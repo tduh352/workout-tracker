@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V36</title>
+<title>Workout Tracker V3</title>
 
 <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
 
@@ -893,14 +893,18 @@
     document.getElementById('login-modal-overlay').style.display = 'none';
   }
 
+  // 改修：エラーのアラートを復活させ、原因を明確にする
   function handleAuthClick() {
-    if (!tokenClient) {
-      // alertではなく画面上にさりげなく表示して操作を妨げないようにする
-      console.warn("Googleの認証システムがまだ読み込まれていない．通信環境を確認してくれ．");
+    if (typeof google === 'undefined' || !google.accounts || !tokenClient) {
+      alert("Googleの認証システムがまだ読み込まれていないか，通信環境によってブロックされている．ページを再読み込みしてみてくれ．");
       return;
     }
     if (!gAccessToken) {
-      tokenClient.requestAccessToken({prompt: 'consent'});
+      try {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+      } catch(e) {
+        alert("ログイン画面の起動に失敗した: " + e.message);
+      }
     }
   }
 
@@ -914,7 +918,8 @@
   }
 
   async function findDriveFile() {
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='workout_tracker_backup.json' and trashed=false&spaces=drive`, {
+    const query = encodeURIComponent("name='workout_tracker_backup.json' and trashed=false");
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive`, {
       headers: { 'Authorization': `Bearer ${gAccessToken}` }
     });
     if (!res.ok) throw new Error('Failed to fetch');
@@ -1577,7 +1582,7 @@
     const finalRating = isRatingVisible ? currentInputRating : 0;
     const finalComment = isRatingVisible ? document.getElementById('input-comment').value.trim() : "";
     
-    if (!exercise) { return; }
+    if (!exercise) { alert('種目を選択してくれ．'); return; }
 
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
@@ -1619,7 +1624,6 @@
     renderLogList();
     renderReviewList();
     resetInputForm();
-    // アラートを削除しサクサク入力可能に
   }
 
   function renderReviewList() {
@@ -2111,7 +2115,6 @@
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // SafariのTainted Canvas対策として、Base64ではなく安全なURLエンコードを使用
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = function() {
