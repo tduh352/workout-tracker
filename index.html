@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V15</title>
+<title>Workout Tracker V16</title>
 <style>
   :root {
     --bg-color: #e8f4f8;
@@ -59,7 +59,8 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     padding: 20px 15px;
     padding-top: env(safe-area-inset-top, 20px);
-    padding-bottom: env(safe-area-inset-bottom, 20px);
+    /* Safariのメニューバー被りを防ぐために下部の余白を拡張 */
+    padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 60px);
     max-width: 800px;
     margin: auto;
     background-color: var(--bg-color);
@@ -115,10 +116,10 @@
   .form-group { margin-bottom: 15px; width: 100%; }
   label { display: block; margin-bottom: 5px; font-weight: bold; }
   
-  input[type="number"], input[type="text"], input[type="date"], input[type="datetime-local"], select, input[type="color"] {
+  input[type="number"], input[type="text"], input[type="date"], input[type="time"], input[type="datetime-local"], select, input[type="color"] {
     padding: 10px;
     width: 100%;
-    min-width: 0; /* iOSの入力欄限界突破を無効化 */
+    min-width: 0;
     background: var(--input-bg);
     color: var(--text-color);
     border: 1px solid var(--border-color);
@@ -142,7 +143,6 @@
   }
   .set-row > div { flex: 1 1 100px; display: flex; flex-direction: column; min-width: 0; }
 
-  /* フレックスボックスの横揺れ原因を修正した記述 */
   .weight-input-group { display: flex; align-items: center; width: 100%; gap: 5px; }
   .weight-input-group input[type="number"] { flex: 1; width: auto; min-width: 0; }
   .unit-select { width: 70px; flex-shrink: 0; margin-left: 0; }
@@ -254,12 +254,11 @@
     display: flex; gap: 10px; margin-top: 20px;
   }
 
-  /* スマホ向けの余白最適化 */
   @media (max-width: 480px) {
     .glass-panel {
       padding: 15px 10px;
     }
-    input[type="number"], input[type="text"], input[type="date"], input[type="datetime-local"], select, input[type="color"] {
+    input[type="number"], input[type="text"], input[type="date"], input[type="time"], select, input[type="color"] {
       padding: 8px;
     }
     .set-row {
@@ -278,8 +277,11 @@
 
 <div id="tab-input" class="tab-content active glass-panel">
   <div class="form-group">
-    <label for="record-datetime">記録日時</label>
-    <input type="datetime-local" id="record-datetime">
+    <label>記録日時</label>
+    <div class="date-range-flex">
+      <input type="date" id="record-date">
+      <input type="time" id="record-time">
+    </div>
   </div>
 
   <div class="controls-row">
@@ -447,7 +449,9 @@
       </select>
     </div>
   </div>
-  <div id="log-list"></div>
+  <div class="scroll-wrapper">
+    <div id="log-list"></div>
+  </div>
 </div>
 
 <div class="glass-panel">
@@ -676,9 +680,13 @@
     const now = new Date();
     const tzOffset = now.getTimezoneOffset() * 60000;
     const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
-    document.getElementById('record-datetime').value = localISOTime;
+    
+    // 日付と時刻を分離して設定
+    const [datePart, timePart] = localISOTime.split('T');
+    document.getElementById('record-date').value = datePart;
+    document.getElementById('record-time').value = timePart;
 
-    const todayStr = (new Date(now - tzOffset)).toISOString().split('T')[0];
+    const todayStr = datePart;
     const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); 
     const pastStr = (new Date(past - tzOffset)).toISOString().split('T')[0];
     
@@ -932,7 +940,11 @@
   function addLog() {
     const category = document.getElementById('category').value;
     const exercise = document.getElementById('exercise').value;
-    const datetime = document.getElementById('record-datetime').value;
+    
+    // 分割された日付と時刻を取得して結合
+    const datePart = document.getElementById('record-date').value;
+    const timePart = document.getElementById('record-time').value;
+    const datetime = `${datePart}T${timePart}`;
     
     if (!exercise) {
       alert('種目を選択してくれ．');
