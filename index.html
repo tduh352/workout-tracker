@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V26</title>
+<title>Workout Tracker V27</title>
 
 <style>
   :root {
@@ -347,12 +347,16 @@
     </div>
   </div>
 
-  <div class="form-group" id="input-rating-section">
+  <button id="toggle-rating-btn" onclick="toggleInputRating()" style="background:none; border:none; color:var(--btn-bottom); font-weight:bold; font-size: 15px; cursor:pointer; padding:0; margin-bottom:15px; text-align: left; width: 100%;">
+    ＋ 評価とコメントを追加 (任意)
+  </button>
+
+  <div class="form-group" id="input-rating-section" style="display:none; padding-top:10px; border-top:1px dashed var(--border-color);">
     <label>評価とコメント (達成感や調子)</label>
     <div class="star-rating-container" id="input-star-rating">
-      <span class="star active" onclick="setRating('input', 1)">★</span>
-      <span class="star active" onclick="setRating('input', 2)">★</span>
-      <span class="star active" onclick="setRating('input', 3)">★</span>
+      <span class="star" onclick="setRating('input', 1)">★</span>
+      <span class="star" onclick="setRating('input', 2)">★</span>
+      <span class="star" onclick="setRating('input', 3)">★</span>
       <span class="star" onclick="setRating('input', 4)">★</span>
       <span class="star" onclick="setRating('input', 5)">★</span>
     </div>
@@ -466,7 +470,7 @@
 
   <div class="form-group checkbox-group">
     <input type="checkbox" id="show-input-rating" checked onchange="updateSettings()">
-    <label for="show-input-rating" style="margin:0;">入力画面で評価とコメントを表示する</label>
+    <label for="show-input-rating" style="margin:0;">入力画面で評価とコメントを常に開いておく</label>
   </div>
 
   <hr style="border-color: var(--border-color); margin: 20px 0;">
@@ -638,7 +642,7 @@
   let editingLogId = null;
   let editingSetIndex = null;
   
-  let currentInputRating = 3;
+  let currentInputRating = 0;
   let currentEditRating = 3;
   let dailyEvals = {};
 
@@ -662,6 +666,21 @@
   
   let customExerciseCategories = {};
   let savedCustomOrders = {};
+
+  // --- 入力欄の開閉ロジックを追加 ---
+  function toggleInputRating() {
+    const section = document.getElementById('input-rating-section');
+    const btn = document.getElementById('toggle-rating-btn');
+    if (section.style.display === 'none') {
+      section.style.display = 'block';
+      btn.innerText = 'ー 評価とコメントを閉じる';
+    } else {
+      section.style.display = 'none';
+      btn.innerText = '＋ 評価とコメントを追加 (任意)';
+      setRating('input', 0); // 閉じた際に星の入力をリセット
+      document.getElementById('input-comment').value = '';
+    }
+  }
 
   function setRating(target, value) {
     if (target === 'input') {
@@ -840,7 +859,6 @@
         console.error("設定の読み込みに失敗した．");
       }
     }
-    document.getElementById('input-rating-section').style.display = document.getElementById('show-input-rating').checked ? 'block' : 'none';
   }
 
   function saveLocalSettings() {
@@ -895,8 +913,22 @@
     document.getElementById('set-count').value = currentDefaultSetCount;
     const isCommonDefault = document.getElementById('default-common').checked;
     document.getElementById('common-check').checked = isCommonDefault;
-    setRating('input', 3); 
+    
+    // 設定に基づく評価欄の初期開閉処理
+    const showRatingDefault = document.getElementById('show-input-rating').checked;
+    const section = document.getElementById('input-rating-section');
+    const btn = document.getElementById('toggle-rating-btn');
+    if (showRatingDefault) {
+        section.style.display = 'block';
+        btn.innerText = 'ー 評価とコメントを閉じる';
+        setRating('input', 3);
+    } else {
+        section.style.display = 'none';
+        btn.innerText = '＋ 評価とコメントを追加 (任意)';
+        setRating('input', 0);
+    }
     document.getElementById('input-comment').value = '';
+    
     initDates();
     renderSetInputs();
   }
@@ -1041,7 +1073,17 @@
     const isCommonDefault = document.getElementById('default-common').checked;
     document.getElementById('common-check').checked = isCommonDefault;
     
-    document.getElementById('input-rating-section').style.display = document.getElementById('show-input-rating').checked ? 'block' : 'none';
+    // 設定変更時に即座に入力画面の状態を反映
+    const showRatingDefault = document.getElementById('show-input-rating').checked;
+    const section = document.getElementById('input-rating-section');
+    const btn = document.getElementById('toggle-rating-btn');
+    if (showRatingDefault) {
+      section.style.display = 'block';
+      btn.innerText = 'ー 評価とコメントを閉じる';
+    } else {
+      section.style.display = 'none';
+      btn.innerText = '＋ 評価とコメントを追加 (任意)';
+    }
     
     document.getElementById('set-count').value = currentDefaultSetCount;
     renderSetInputs();
@@ -1113,7 +1155,8 @@
     const timePart = document.getElementById('record-time').value;
     const datetime = `${datePart}T${timePart}`;
     
-    const isRatingVisible = document.getElementById('show-input-rating').checked;
+    // 表示されている時だけ値を取得する
+    const isRatingVisible = document.getElementById('input-rating-section').style.display !== 'none';
     const finalRating = isRatingVisible ? currentInputRating : 0;
     const finalComment = isRatingVisible ? document.getElementById('input-comment').value.trim() : "";
     
