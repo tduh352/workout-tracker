@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V18</title>
+<title>Workout Tracker V19</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 
@@ -1351,6 +1351,7 @@
     container.innerHTML = svgHtml;
   }
 
+  // --- 安全なダウンロードとエラー処理を実装した新関数 ---
   function downloadGraph() {
     const container = document.getElementById('chart-container');
     const svg = container.querySelector('svg');
@@ -1366,20 +1367,16 @@
 
     const svgData = new XMLSerializer().serializeToString(svg);
 
+    // SVG形式はそのまま即座にダウンロード
     if (format === 'svg') {
       const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      triggerDownload(url, filename);
       return;
     }
 
-    const scale = 8;
+    // PDFの場合はスケールを下げてメモリのパンクを防止する
+    const scale = format === 'pdf' ? 3 : 6;
     const baseWidth = svg.viewBox.baseVal.width || 600;
     const baseHeight = svg.viewBox.baseVal.height || 400;
     
@@ -1396,31 +1393,60 @@
     const img = new Image();
     
     img.onload = function() {
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      
-      if (format === 'pdf') {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({
-          orientation: baseWidth > baseHeight ? 'landscape' : 'portrait',
-          unit: 'pt',
-          format: [baseWidth, baseHeight]
-        });
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        pdf.addImage(imgData, 'JPEG', 0, 0, baseWidth, baseHeight);
-        pdf.save(filename);
-      } else {
-        const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-        const dataUrl = canvas.toDataURL(mimeType, 1.0);
+      try {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
-        const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        if (format === 'pdf') {
+          // 外部ライブラリが読み込めていない場合のエラーハンドリング
+          if (!window.jspdf || !window.jspdf.jsPDF) {
+            alert("PDF生成プログラムの読み込みに失敗している．通信環境を確認するか，ページを再読み込みしてくれ．");
+            return;
+          }
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({
+            orientation: baseWidth > baseHeight ? 'landscape' : 'portrait',
+            unit: 'pt',
+            format: [baseWidth, baseHeight]
+          });
+          
+          const imgData = canvas.toDataURL('image/jpeg', 0.95);
+          pdf.addImage(imgData, 'JPEG', 0, 0, baseWidth, baseHeight);
+          
+          // Blobとして実体化してから安全にダウンロードさせる
+          const pdfBlob = pdf.output('blob');
+          const url = URL.createObjectURL(pdfBlob);
+          triggerDownload(url, filename);
+        } else {
+          // PNG/JPEGのダウンロード処理
+          const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+          const dataUrl = canvas.toDataURL(mimeType, 1.0);
+          triggerDownload(dataUrl, filename);
+        }
+      } catch (e) {
+        alert("画像の処理中にエラーが発生した: " + e.message);
       }
     };
+    
+    img.onerror = function() {
+      alert("グラフの画像化に失敗した．");
+    };
+    
     img.src = 'data:image/svg+xml;base64,' + svgBase64;
+  }
+
+  // --- ダウンロードを強制発火させる共通関数 ---
+  function triggerDownload(url, filename) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Blob URLの場合はメモリ解放
+    if (url.startsWith('blob:')) {
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
   }
 
   function showTooltip(e, date, setIndex, weight, unit, reps) {
