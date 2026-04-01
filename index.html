@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Workout">
-<link rel="apple-touch-icon" href="icon.png"> <title>Workout Tracker V12</title>
+<link rel="apple-touch-icon" href="icon.png">
+<title>Workout Tracker V12</title>
 <style>
   :root {
     --bg-color: #e8f4f8;
@@ -41,18 +41,25 @@
     --modal-overlay: rgba(0, 0, 0, 0.7);
   }
 
-  /* 画面の端まで使うアプリ特有の余白調整 */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    overflow-x: hidden;
+  }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     padding: 20px 15px;
-    padding-top: env(safe-area-inset-top, 20px); /* iPhoneのノッチ対応 */
+    padding-top: env(safe-area-inset-top, 20px);
     padding-bottom: env(safe-area-inset-bottom, 20px);
     max-width: 800px;
     margin: auto;
     background-color: var(--bg-color);
     color: var(--text-color);
     transition: background-color 0.3s, color 0.3s;
-    -webkit-tap-highlight-color: transparent; /* タップ時の青い枠を消す */
+    -webkit-tap-highlight-color: transparent;
   }
 
   .glass-panel {
@@ -62,22 +69,23 @@
     padding: 20px;
     box-shadow: 0 4px 15px var(--shadow);
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px); /* iOS向けブラー */
+    -webkit-backdrop-filter: blur(10px);
     margin-bottom: 20px;
     overflow-x: auto;
   }
 
   .tab-buttons { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; }
   .tab-btn {
-    padding: 12px 20px; /* タップしやすいように少し大きく */
+    padding: 12px 10px;
     cursor: pointer;
     border: 1px solid transparent;
     background: transparent;
     color: var(--text-color);
     outline: none;
     font-size: 16px;
-    flex: 1; /* タブの幅を均等に */
+    flex: 1;
     text-align: center;
+    white-space: nowrap;
   }
   .tab-btn.active {
     border: 2px solid var(--border-color);
@@ -91,35 +99,35 @@
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
-  .form-group { margin-bottom: 15px; }
+  .form-group { margin-bottom: 15px; width: 100%; }
   label { display: block; margin-bottom: 5px; font-weight: bold; }
   input[type="number"], input[type="text"], input[type="date"], input[type="datetime-local"], select, input[type="color"] {
-    padding: 10px; /* タップしやすいサイズ */
+    padding: 10px;
     width: 100%;
-    box-sizing: border-box;
     background: var(--input-bg);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    font-size: 16px; /* iPhoneでズームされないための必須サイズ */
+    font-size: 16px;
   }
   
-  .checkbox-group { display: flex; align-items: center; }
-  .checkbox-group input { width: auto; margin-right: 10px; transform: scale(1.2); } /* チェックボックスを少し大きく */
+  .checkbox-group { display: flex; align-items: center; flex-wrap: wrap; }
+  .checkbox-group input { width: auto; margin-right: 10px; transform: scale(1.2); }
 
   .set-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 10px;
     align-items: center;
     background: rgba(128, 128, 128, 0.1);
     padding: 10px;
     border-radius: 8px;
-    min-width: 300px;
+    width: 100%;
   }
-  .set-row > div { flex: 1; display: flex; flex-direction: column; }
-  .unit-select { width: 60px; display: inline-block; margin-left: 5px; }
-  .weight-input-group { display: flex; align-items: center; }
+  .set-row > div { flex: 1 1 100px; display: flex; flex-direction: column; }
+  .unit-select { width: 70px; display: inline-block; margin-left: 5px; }
+  .weight-input-group { display: flex; align-items: center; width: 100%; }
 
   .glossy-btn {
     padding: 14px 20px;
@@ -169,21 +177,24 @@
     cursor: not-allowed;
   }
 
-  table { width: 100%; border-collapse: collapse; min-width: 600px; }
+  table { width: 100%; border-collapse: collapse; min-width: 400px; }
   th, td { border: 1px solid var(--border-color); padding: 10px 8px; text-align: left; vertical-align: middle; }
   th { background: rgba(128, 128, 128, 0.2); }
 
-  .canvas-container { position: relative; width: 100%; overflow-x: auto; }
-  .graph-svg {
+  .canvas-container { 
+    position: relative; 
+    width: 100%; 
+    overflow: auto; 
+    max-height: 70vh;
     background: var(--input-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    display: block;
-    width: 100%;
-    min-width: 600px;
-    height: 400px;
     margin-top: 10px;
   }
+  .graph-svg {
+    display: block;
+  }
+
   #tooltip {
     position: absolute;
     display: none;
@@ -198,7 +209,7 @@
     box-shadow: 0 2px 5px var(--shadow);
   }
   .controls-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: flex-end; }
-  .controls-row > div { flex: 1; min-width: 150px; }
+  .controls-row > div { flex: 1 1 150px; }
 
   #edit-modal-overlay {
     position: fixed;
@@ -261,9 +272,7 @@
     <label for="common-check" style="margin:0;">全セット共通</label>
   </div>
 
-  <div style="overflow-x: auto;">
-    <div id="set-inputs-container"></div>
-  </div>
+  <div id="set-inputs-container"></div>
 
   <button class="glossy-btn" onclick="addLog()">記録を追加</button>
 </div>
@@ -297,13 +306,13 @@
   </div>
 
   <div style="overflow-x: auto;">
-    <table style="min-width: 400px;">
+    <table style="min-width: 300px;">
       <tr>
         <th>種目名</th>
-        <th style="width: 200px;">操作 (並び替え / 編集)</th>
+        <th style="width: 150px;">操作</th>
       </tr>
       <tbody id="exercise-edit-tbody">
-        </tbody>
+      </tbody>
     </table>
   </div>
 </div>
@@ -376,7 +385,7 @@
 
     <div class="form-group" id="date-range-group" style="flex: 2;">
       <label>期間指定</label>
-      <div style="display: flex; gap: 5px; align-items: center;">
+      <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
         <input type="date" id="log-start-date" onchange="renderLogList()">
         <span>〜</span>
         <input type="date" id="log-end-date" onchange="renderLogList()">
@@ -400,7 +409,9 @@
       </select>
     </div>
   </div>
-  <div id="log-list" style="overflow-x: auto;"></div>
+  <div style="overflow-x: auto;">
+    <div id="log-list"></div>
+  </div>
 </div>
 
 <div class="glass-panel">
@@ -425,7 +436,7 @@
       <label for="graph-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
     </div>
     <div class="form-group" id="graph-date-inputs" style="display: none; flex: 2;">
-      <div style="display: flex; gap: 5px; align-items: center;">
+      <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
         <input type="date" id="graph-start-date" onchange="drawGraph()">
         <span>〜</span>
         <input type="date" id="graph-end-date" onchange="drawGraph()">
@@ -1100,7 +1111,7 @@
     container.innerHTML = '';
 
     if (!exercise) {
-      container.innerHTML = `<svg viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">データがありません．</text></svg>`;
+      container.innerHTML = `<svg width="600" height="400" viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">データがありません．</text></svg>`;
       return;
     }
 
@@ -1119,7 +1130,7 @@
     }
 
     if (exLogs.length === 0) {
-      container.innerHTML = `<svg viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">指定範囲にデータがありません．</text></svg>`;
+      container.innerHTML = `<svg width="600" height="400" viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">指定範囲にデータがありません．</text></svg>`;
       return;
     }
 
@@ -1162,16 +1173,23 @@
     let maxY = Math.ceil(maxYReal / 5) * 5;
     if (maxY === 0) maxY = 5;
     
-    const baseWidth = 600;
-    const baseHeight = 400;
     const padLeft = 50;
     const padRight = 30;
     const padTop = 30;
     const padBottom = 40;
-    const plotW = baseWidth - padLeft - padRight;
-    const plotH = baseHeight - padTop - padBottom;
+    
+    // ピクセルスケールの固定計算（重量5につき40px，回数1につき30px）
+    const ySteps = maxY / 5;
+    const Y_PIXELS_PER_STEP = 40;
+    const plotH = Math.max(300, ySteps * Y_PIXELS_PER_STEP); 
+    const baseHeight = plotH + padTop + padBottom;
 
-    let svgHtml = `<svg viewBox="0 0 ${baseWidth} ${baseHeight}" class="graph-svg" preserveAspectRatio="xMidYMid meet">`;
+    const xSteps = Math.min(maxX, 10);
+    const X_PIXELS_PER_STEP = 30;
+    const plotW = Math.max(500, maxX * X_PIXELS_PER_STEP);
+    const baseWidth = Math.max(600, plotW + padLeft + padRight);
+
+    let svgHtml = `<svg width="${baseWidth}" height="${baseHeight}" viewBox="0 0 ${baseWidth} ${baseHeight}" class="graph-svg">`;
 
     const showArrows = document.getElementById('graph-show-arrows').checked;
     const arrowColor = document.getElementById('arrow-color').value;
@@ -1187,7 +1205,6 @@
       `;
     }
 
-    const ySteps = maxY / 5;
     for (let i = 0; i <= ySteps; i++) {
       const yVal = maxY * (i / ySteps);
       const py = padTop + plotH - (yVal / maxY) * plotH;
@@ -1195,7 +1212,6 @@
       svgHtml += `<text x="${padLeft - 5}" y="${py}" fill="${axisColor}" font-size="12" text-anchor="end" alignment-baseline="middle">${yVal.toFixed(1)}</text>`;
     }
 
-    const xSteps = Math.min(maxX, 10);
     for (let i = 0; i <= xSteps; i++) {
       const xVal = maxX * (i / xSteps);
       const px = padLeft + (xVal / maxX) * plotW;
