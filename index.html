@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V21</title>
+<title>Workout Tracker V22</title>
 
 <style>
   :root {
@@ -129,6 +129,21 @@
   
   .checkbox-group { display: flex; align-items: center; flex-wrap: wrap; }
   .checkbox-group input { width: auto; margin-right: 10px; transform: scale(1.2); }
+
+  /* 星評価UI用のスタイル */
+  .star-rating-container {
+    display: inline-flex;
+    gap: 4px;
+    font-size: 28px;
+    color: var(--border-color);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .star-rating-container .star.active {
+    color: #ffc700;
+    text-shadow: 0 0 5px rgba(255, 199, 0, 0.4);
+  }
 
   .set-row {
     display: flex;
@@ -298,6 +313,17 @@
     <div class="form-group" style="flex: 2;">
       <label for="exercise">種目</label>
       <select id="exercise"></select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>評価 (達成感や調子)</label>
+    <div class="star-rating-container" id="input-star-rating">
+      <span class="star active" onclick="setRating('input', 1)">★</span>
+      <span class="star active" onclick="setRating('input', 2)">★</span>
+      <span class="star active" onclick="setRating('input', 3)">★</span>
+      <span class="star" onclick="setRating('input', 4)">★</span>
+      <span class="star" onclick="setRating('input', 5)">★</span>
     </div>
   </div>
 
@@ -515,6 +541,18 @@
 <div id="edit-modal-overlay">
   <div id="edit-modal" class="glass-panel">
     <h3>記録の編集</h3>
+
+    <div class="form-group">
+      <label>評価</label>
+      <div class="star-rating-container" id="edit-star-rating">
+        <span class="star" onclick="setRating('edit', 1)">★</span>
+        <span class="star" onclick="setRating('edit', 2)">★</span>
+        <span class="star" onclick="setRating('edit', 3)">★</span>
+        <span class="star" onclick="setRating('edit', 4)">★</span>
+        <span class="star" onclick="setRating('edit', 5)">★</span>
+      </div>
+    </div>
+
     <div class="form-group">
       <label>重量</label>
       <div class="weight-input-group">
@@ -544,6 +582,10 @@
   
   let editingLogId = null;
   let editingSetIndex = null;
+  
+  /* 星評価の内部状態を管理する変数 */
+  let currentInputRating = 3;
+  let currentEditRating = 3;
 
   const defaultExerciseCategories = {
     "マシン": [
@@ -565,6 +607,38 @@
   
   let customExerciseCategories = {};
   let savedCustomOrders = {};
+
+  // --- 星評価のロジック ---
+  function setRating(target, value) {
+    if (target === 'input') {
+      currentInputRating = value;
+      updateStarUI('input-star-rating', currentInputRating);
+    } else if (target === 'edit') {
+      currentEditRating = value;
+      updateStarUI('edit-star-rating', currentEditRating);
+    }
+  }
+
+  function updateStarUI(containerId, rating) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const stars = container.querySelectorAll('.star');
+    stars.forEach((star, index) => {
+      if (index < rating) {
+        star.classList.add('active');
+      } else {
+        star.classList.remove('active');
+      }
+    });
+  }
+
+  function getStarHtml(rating) {
+    rating = rating || 0;
+    const activeStars = '★'.repeat(rating);
+    const inactiveStars = '★'.repeat(5 - rating);
+    return `<span style="color: #ffc700;">${activeStars}</span><span style="color: var(--border-color);">${inactiveStars}</span>`;
+  }
+  // -------------------------
 
   function loadLocalCategories() {
     const saved = localStorage.getItem('workout_tracker_categories');
@@ -711,6 +785,7 @@
     document.getElementById('set-count').value = currentDefaultSetCount;
     const isCommonDefault = document.getElementById('default-common').checked;
     document.getElementById('common-check').checked = isCommonDefault;
+    setRating('input', 3); // 記録完了後に星評価をデフォルトの3に戻す
     initDates();
     renderSetInputs();
   }
@@ -962,11 +1037,14 @@
 
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
+    
+    // 入力した星評価を記録データに統合する
     let logEntry = {
       id: Date.now(),
       date: datetime,
       category: category,
       exercise: exercise,
+      rating: currentInputRating,
       sets: []
     };
 
@@ -1022,6 +1100,10 @@
     editingLogId = logId;
     editingSetIndex = setIndex;
     
+    // 編集モーダルを開く際に現在の星評価を引き継ぐ
+    currentEditRating = log.rating || 0;
+    updateStarUI('edit-star-rating', currentEditRating);
+
     document.getElementById('edit-weight').value = set.weight;
     document.getElementById('edit-unit').value = set.unit;
     document.getElementById('edit-reps').value = set.reps;
@@ -1042,6 +1124,8 @@
     const log = logs.find(l => l.id === editingLogId);
     const set = log.sets.find(s => s.setIndex === editingSetIndex);
     if (log && set) {
+      // 編集した星評価を記録データに反映させる
+      log.rating = currentEditRating;
       set.weight = parseFloat(document.getElementById('edit-weight').value) || 0;
       set.unit = document.getElementById('edit-unit').value;
       set.reps = parseInt(document.getElementById('edit-reps').value) || 0;
@@ -1112,7 +1196,7 @@
             html += `<tr>
               <td>${timeStr}</td>
               <td>${log.category}</td>
-              <td>${log.exercise}</td>
+              <td>${log.exercise}<br><span style="font-size:14px; display:inline-block; margin-top:2px;">${getStarHtml(log.rating)}</span></td>
               <td>${s.setIndex}</td>
               <td>${s.weight}${s.unit}</td>
               <td>${s.reps}</td>
@@ -1143,6 +1227,7 @@
             setLogs.push({
               logId: log.id,
               date: log.date,
+              rating: log.rating,
               setIndex: set.setIndex,
               weight: set.weight,
               unit: set.unit,
@@ -1176,7 +1261,7 @@
       setLogs.forEach(s => {
         const dtStr = s.date.replace('T', ' ');
         html += `<tr>
-          <td>${dtStr}</td>
+          <td>${dtStr}<br><span style="font-size:14px; display:inline-block; margin-top:2px;">${getStarHtml(s.rating)}</span></td>
           <td>${s.setIndex}</td>
           <td>${s.weight}${s.unit}</td>
           <td>${s.reps}</td>
@@ -1370,8 +1455,6 @@
       return;
     }
 
-    // PNG/JPEGのための高解像度キャンバス作成処理
-    // スマホのメモリが耐えられる限界ギリギリの10倍スケール（約800DPIから1000DPI相当）に設定
     const scale = 10;
     const baseWidth = svg.viewBox.baseVal.width || 600;
     const baseHeight = svg.viewBox.baseVal.height || 400;
