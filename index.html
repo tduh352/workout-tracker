@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V22</title>
+<title>Workout Tracker V30</title>
 
 <style>
   :root {
@@ -28,6 +28,7 @@
     --tooltip-bg: rgba(0, 0, 0, 0.8);
     --tooltip-text: #ffffff;
     --modal-overlay: rgba(0, 0, 0, 0.5);
+    --card-bg: #ffffff;
   }
 
   body.dark-theme {
@@ -44,6 +45,7 @@
     --tooltip-bg: rgba(255, 255, 255, 0.9);
     --tooltip-text: #000000;
     --modal-overlay: rgba(0, 0, 0, 0.7);
+    --card-bg: #2a2a2a;
   }
 
   *, *::before, *::after {
@@ -87,19 +89,19 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .tab-buttons { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; width: 100%; }
+  .tab-buttons { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; width: 100%; overflow-x: auto; }
   .tab-btn {
-    padding: 12px 5px;
+    padding: 12px 10px;
     cursor: pointer;
     border: 1px solid transparent;
     background: transparent;
     color: var(--text-color);
     outline: none;
-    font-size: 15px;
+    font-size: 14px;
     flex: 1;
     text-align: center;
     white-space: nowrap;
-    min-width: 0;
+    min-width: 70px;
   }
   .tab-btn.active {
     border: 2px solid var(--border-color);
@@ -116,7 +118,7 @@
   .form-group { margin-bottom: 15px; width: 100%; }
   label { display: block; margin-bottom: 5px; font-weight: bold; }
   
-  input[type="number"], input[type="text"], input[type="date"], input[type="time"], input[type="datetime-local"], select, input[type="color"] {
+  input[type="number"], input[type="text"], input[type="date"], input[type="time"], input[type="datetime-local"], select, input[type="color"], textarea {
     padding: 10px;
     width: 100%;
     min-width: 0;
@@ -126,11 +128,11 @@
     border-radius: 6px;
     font-size: 16px;
   }
+  textarea { resize: vertical; min-height: 80px; }
   
-  .checkbox-group { display: flex; align-items: center; flex-wrap: wrap; }
+  .checkbox-group { display: flex; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
   .checkbox-group input { width: auto; margin-right: 10px; transform: scale(1.2); }
 
-  /* 星評価UI用のスタイル */
   .star-rating-container {
     display: inline-flex;
     gap: 4px;
@@ -139,10 +141,34 @@
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
+    margin-bottom: 5px;
   }
   .star-rating-container .star.active {
     color: #ffc700;
     text-shadow: 0 0 5px rgba(255, 199, 0, 0.4);
+  }
+
+  .review-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .review-card-header {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+  }
+  .review-card-context {
+    font-size: 14px;
+    color: var(--text-color);
+    opacity: 0.8;
+    margin-bottom: 15px;
+    line-height: 1.4;
   }
 
   .set-row {
@@ -273,11 +299,15 @@
     .glass-panel {
       padding: 15px 10px;
     }
-    input[type="number"], input[type="text"], input[type="date"], input[type="time"], select, input[type="color"] {
+    input[type="number"], input[type="text"], input[type="date"], input[type="time"], select, input[type="color"], textarea {
       padding: 8px;
     }
     .set-row {
       padding: 8px;
+    }
+    .tab-btn {
+      padding: 12px 2px;
+      font-size: 13px;
     }
   }
 </style>
@@ -286,8 +316,10 @@
 
 <div class="tab-buttons">
   <button class="tab-btn active" onclick="switchTab('input')">入力</button>
+  <button class="tab-btn" onclick="switchTab('review')">振り返り</button>
   <button class="tab-btn" onclick="switchTab('exercises')">種目</button>
   <button class="tab-btn" onclick="switchTab('settings')">設定</button>
+  <button class="tab-btn" onclick="switchTab('feedback')">ご意見</button>
 </div>
 
 <div id="tab-input" class="tab-content active glass-panel">
@@ -316,15 +348,28 @@
     </div>
   </div>
 
-  <div class="form-group">
-    <label>評価 (達成感や調子)</label>
+  <button id="toggle-rating-btn" onclick="toggleInputRating()" style="background:none; border:none; color:var(--btn-bottom); font-weight:bold; font-size: 15px; cursor:pointer; padding:0; margin-bottom:15px; text-align: left; width: 100%;">
+    ＋ 評価とコメントを追加 (任意)
+  </button>
+
+  <div class="form-group" id="input-rating-section" style="display:none; padding-top:10px; border-top:1px dashed var(--border-color);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+      <label style="margin: 0;">全体評価</label>
+      <button class="action-btn" style="margin: 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--btn-bottom); border: 1px solid var(--btn-bottom);" onclick="setRating('input', 0)">星をリセット</button>
+    </div>
     <div class="star-rating-container" id="input-star-rating">
-      <span class="star active" onclick="setRating('input', 1)">★</span>
-      <span class="star active" onclick="setRating('input', 2)">★</span>
-      <span class="star active" onclick="setRating('input', 3)">★</span>
+      <span class="star" onclick="setRating('input', 1)">★</span>
+      <span class="star" onclick="setRating('input', 2)">★</span>
+      <span class="star" onclick="setRating('input', 3)">★</span>
       <span class="star" onclick="setRating('input', 4)">★</span>
       <span class="star" onclick="setRating('input', 5)">★</span>
     </div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 10px;">
+      <label style="margin: 0;">全体コメント</label>
+      <button class="action-btn" style="margin: 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--btn-bottom); border: 1px solid var(--btn-bottom);" onclick="document.getElementById('input-comment').value = ''">コメントを消去</button>
+    </div>
+    <textarea id="input-comment" placeholder="フォームの感覚や調子などのコメントを記録..."></textarea>
   </div>
 
   <div class="form-group">
@@ -340,6 +385,41 @@
   <div id="set-inputs-container"></div>
 
   <button class="glossy-btn" onclick="addLog()">記録を追加</button>
+</div>
+
+<div id="tab-review" class="tab-content glass-panel">
+  <h3>評価と振り返り</h3>
+  
+  <div class="controls-row">
+    <div class="form-group">
+      <label for="review-level">表示モード</label>
+      <select id="review-level" onchange="updateReviewUI()">
+        <option value="day">日付ごと (その日全体の評価)</option>
+        <option value="exercise">種目ごと (その種目の評価)</option>
+        <option value="set">セットごと (個別のセット評価)</option>
+      </select>
+    </div>
+    <div class="form-group" id="review-exercise-group" style="display: none; flex: 2;">
+      <label for="review-target-exercise">対象種目</label>
+      <select id="review-target-exercise" onchange="renderReviewList()"></select>
+    </div>
+  </div>
+
+  <div class="controls-row">
+    <div class="form-group checkbox-group" style="flex: 1;">
+      <input type="checkbox" id="review-date-filter-check" onchange="toggleReviewDateFilter()">
+      <label for="review-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
+    </div>
+    <div class="form-group" id="review-date-inputs" style="display: none; flex: 2;">
+      <div class="date-range-flex">
+        <input type="date" id="review-start-date" onchange="renderReviewList()">
+        <span>〜</span>
+        <input type="date" id="review-end-date" onchange="renderReviewList()">
+      </div>
+    </div>
+  </div>
+
+  <div id="review-container"></div>
 </div>
 
 <div id="tab-exercises" class="tab-content glass-panel">
@@ -416,6 +496,16 @@
     <label for="default-common" style="margin:0;">全セット共通をデフォルトにする</label>
   </div>
 
+  <div class="form-group checkbox-group">
+    <input type="checkbox" id="show-input-rating" checked onchange="updateSettings()">
+    <label for="show-input-rating" style="margin:0;">入力画面で全体評価とコメントを常に開いておく</label>
+  </div>
+
+  <div class="form-group checkbox-group">
+    <input type="checkbox" id="show-set-comments" onchange="updateSettings()">
+    <label for="show-set-comments" style="margin:0;">入力画面で各セットごとのコメント欄を表示する</label>
+  </div>
+
   <hr style="border-color: var(--border-color); margin: 20px 0;">
 
   <div class="form-group">
@@ -436,6 +526,18 @@
     <button class="glossy-btn danger-btn" onclick="clearAllData()">全記録を削除する</button>
     <button class="glossy-btn danger-btn" style="margin-top: 10px;" onclick="resetCategoriesData()">種目リストを初期状態に戻す</button>
   </div>
+</div>
+
+<div id="tab-feedback" class="tab-content glass-panel">
+  <h3>バグ報告・フィードバック</h3>
+  <p style="font-size: 14px; margin-top: 0;">アプリのバグや改善案があれば，ここから開発者にメールで直接送信できる．</p>
+  
+  <div class="form-group">
+    <label for="feedback-body">内容</label>
+    <textarea id="feedback-body" placeholder="ここにバグの状況や追加してほしい機能のアイデアを記入してくれ..."></textarea>
+  </div>
+  
+  <button class="glossy-btn" onclick="sendFeedback()">メール作成画面を開く</button>
 </div>
 
 <div class="glass-panel">
@@ -517,15 +619,17 @@
     </div>
   </div>
 
-  <div class="controls-row" style="margin-bottom: 0; align-items: stretch;">
-    <button class="glossy-btn" style="flex: 1;" onclick="drawGraph()">グラフを描画</button>
+  <div class="controls-row" style="margin-bottom: 0; align-items: center;">
+    <div class="form-group" style="margin-bottom: 0; flex: 1;">
+      <button class="glossy-btn" onclick="drawGraph()">グラフを描画</button>
+    </div>
     <div style="display: flex; gap: 5px; flex: 1;">
       <select id="download-format" style="width: auto; flex-shrink: 0; padding: 10px;">
         <option value="png">PNG</option>
         <option value="jpeg">JPEG</option>
-        <option value="svg">SVG (推奨)</option>
+        <option value="svg">SVG</option>
       </select>
-      <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563; flex: 1; margin-top: 0;" onclick="downloadGraph()">保存</button>
+      <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563; margin-top: 0; flex: 1;" onclick="downloadGraph()">保存</button>
     </div>
   </div>
 
@@ -583,9 +687,9 @@
   let editingLogId = null;
   let editingSetIndex = null;
   
-  /* 星評価の内部状態を管理する変数 */
-  let currentInputRating = 3;
+  let currentInputRating = 0;
   let currentEditRating = 3;
+  let dailyEvals = {};
 
   const defaultExerciseCategories = {
     "マシン": [
@@ -608,7 +712,18 @@
   let customExerciseCategories = {};
   let savedCustomOrders = {};
 
-  // --- 星評価のロジック ---
+  function toggleInputRating() {
+    const section = document.getElementById('input-rating-section');
+    const btn = document.getElementById('toggle-rating-btn');
+    if (section.style.display === 'none') {
+      section.style.display = 'block';
+      btn.innerText = 'ー 評価とコメントを閉じる';
+    } else {
+      section.style.display = 'none';
+      btn.innerText = '＋ 評価とコメントを追加 (任意)';
+    }
+  }
+
   function setRating(target, value) {
     if (target === 'input') {
       currentInputRating = value;
@@ -624,45 +739,134 @@
     if (!container) return;
     const stars = container.querySelectorAll('.star');
     stars.forEach((star, index) => {
-      if (index < rating) {
-        star.classList.add('active');
-      } else {
-        star.classList.remove('active');
-      }
+      if (index < rating) star.classList.add('active');
+      else star.classList.remove('active');
     });
   }
 
-  function getStarHtml(rating) {
+  function getDynamicStarHtml(level, identifier, currentRating) {
+    let html = `<div class="star-rating-container" id="star-container-${level}-${identifier}">`;
+    for (let i = 1; i <= 5; i++) {
+      const activeClass = i <= currentRating ? 'active' : '';
+      html += `<span class="star ${activeClass}" onclick="updateReviewRating('${level}', '${identifier}', ${i})">★</span>`;
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function getStaticStarHtml(rating) {
     rating = rating || 0;
+    if (rating === 0) return '';
     const activeStars = '★'.repeat(rating);
     const inactiveStars = '★'.repeat(5 - rating);
     return `<span style="color: #ffc700;">${activeStars}</span><span style="color: var(--border-color);">${inactiveStars}</span>`;
+  }
+
+  function updateReviewUI() {
+    const level = document.getElementById('review-level').value;
+    const exGroup = document.getElementById('review-exercise-group');
+    if (level === 'exercise' || level === 'set') {
+      exGroup.style.display = 'block';
+    } else {
+      exGroup.style.display = 'none';
+    }
+    renderReviewList();
+  }
+
+  function toggleReviewDateFilter() {
+    const isChecked = document.getElementById('review-date-filter-check').checked;
+    document.getElementById('review-date-inputs').style.display = isChecked ? 'block' : 'none';
+    renderReviewList();
+  }
+
+  function updateReviewRating(level, identifier, rating) {
+    if (level === 'day') {
+      if (!dailyEvals[identifier]) dailyEvals[identifier] = { rating: 0, comment: '' };
+      dailyEvals[identifier].rating = rating;
+    } else if (level === 'exercise') {
+      const log = logs.find(l => l.id == identifier);
+      if (log) log.rating = rating;
+    } else if (level === 'set') {
+      const [logId, setIdx] = identifier.split('_');
+      const log = logs.find(l => l.id == logId);
+      if (log) {
+        const set = log.sets.find(s => s.setIndex == setIdx);
+        if (set) set.rating = rating;
+      }
+    }
+    saveLocalData();
+    
+    const container = document.getElementById(`star-container-${level}-${identifier}`);
+    if (container) {
+      const stars = container.querySelectorAll('.star');
+      stars.forEach((star, index) => {
+        if (index < rating) star.classList.add('active');
+        else star.classList.remove('active');
+      });
+    }
+    renderLogList();
+  }
+
+  function saveReviewComment(level, identifier) {
+    const textarea = document.getElementById(`comment-${level}-${identifier}`);
+    if (!textarea) return;
+    const comment = textarea.value;
+    
+    if (level === 'day') {
+      if (!dailyEvals[identifier]) dailyEvals[identifier] = { rating: 0, comment: '' };
+      dailyEvals[identifier].comment = comment;
+    } else if (level === 'exercise') {
+      const log = logs.find(l => l.id == identifier);
+      if (log) log.comment = comment;
+    } else if (level === 'set') {
+      const [logId, setIdx] = identifier.split('_');
+      const log = logs.find(l => l.id == logId);
+      if (log) {
+        const set = log.sets.find(s => s.setIndex == setIdx);
+        if (set) set.comment = comment;
+      }
+    }
+    saveLocalData();
+    
+    const btn = document.getElementById(`save-btn-${level}-${identifier}`);
+    const originalText = btn.innerText;
+    btn.innerText = "保存完了！";
+    btn.style.background = "linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%)";
+    setTimeout(() => {
+      btn.innerText = originalText;
+      btn.style.background = "";
+    }, 1500);
+  }
+
+  // --- フィードバック送信ロジック ---
+  function sendFeedback() {
+    const bodyText = document.getElementById('feedback-body').value;
+    if (!bodyText.trim()) {
+      alert('フィードバックの内容を入力してくれ．');
+      return;
+    }
+    
+    const email = 'saigouman+workout@gmail.com';
+    const subject = '筋トレアプリのフィードバック';
+    
+    // URLエンコードを施してmailtoの構文を組み立てる
+    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+    
+    // 端末のメーラーを起動
+    window.location.href = mailtoUrl;
   }
   // -------------------------
 
   function loadLocalCategories() {
     const saved = localStorage.getItem('workout_tracker_categories');
     const savedOrders = localStorage.getItem('workout_tracker_custom_orders');
-    
     if (saved) {
-      try {
-        customExerciseCategories = JSON.parse(saved);
-      } catch (e) {
-        customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories));
-      }
-    } else {
-      customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories));
-    }
+      try { customExerciseCategories = JSON.parse(saved); } catch (e) { customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories)); }
+    } else { customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories)); }
 
     if (savedOrders) {
-      try {
-        savedCustomOrders = JSON.parse(savedOrders);
-      } catch (e) {
-        savedCustomOrders = JSON.parse(JSON.stringify(customExerciseCategories));
-      }
-    } else {
-      savedCustomOrders = JSON.parse(JSON.stringify(customExerciseCategories));
-    }
+      try { savedCustomOrders = JSON.parse(savedOrders); } catch (e) { savedCustomOrders = JSON.parse(JSON.stringify(customExerciseCategories)); }
+    } else { savedCustomOrders = JSON.parse(JSON.stringify(customExerciseCategories)); }
   }
 
   function saveLocalCategories() {
@@ -671,9 +875,7 @@
   }
 
   function saveCustomOrderState(cat) {
-    if (customExerciseCategories[cat]) {
-      savedCustomOrders[cat] = [...customExerciseCategories[cat]];
-    }
+    if (customExerciseCategories[cat]) { savedCustomOrders[cat] = [...customExerciseCategories[cat]]; }
     saveLocalCategories();
   }
 
@@ -701,17 +903,17 @@
   function loadLocalData() {
     const savedLogs = localStorage.getItem('workout_tracker_logs');
     if (savedLogs) {
-      try {
-        logs = JSON.parse(savedLogs);
-      } catch (e) {
-        console.error("データの読み込みに失敗した．");
-        logs = [];
-      }
+      try { logs = JSON.parse(savedLogs); } catch (e) { logs = []; }
+    }
+    const savedDaily = localStorage.getItem('workout_tracker_daily_evals');
+    if (savedDaily) {
+      try { dailyEvals = JSON.parse(savedDaily); } catch (e) { dailyEvals = {}; }
     }
   }
 
   function saveLocalData() {
     localStorage.setItem('workout_tracker_logs', JSON.stringify(logs));
+    localStorage.setItem('workout_tracker_daily_evals', JSON.stringify(dailyEvals));
   }
 
   function loadLocalSettings() {
@@ -727,6 +929,8 @@
           currentDefaultSetCount = parseInt(settings.defaultSetCount) || 3;
         }
         if (settings.defaultCommon !== undefined) document.getElementById('default-common').checked = settings.defaultCommon;
+        if (settings.showInputRating !== undefined) document.getElementById('show-input-rating').checked = settings.showInputRating;
+        if (settings.showSetComments !== undefined) document.getElementById('show-set-comments').checked = settings.showSetComments;
         if (settings.arrowColor) document.getElementById('arrow-color').value = settings.arrowColor;
         if (settings.arrowThickness) document.getElementById('arrow-thickness').value = settings.arrowThickness;
         if (settings.showArrows !== undefined) document.getElementById('graph-show-arrows').checked = settings.showArrows;
@@ -743,6 +947,8 @@
       weightStep: document.getElementById('weight-step').value,
       defaultSetCount: document.getElementById('default-set-count').value,
       defaultCommon: document.getElementById('default-common').checked,
+      showInputRating: document.getElementById('show-input-rating').checked,
+      showSetComments: document.getElementById('show-set-comments').checked,
       arrowColor: document.getElementById('arrow-color').value,
       arrowThickness: document.getElementById('arrow-thickness').value,
       showArrows: document.getElementById('graph-show-arrows').checked
@@ -753,10 +959,12 @@
   function clearAllData() {
     if (confirm("本当にすべての記録を削除するだろうか？　この操作は取り消せない．")) {
       logs = [];
+      dailyEvals = {};
       saveLocalData();
       updateGlobalExerciseOptions();
       renderLogList();
       drawGraph();
+      renderReviewList();
       alert("全記録を削除した．");
     }
   }
@@ -778,6 +986,8 @@
     document.getElementById('log-end-date').value = todayStr;
     document.getElementById('graph-start-date').value = pastStr;
     document.getElementById('graph-end-date').value = todayStr;
+    document.getElementById('review-start-date').value = pastStr;
+    document.getElementById('review-end-date').value = todayStr;
   }
 
   function resetInputForm() {
@@ -785,7 +995,21 @@
     document.getElementById('set-count').value = currentDefaultSetCount;
     const isCommonDefault = document.getElementById('default-common').checked;
     document.getElementById('common-check').checked = isCommonDefault;
-    setRating('input', 3); // 記録完了後に星評価をデフォルトの3に戻す
+    
+    const showRatingDefault = document.getElementById('show-input-rating').checked;
+    const section = document.getElementById('input-rating-section');
+    const btn = document.getElementById('toggle-rating-btn');
+    if (showRatingDefault) {
+        section.style.display = 'block';
+        btn.innerText = 'ー 評価とコメントを閉じる';
+        setRating('input', 0); 
+    } else {
+        section.style.display = 'none';
+        btn.innerText = '＋ 評価とコメントを追加 (任意)';
+        setRating('input', 0);
+    }
+    document.getElementById('input-comment').value = '';
+    
     initDates();
     renderSetInputs();
   }
@@ -793,9 +1017,7 @@
   function updateExerciseList() {
     const cat = document.getElementById('category').value;
     const selectEl = document.getElementById('exercise');
-    
     selectEl.innerHTML = '<option value="" disabled selected style="display:none;">種目を選択してくれ</option>';
-    
     if (customExerciseCategories[cat]) {
       customExerciseCategories[cat].forEach(ex => {
         selectEl.innerHTML += `<option value="${ex}">${ex}</option>`;
@@ -828,14 +1050,11 @@
     const cat = document.getElementById('edit-category').value;
     const list = customExerciseCategories[cat];
     if (!list) return;
-    
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= list.length) return;
-    
     const temp = list[index];
     list[index] = list[newIndex];
     list[newIndex] = temp;
-    
     saveCustomOrderState(cat);
     renderExerciseEditList();
     updateExerciseList();
@@ -845,15 +1064,10 @@
     const cat = document.getElementById('edit-category').value;
     const list = customExerciseCategories[cat];
     if (!list) return;
-    
     const currentName = list[index];
     const newName = prompt("新しい種目名を入力してくれ．", currentName);
-    
     if (newName && newName.trim() !== "" && newName !== currentName) {
-      if (list.includes(newName.trim())) {
-        alert("その種目名はすでに存在している．");
-        return;
-      }
+      if (list.includes(newName.trim())) { alert("その種目名はすでに存在している．"); return; }
       list[index] = newName.trim();
       saveCustomOrderState(cat);
       renderExerciseEditList();
@@ -865,7 +1079,6 @@
     const cat = document.getElementById('edit-category').value;
     const list = customExerciseCategories[cat];
     if (!list) return;
-    
     if (confirm(`「${list[index]}」をリストから削除してもよいだろうか？\n※過去の記録データが消えることはない．`)) {
       list.splice(index, 1);
       saveCustomOrderState(cat);
@@ -878,15 +1091,9 @@
     const cat = document.getElementById('edit-category').value;
     const inputEl = document.getElementById('new-exercise-name');
     const newName = inputEl.value.trim();
-    
     if (!newName) return;
-    
     if (!customExerciseCategories[cat]) customExerciseCategories[cat] = [];
-    if (customExerciseCategories[cat].includes(newName)) {
-      alert("すでに存在する種目だ．");
-      return;
-    }
-    
+    if (customExerciseCategories[cat].includes(newName)) { alert("すでに存在する種目だ．"); return; }
     customExerciseCategories[cat].push(newName);
     inputEl.value = '';
     saveCustomOrderState(cat);
@@ -897,12 +1104,10 @@
   function sortExercisesEdit(order) {
     const cat = document.getElementById('edit-category').value;
     if (!customExerciseCategories[cat]) return;
-    
     customExerciseCategories[cat].sort((a, b) => {
       if (order === 'asc') return a.localeCompare(b, 'ja');
       else return b.localeCompare(a, 'ja');
     });
-    
     saveLocalCategories();
     renderExerciseEditList();
     updateExerciseList();
@@ -927,20 +1132,19 @@
   }
 
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (document.getElementById('theme-select').value === 'system') {
-      applyThemeLogic('system');
-    }
+    if (document.getElementById('theme-select').value === 'system') { applyThemeLogic('system'); }
   });
 
   function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tabId).classList.add('active');
-    event.target.classList.add('active');
     
-    if (tabId === 'exercises') {
-      renderExerciseEditList();
-    }
+    const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.innerText.includes(event.target.innerText));
+    if (clickedBtn) clickedBtn.classList.add('active');
+    
+    if (tabId === 'exercises') renderExerciseEditList();
+    if (tabId === 'review') renderReviewList();
   }
 
   function updateSettings() {
@@ -949,6 +1153,17 @@
     currentDefaultSetCount = parseInt(document.getElementById('default-set-count').value) || 3;
     const isCommonDefault = document.getElementById('default-common').checked;
     document.getElementById('common-check').checked = isCommonDefault;
+    
+    const showRatingDefault = document.getElementById('show-input-rating').checked;
+    const section = document.getElementById('input-rating-section');
+    const btn = document.getElementById('toggle-rating-btn');
+    if (showRatingDefault) {
+      section.style.display = 'block';
+      btn.innerText = 'ー 評価とコメントを閉じる';
+    } else {
+      section.style.display = 'none';
+      btn.innerText = '＋ 評価とコメントを追加 (任意)';
+    }
     
     document.getElementById('set-count').value = currentDefaultSetCount;
     renderSetInputs();
@@ -966,21 +1181,31 @@
     const container = document.getElementById('set-inputs-container');
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
+    const showComments = document.getElementById('show-set-comments').checked;
 
     container.innerHTML = '';
-
     if (isCommon) {
-      container.innerHTML = createSetRowHTML('全セット', 0);
+      container.innerHTML = createSetRowHTML('全セット', 0, showComments);
     } else {
-      for (let i = 1; i <= setCount; i++) {
-        container.innerHTML += createSetRowHTML(`セット ${i}`, i);
+      for (let i = 1; i <= setCount; i++) { 
+        container.innerHTML += createSetRowHTML(`セット ${i}`, i, showComments); 
       }
     }
   }
 
-  function createSetRowHTML(label, index) {
+  function createSetRowHTML(label, index, showComments) {
     const lbsSelected = currentUnit === 'lbs' ? 'selected' : '';
     const kgSelected = currentUnit === 'kg' ? 'selected' : '';
+    
+    let commentHtml = '';
+    if (showComments) {
+      commentHtml = `
+        <div style="flex: 1 1 100%; margin-top: 5px;">
+          <input type="text" id="set-comment-${index}" placeholder="セットのメモ（任意）..." style="font-size: 14px; padding: 8px;">
+        </div>
+      `;
+    }
+
     return `
       <div class="set-row">
         <div style="flex: 0.5;"><strong>${label}</strong></div>
@@ -998,6 +1223,7 @@
           <label>回数</label>
           <input type="number" id="reps-${index}" min="0">
         </div>
+        ${commentHtml}
       </div>
     `;
   }
@@ -1006,45 +1232,54 @@
     const exercises = [...new Set(logs.map(log => log.exercise))];
     
     const logSelect = document.getElementById('log-target-exercise');
-    const prevLogEx = logSelect.value;
-    logSelect.innerHTML = '';
-    exercises.forEach(ex => {
-      logSelect.innerHTML += `<option value="${ex}">${ex}</option>`;
-    });
-    if (prevLogEx && exercises.includes(prevLogEx)) logSelect.value = prevLogEx;
+    if (logSelect) {
+      const prevLogEx = logSelect.value;
+      logSelect.innerHTML = '';
+      exercises.forEach(ex => { logSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
+      if (prevLogEx && exercises.includes(prevLogEx)) logSelect.value = prevLogEx;
+    }
 
     const graphSelect = document.getElementById('graph-exercise');
-    const prevGraphEx = graphSelect.value;
-    graphSelect.innerHTML = '';
-    exercises.forEach(ex => {
-      graphSelect.innerHTML += `<option value="${ex}">${ex}</option>`;
-    });
-    if (prevGraphEx && exercises.includes(prevGraphEx)) graphSelect.value = prevGraphEx;
+    if (graphSelect) {
+      const prevGraphEx = graphSelect.value;
+      graphSelect.innerHTML = '';
+      exercises.forEach(ex => { graphSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
+      if (prevGraphEx && exercises.includes(prevGraphEx)) graphSelect.value = prevGraphEx;
+    }
+    
+    const reviewSelect = document.getElementById('review-target-exercise');
+    if (reviewSelect) {
+      const prevReviewEx = reviewSelect.value;
+      reviewSelect.innerHTML = '';
+      exercises.forEach(ex => { reviewSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
+      if (prevReviewEx && exercises.includes(prevReviewEx)) reviewSelect.value = prevReviewEx;
+    }
   }
 
   function addLog() {
     const category = document.getElementById('category').value;
     const exercise = document.getElementById('exercise').value;
-    
     const datePart = document.getElementById('record-date').value;
     const timePart = document.getElementById('record-time').value;
     const datetime = `${datePart}T${timePart}`;
     
-    if (!exercise) {
-      alert('種目を選択してくれ．');
-      return;
-    }
+    const isRatingVisible = document.getElementById('input-rating-section').style.display !== 'none';
+    const finalRating = isRatingVisible ? currentInputRating : 0;
+    const finalComment = isRatingVisible ? document.getElementById('input-comment').value.trim() : "";
+    
+    if (!exercise) { alert('種目を選択してくれ．'); return; }
 
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
+    const showSetComments = document.getElementById('show-set-comments').checked;
     
-    // 入力した星評価を記録データに統合する
     let logEntry = {
       id: Date.now(),
       date: datetime,
       category: category,
       exercise: exercise,
-      rating: currentInputRating,
+      rating: finalRating,
+      comment: finalComment,
       sets: []
     };
 
@@ -1052,15 +1287,19 @@
       const w = parseFloat(document.getElementById('weight-0').value) || 0;
       const u = document.getElementById('unit-0').value;
       const r = parseInt(document.getElementById('reps-0').value) || 0;
+      const c = showSetComments ? (document.getElementById('set-comment-0').value.trim()) : "";
+
       for (let i = 1; i <= setCount; i++) {
-        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r });
+        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r, rating: 0, comment: c });
       }
     } else {
       for (let i = 1; i <= setCount; i++) {
         const w = parseFloat(document.getElementById(`weight-${i}`).value) || 0;
         const u = document.getElementById(`unit-${i}`).value;
         const r = parseInt(document.getElementById(`reps-${i}`).value) || 0;
-        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r });
+        const c = showSetComments ? (document.getElementById(`set-comment-${i}`).value.trim()) : "";
+
+        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r, rating: 0, comment: c });
       }
     }
 
@@ -1068,8 +1307,102 @@
     saveLocalData(); 
     updateGlobalExerciseOptions();
     renderLogList();
-    
+    renderReviewList();
     resetInputForm();
+    alert('記録を追加した．');
+  }
+
+  function renderReviewList() {
+    const level = document.getElementById('review-level').value;
+    const container = document.getElementById('review-container');
+    container.innerHTML = '';
+
+    if (logs.length === 0) {
+      container.innerHTML = '<p>データがありません．</p>';
+      return;
+    }
+    
+    let filteredLogs = logs;
+    const useDateFilter = document.getElementById('review-date-filter-check').checked;
+    if (useDateFilter) {
+      const startDate = document.getElementById('review-start-date').value;
+      const endDate = document.getElementById('review-end-date').value;
+      filteredLogs = filteredLogs.filter(log => {
+        const logDate = log.date.split('T')[0];
+        if (startDate && logDate < startDate) return false;
+        if (endDate && logDate > endDate) return false;
+        return true;
+      });
+    }
+    
+    if (level === 'exercise' || level === 'set') {
+      const targetEx = document.getElementById('review-target-exercise').value;
+      if (targetEx) {
+        filteredLogs = filteredLogs.filter(log => log.exercise === targetEx);
+      }
+    }
+
+    if (filteredLogs.length === 0) {
+      container.innerHTML = '<p>指定された条件のデータがありません．</p>';
+      return;
+    }
+
+    if (level === 'day') {
+      const dates = [...new Set(filteredLogs.map(l => l.date.split('T')[0]))].sort().reverse();
+      dates.forEach(date => {
+        const dayLogs = filteredLogs.filter(l => l.date.startsWith(date));
+        if(dayLogs.length === 0) return;
+        const exNames = [...new Set(dayLogs.map(l => l.exercise))].join(', ');
+        const evalData = dailyEvals[date] || { rating: 0, comment: '' };
+        
+        container.innerHTML += `
+          <div class="review-card">
+            <div class="review-card-header">${date} のトレーニング全体</div>
+            <div class="review-card-context">実行した種目: ${exNames}</div>
+            <label>評価</label>
+            ${getDynamicStarHtml('day', date, evalData.rating)}
+            <textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea>
+            <button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button>
+          </div>
+        `;
+      });
+    } else if (level === 'exercise') {
+      const sortedLogs = [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date));
+      sortedLogs.forEach(log => {
+        const dtStr = log.date.replace('T', ' ');
+        const setsSummary = log.sets.map(s => `第${s.setIndex}セット: ${s.weight}${s.unit} × ${s.reps}回`).join('<br>');
+        
+        container.innerHTML += `
+          <div class="review-card">
+            <div class="review-card-header">${dtStr} - ${log.exercise}</div>
+            <div class="review-card-context">${setsSummary}</div>
+            <label>評価</label>
+            ${getDynamicStarHtml('exercise', log.id, log.rating || 0)}
+            <textarea id="comment-exercise-${log.id}" placeholder="この種目に関するフォームの感覚などを記録...">${log.comment || ''}</textarea>
+            <button id="save-btn-exercise-${log.id}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('exercise', '${log.id}')">コメントを保存</button>
+          </div>
+        `;
+      });
+    } else if (level === 'set') {
+      const sortedLogs = [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date));
+      sortedLogs.forEach(log => {
+        log.sets.forEach(set => {
+          const dtStr = log.date.replace('T', ' ');
+          const identifier = `${log.id}_${set.setIndex}`;
+          
+          container.innerHTML += `
+            <div class="review-card">
+              <div class="review-card-header">${dtStr} - ${log.exercise} (第${set.setIndex}セット)</div>
+              <div class="review-card-context">重量: ${set.weight}${set.unit} / 回数: ${set.reps}回</div>
+              <label>評価</label>
+              ${getDynamicStarHtml('set', identifier, set.rating || 0)}
+              <textarea id="comment-set-${identifier}" placeholder="このセットの限界度や軌道などを記録...">${set.comment || ''}</textarea>
+              <button id="save-btn-set-${identifier}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('set', '${identifier}')">コメントを保存</button>
+            </div>
+          `;
+        });
+      });
+    }
   }
 
   function deleteSet(logId, setIndex) {
@@ -1078,16 +1411,15 @@
     if (logIndex > -1) {
       let log = logs[logIndex];
       log.sets = log.sets.filter(s => s.setIndex !== setIndex);
-      
       if (log.sets.length === 0) {
         logs.splice(logIndex, 1);
       } else {
         log.sets.forEach((s, idx) => s.setIndex = idx + 1);
       }
-      
       saveLocalData();
       renderLogList();
       drawGraph();
+      renderReviewList();
       updateGlobalExerciseOptions();
     }
   }
@@ -1100,7 +1432,6 @@
     editingLogId = logId;
     editingSetIndex = setIndex;
     
-    // 編集モーダルを開く際に現在の星評価を引き継ぐ
     currentEditRating = log.rating || 0;
     updateStarUI('edit-star-rating', currentEditRating);
 
@@ -1120,19 +1451,17 @@
 
   function saveEdit() {
     if (editingLogId === null || editingSetIndex === null) return;
-    
     const log = logs.find(l => l.id === editingLogId);
     const set = log.sets.find(s => s.setIndex === editingSetIndex);
     if (log && set) {
-      // 編集した星評価を記録データに反映させる
       log.rating = currentEditRating;
       set.weight = parseFloat(document.getElementById('edit-weight').value) || 0;
       set.unit = document.getElementById('edit-unit').value;
       set.reps = parseInt(document.getElementById('edit-reps').value) || 0;
-      
       saveLocalData();
       renderLogList();
       drawGraph();
+      renderReviewList();
     }
     closeEditModal();
   }
@@ -1187,8 +1516,10 @@
       const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
       sortedDates.forEach(date => {
+        const dayEval = dailyEvals[date] ? getStaticStarHtml(dailyEvals[date].rating) : '';
         const dayLogs = groupedByDate[date].sort((a, b) => a.date.localeCompare(b.date));
-        let html = `<h4>${date}</h4><div class="scroll-wrapper"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+        
+        let html = `<h4>${date} <span style="font-size:16px;">${dayEval}</span></h4><div class="scroll-wrapper"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
         
         dayLogs.forEach(log => {
           const timeStr = log.date.split('T')[1];
@@ -1196,8 +1527,8 @@
             html += `<tr>
               <td>${timeStr}</td>
               <td>${log.category}</td>
-              <td>${log.exercise}<br><span style="font-size:14px; display:inline-block; margin-top:2px;">${getStarHtml(log.rating)}</span></td>
-              <td>${s.setIndex}</td>
+              <td>${log.exercise}<br><span style="font-size:14px; display:inline-block; margin-top:2px;">${getStaticStarHtml(log.rating)}</span></td>
+              <td>${s.setIndex}<br><span style="font-size:12px; display:inline-block; margin-top:2px;">${getStaticStarHtml(s.rating)}</span></td>
               <td>${s.weight}${s.unit}</td>
               <td>${s.reps}</td>
               <td style="white-space: nowrap;">
@@ -1227,7 +1558,8 @@
             setLogs.push({
               logId: log.id,
               date: log.date,
-              rating: log.rating,
+              logRating: log.rating,
+              setRating: set.rating,
               setIndex: set.setIndex,
               weight: set.weight,
               unit: set.unit,
@@ -1245,7 +1577,6 @@
       setLogs.sort((a, b) => {
         let wA = a.unit === 'kg' ? a.weight * 2.20462 : a.weight;
         let wB = b.unit === 'kg' ? b.weight * 2.20462 : b.weight;
-        
         switch(sortMode) {
           case 'date-desc': return b.date.localeCompare(a.date);
           case 'date-asc': return a.date.localeCompare(b.date);
@@ -1261,8 +1592,8 @@
       setLogs.forEach(s => {
         const dtStr = s.date.replace('T', ' ');
         html += `<tr>
-          <td>${dtStr}<br><span style="font-size:14px; display:inline-block; margin-top:2px;">${getStarHtml(s.rating)}</span></td>
-          <td>${s.setIndex}</td>
+          <td>${dtStr}<br><span style="font-size:14px; display:inline-block; margin-top:2px;">${getStaticStarHtml(s.logRating)}</span></td>
+          <td>${s.setIndex}<br><span style="font-size:12px; display:inline-block; margin-top:2px;">${getStaticStarHtml(s.setRating)}</span></td>
           <td>${s.weight}${s.unit}</td>
           <td>${s.reps}</td>
           <td style="white-space: nowrap;">
@@ -1354,7 +1685,7 @@
     const padTop = 30;
     const padBottom = 40;
     
-    const ySteps = maxY / 5;
+    const ySteps = Math.ceil(maxY / 5);
     const Y_PIXELS_PER_STEP = 40;
     const plotH = Math.max(300, ySteps * Y_PIXELS_PER_STEP); 
     const baseHeight = plotH + padTop + padBottom;
@@ -1455,7 +1786,7 @@
       return;
     }
 
-    const scale = 10;
+    const scale = 3; 
     const baseWidth = svg.viewBox.baseVal.width || 600;
     const baseHeight = svg.viewBox.baseVal.height || 400;
     
@@ -1475,8 +1806,14 @@
       try {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-        const dataUrl = canvas.toDataURL(mimeType, 1.0);
-        triggerDownload(dataUrl, filename);
+        canvas.toBlob(function(blob) {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            triggerDownload(url, filename);
+          } else {
+            alert("画像の変換に失敗した．");
+          }
+        }, mimeType, 1.0);
       } catch (e) {
         alert("画像の保存中にエラーが発生した: " + e.message);
       }
@@ -1496,7 +1833,6 @@
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    
     if (url.startsWith('blob:')) {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
