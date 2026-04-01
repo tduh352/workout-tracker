@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V23</title>
+<title>Workout Tracker V25</title>
 
 <style>
   :root {
@@ -348,7 +348,7 @@
   </div>
 
   <div class="form-group">
-    <label>評価 (達成感や調子)</label>
+    <label>評価とコメント (達成感や調子)</label>
     <div class="star-rating-container" id="input-star-rating">
       <span class="star active" onclick="setRating('input', 1)">★</span>
       <span class="star active" onclick="setRating('input', 2)">★</span>
@@ -356,6 +356,7 @@
       <span class="star" onclick="setRating('input', 4)">★</span>
       <span class="star" onclick="setRating('input', 5)">★</span>
     </div>
+    <textarea id="input-comment" placeholder="フォームの感覚や調子などのコメントを記録..."></textarea>
   </div>
 
   <div class="form-group">
@@ -371,7 +372,7 @@
   <div id="set-inputs-container"></div>
 
   <button class="glossy-btn" onclick="addLog()">記録を追加</button>
-  <p style="font-size: 13px; text-align: center; margin-top: 15px; opacity: 0.8;">※星評価や詳細なコメントは「振り返り」タブから個別に追加できる．</p>
+  <p style="font-size: 13px; text-align: center; margin-top: 15px; opacity: 0.8;">※各セットごとの詳細な評価やコメントは「振り返り」タブから追加できる．</p>
 </div>
 
 <div id="tab-review" class="tab-content glass-panel">
@@ -564,17 +565,17 @@
     </div>
   </div>
 
-  <button class="glossy-btn" style="margin-bottom: 15px;" onclick="drawGraph()">グラフを描画</button>
   <div class="controls-row" style="margin-bottom: 0; align-items: center;">
     <div class="form-group" style="margin-bottom: 0; flex: 1;">
-      <select id="download-format">
+      <button class="glossy-btn" onclick="drawGraph()">グラフを描画</button>
+    </div>
+    <div style="display: flex; gap: 5px; flex: 1;">
+      <select id="download-format" style="width: auto; flex-shrink: 0; padding: 10px;">
         <option value="png">PNG</option>
         <option value="jpeg">JPEG</option>
-        <option value="svg">SVG (推奨)</option>
+        <option value="svg">SVG</option>
       </select>
-    </div>
-    <div style="flex: 1;">
-      <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563; margin-top: 0;" onclick="downloadGraph()">画像を保存</button>
+      <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563; margin-top: 0; flex: 1;" onclick="downloadGraph()">保存</button>
     </div>
   </div>
 
@@ -887,6 +888,7 @@
     const isCommonDefault = document.getElementById('default-common').checked;
     document.getElementById('common-check').checked = isCommonDefault;
     setRating('input', 3); 
+    document.getElementById('input-comment').value = '';
     initDates();
     renderSetInputs();
   }
@@ -1099,6 +1101,7 @@
     const datePart = document.getElementById('record-date').value;
     const timePart = document.getElementById('record-time').value;
     const datetime = `${datePart}T${timePart}`;
+    const comment = document.getElementById('input-comment').value.trim();
     
     if (!exercise) { alert('種目を選択してくれ．'); return; }
 
@@ -1111,7 +1114,7 @@
       category: category,
       exercise: exercise,
       rating: currentInputRating,
-      comment: "",
+      comment: comment,
       sets: []
     };
 
@@ -1137,7 +1140,7 @@
     renderLogList();
     renderReviewList();
     resetInputForm();
-    alert('記録を追加した．評価やコメントは「振り返り」タブから行える．');
+    alert('記録を追加した．');
   }
 
   function renderReviewList() {
@@ -1487,7 +1490,7 @@
     const padTop = 30;
     const padBottom = 40;
     
-    const ySteps = maxY / 5;
+    const ySteps = Math.ceil(maxY / 5);
     const Y_PIXELS_PER_STEP = 40;
     const plotH = Math.max(300, ySteps * Y_PIXELS_PER_STEP); 
     const baseHeight = plotH + padTop + padBottom;
@@ -1566,7 +1569,6 @@
     container.innerHTML = svgHtml;
   }
 
-  // 安全なBlobへの変換処理を行う関数
   function downloadGraph() {
     const container = document.getElementById('chart-container');
     const svg = container.querySelector('svg');
@@ -1589,7 +1591,7 @@
       return;
     }
 
-    const scale = 10;
+    const scale = 3; 
     const baseWidth = svg.viewBox.baseVal.width || 600;
     const baseHeight = svg.viewBox.baseVal.height || 400;
     
@@ -1609,8 +1611,6 @@
       try {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-        
-        // SafariのData URLバグを回避するため、Canvasから直接Blobを生成
         canvas.toBlob(function(blob) {
           if (blob) {
             const url = URL.createObjectURL(blob);
@@ -1638,7 +1638,6 @@
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    
     if (url.startsWith('blob:')) {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
