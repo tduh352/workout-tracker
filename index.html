@@ -16,6 +16,7 @@
 <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
 
 <style>
+  /* 基本(ブルー)・ライトモード */
   :root {
     --bg-color: #e8f4f8;
     --panel-bg: rgba(255, 255, 255, 0.6);
@@ -33,6 +34,7 @@
     --card-bg: #ffffff;
   }
 
+  /* 共通・ダークモードベース */
   body.mode-dark {
     --bg-color: #121212;
     --panel-bg: rgba(40, 40, 40, 0.6);
@@ -46,12 +48,16 @@
     --card-bg: #2a2a2a;
   }
 
+  /* テーマカラー: ブルー (ダークモード) */
   body.mode-dark.color-blue {
+    --bg-color: #121518;
+    --border-color: #334455;
     --btn-top: #4682b4;
     --btn-bottom: #191970;
     --btn-border: #000080;
   }
 
+  /* テーマカラー: グリーン */
   body.color-green {
     --bg-color: #e8f8e8;
     --border-color: #b0deb0;
@@ -60,11 +66,14 @@
     --btn-border: #228b22;
   }
   body.mode-dark.color-green {
+    --bg-color: #121812;
+    --border-color: #335533;
     --btn-top: #46b446;
     --btn-bottom: #006400;
     --btn-border: #004d00;
   }
 
+  /* テーマカラー: オレンジ */
   body.color-orange {
     --bg-color: #f8eee8;
     --border-color: #decab0;
@@ -73,11 +82,14 @@
     --btn-border: #d2691e;
   }
   body.mode-dark.color-orange {
+    --bg-color: #181412;
+    --border-color: #554433;
     --btn-top: #b47846;
     --btn-bottom: #8b4513;
     --btn-border: #a0522d;
   }
 
+  /* テーマカラー: モノクロ */
   body.color-mono {
     --bg-color: #f0f0f0;
     --border-color: #cccccc;
@@ -86,6 +98,8 @@
     --btn-border: #333333;
   }
   body.mode-dark.color-mono {
+    --bg-color: #1a1a1a;
+    --border-color: #444444;
     --btn-top: #555555;
     --btn-bottom: #222222;
     --btn-border: #000000;
@@ -379,7 +393,7 @@
 
 <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
   <button onclick="openLoginModal()" style="background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px var(--shadow); display: flex; align-items: center; gap: 8px;">
-    <span>👤</span> <span class="gdrive-status-text">未接続</span>
+    <span>👤</span> <span id="header-login-text">未接続</span>
   </button>
 </div>
 
@@ -881,7 +895,8 @@
 
   function handleAuthClick() {
     if (!tokenClient) {
-      alert("Googleの認証システムがまだ読み込まれていない．通信環境を確認してくれ．");
+      // alertではなく画面上にさりげなく表示して操作を妨げないようにする
+      console.warn("Googleの認証システムがまだ読み込まれていない．通信環境を確認してくれ．");
       return;
     }
     if (!gAccessToken) {
@@ -899,12 +914,10 @@
   }
 
   async function findDriveFile() {
-    // 記号をURLエンコードしてCORSやリクエストエラーを防ぐ
-    const query = encodeURIComponent("name='workout_tracker_backup.json' and trashed=false");
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive`, {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='workout_tracker_backup.json' and trashed=false&spaces=drive`, {
       headers: { 'Authorization': `Bearer ${gAccessToken}` }
     });
-    if (!res.ok) throw new Error('通信エラーが発生した．');
+    if (!res.ok) throw new Error('Failed to fetch');
     const data = await res.json();
     return data.files && data.files.length > 0 ? data.files[0].id : null;
   }
@@ -950,7 +963,11 @@
       
       alert('Googleドライブへのバックアップが完了した．');
     } catch(e) {
-      alert('保存エラー: ' + e.message + '\n※Google Cloudの設定が反映されていない可能性があるため、少し時間を置いて試してくれ．');
+      if (e.message === 'Failed to fetch') {
+        alert('保存エラー: 通信に失敗した．\nGoogle Cloud Consoleの「承認済みの JavaScript 生成元」にこのサイトのURLが正しく登録されていない（CORSエラー）か，ネットワーク環境の問題だ．反映まで時間がかかることもある．');
+      } else {
+        alert('保存エラー: ' + e.message);
+      }
     } finally {
       saveBtns.forEach(btn => btn.innerText = 'ドライブへ保存');
     }
@@ -993,7 +1010,11 @@
 
       alert('ドライブからの復元が完了し，画面を更新した．');
     } catch(e) {
-      alert('復元エラー: ' + e.message);
+      if (e.message === 'Failed to fetch') {
+        alert('復元エラー: 通信に失敗した．CORS設定が反映されていないか，ネットワークの問題だ．');
+      } else {
+        alert('復元エラー: ' + e.message);
+      }
     } finally {
       loadBtns.forEach(btn => btn.innerText = 'ドライブから復元');
     }
@@ -1172,7 +1193,6 @@
       saveLocalCategories();
       renderExerciseEditList();
       updateExerciseList();
-      alert("種目リストを初期化した．");
     }
   }
 
@@ -1248,7 +1268,6 @@
       renderLogList();
       drawGraph();
       renderReviewList();
-      alert("全記録を削除した．");
     }
   }
 
@@ -1558,7 +1577,7 @@
     const finalRating = isRatingVisible ? currentInputRating : 0;
     const finalComment = isRatingVisible ? document.getElementById('input-comment').value.trim() : "";
     
-    if (!exercise) { alert('種目を選択してくれ．'); return; }
+    if (!exercise) { return; }
 
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
@@ -1600,8 +1619,7 @@
     renderLogList();
     renderReviewList();
     resetInputForm();
-    
-    // 記録完了のポップアップは削除し、そのままサクサク入力できるようにした
+    // アラートを削除しサクサク入力可能に
   }
 
   function renderReviewList() {
@@ -2078,8 +2096,7 @@
       return;
     }
 
-    // Safariのキャンバス汚染エラー対策としてスケールを下げ，BlobURLを経由して読み込む
-    const scale = 2; 
+    const scale = 3; 
     const baseWidth = svg.viewBox.baseVal.width || 600;
     const baseHeight = svg.viewBox.baseVal.height || 400;
     
@@ -2094,20 +2111,17 @@
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 文字化けやSVGのパースエラーを防ぐため，Blob URLを使用してImageに渡す
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
+    // SafariのTainted Canvas対策として、Base64ではなく安全なURLエンコードを使用
     const img = new Image();
-    
+    img.crossOrigin = "anonymous";
     img.onload = function() {
       try {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url); // メモリの解放
         const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
         canvas.toBlob(function(blob) {
           if (blob) {
-            const downloadUrl = URL.createObjectURL(blob);
-            triggerDownload(downloadUrl, filename);
+            const url = URL.createObjectURL(blob);
+            triggerDownload(url, filename);
           } else {
             alert("画像の変換に失敗した．Safariのセキュリティ制限の可能性がある．");
           }
@@ -2117,11 +2131,11 @@
       }
     };
     
-    img.onerror = function() {
-      alert("グラフの画像化に失敗した．");
+    img.onerror = function(e) {
+      alert("グラフの画像化に失敗した．Safariのセキュリティ制限の可能性がある．");
     };
     
-    img.src = url;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
   }
 
   function triggerDownload(url, filename) {
