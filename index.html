@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V27</title>
+<title>Workout Tracker V28</title>
 
 <style>
   :root {
@@ -352,13 +352,21 @@
   </button>
 
   <div class="form-group" id="input-rating-section" style="display:none; padding-top:10px; border-top:1px dashed var(--border-color);">
-    <label>評価とコメント (達成感や調子)</label>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+      <label style="margin: 0;">評価</label>
+      <button class="action-btn" style="margin: 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--btn-bottom); border: 1px solid var(--btn-bottom);" onclick="setRating('input', 0)">星をリセット</button>
+    </div>
     <div class="star-rating-container" id="input-star-rating">
       <span class="star" onclick="setRating('input', 1)">★</span>
       <span class="star" onclick="setRating('input', 2)">★</span>
       <span class="star" onclick="setRating('input', 3)">★</span>
       <span class="star" onclick="setRating('input', 4)">★</span>
       <span class="star" onclick="setRating('input', 5)">★</span>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 10px;">
+      <label style="margin: 0;">コメント</label>
+      <button class="action-btn" style="margin: 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--btn-bottom); border: 1px solid var(--btn-bottom);" onclick="document.getElementById('input-comment').value = ''">コメントを消去</button>
     </div>
     <textarea id="input-comment" placeholder="フォームの感覚や調子などのコメントを記録..."></textarea>
   </div>
@@ -381,16 +389,36 @@
 
 <div id="tab-review" class="tab-content glass-panel">
   <h3>評価と振り返り</h3>
+  
   <div class="controls-row">
     <div class="form-group">
-      <label for="review-level">評価の対象を選択</label>
-      <select id="review-level" onchange="renderReviewList()">
+      <label for="review-level">表示モード</label>
+      <select id="review-level" onchange="updateReviewUI()">
         <option value="day">日付ごと (その日全体の評価)</option>
         <option value="exercise">種目ごと (その種目の評価)</option>
         <option value="set">セットごと (個別のセット評価)</option>
       </select>
     </div>
+    <div class="form-group" id="review-exercise-group" style="display: none; flex: 2;">
+      <label for="review-target-exercise">対象種目</label>
+      <select id="review-target-exercise" onchange="renderReviewList()"></select>
+    </div>
   </div>
+
+  <div class="controls-row">
+    <div class="form-group checkbox-group" style="flex: 1;">
+      <input type="checkbox" id="review-date-filter-check" onchange="toggleReviewDateFilter()">
+      <label for="review-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
+    </div>
+    <div class="form-group" id="review-date-inputs" style="display: none; flex: 2;">
+      <div class="date-range-flex">
+        <input type="date" id="review-start-date" onchange="renderReviewList()">
+        <span>〜</span>
+        <input type="date" id="review-end-date" onchange="renderReviewList()">
+      </div>
+    </div>
+  </div>
+
   <div id="review-container"></div>
 </div>
 
@@ -667,7 +695,6 @@
   let customExerciseCategories = {};
   let savedCustomOrders = {};
 
-  // --- 入力欄の開閉ロジックを追加 ---
   function toggleInputRating() {
     const section = document.getElementById('input-rating-section');
     const btn = document.getElementById('toggle-rating-btn');
@@ -677,8 +704,7 @@
     } else {
       section.style.display = 'none';
       btn.innerText = '＋ 評価とコメントを追加 (任意)';
-      setRating('input', 0); // 閉じた際に星の入力をリセット
-      document.getElementById('input-comment').value = '';
+      // 閉じる操作では値をリセットせず，裏側で保持し続ける
     }
   }
 
@@ -718,6 +744,23 @@
     const activeStars = '★'.repeat(rating);
     const inactiveStars = '★'.repeat(5 - rating);
     return `<span style="color: #ffc700;">${activeStars}</span><span style="color: var(--border-color);">${inactiveStars}</span>`;
+  }
+
+  function updateReviewUI() {
+    const level = document.getElementById('review-level').value;
+    const exGroup = document.getElementById('review-exercise-group');
+    if (level === 'exercise' || level === 'set') {
+      exGroup.style.display = 'block';
+    } else {
+      exGroup.style.display = 'none';
+    }
+    renderReviewList();
+  }
+
+  function toggleReviewDateFilter() {
+    const isChecked = document.getElementById('review-date-filter-check').checked;
+    document.getElementById('review-date-inputs').style.display = isChecked ? 'block' : 'none';
+    renderReviewList();
   }
 
   function updateReviewRating(level, identifier, rating) {
@@ -906,6 +949,8 @@
     document.getElementById('log-end-date').value = todayStr;
     document.getElementById('graph-start-date').value = pastStr;
     document.getElementById('graph-end-date').value = todayStr;
+    document.getElementById('review-start-date').value = pastStr;
+    document.getElementById('review-end-date').value = todayStr;
   }
 
   function resetInputForm() {
@@ -914,7 +959,6 @@
     const isCommonDefault = document.getElementById('default-common').checked;
     document.getElementById('common-check').checked = isCommonDefault;
     
-    // 設定に基づく評価欄の初期開閉処理
     const showRatingDefault = document.getElementById('show-input-rating').checked;
     const section = document.getElementById('input-rating-section');
     const btn = document.getElementById('toggle-rating-btn');
@@ -1073,7 +1117,6 @@
     const isCommonDefault = document.getElementById('default-common').checked;
     document.getElementById('common-check').checked = isCommonDefault;
     
-    // 設定変更時に即座に入力画面の状態を反映
     const showRatingDefault = document.getElementById('show-input-rating').checked;
     const section = document.getElementById('input-rating-section');
     const btn = document.getElementById('toggle-rating-btn');
@@ -1135,17 +1178,30 @@
 
   function updateGlobalExerciseOptions() {
     const exercises = [...new Set(logs.map(log => log.exercise))];
+    
     const logSelect = document.getElementById('log-target-exercise');
-    const prevLogEx = logSelect.value;
-    logSelect.innerHTML = '';
-    exercises.forEach(ex => { logSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
-    if (prevLogEx && exercises.includes(prevLogEx)) logSelect.value = prevLogEx;
+    if (logSelect) {
+      const prevLogEx = logSelect.value;
+      logSelect.innerHTML = '';
+      exercises.forEach(ex => { logSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
+      if (prevLogEx && exercises.includes(prevLogEx)) logSelect.value = prevLogEx;
+    }
 
     const graphSelect = document.getElementById('graph-exercise');
-    const prevGraphEx = graphSelect.value;
-    graphSelect.innerHTML = '';
-    exercises.forEach(ex => { graphSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
-    if (prevGraphEx && exercises.includes(prevGraphEx)) graphSelect.value = prevGraphEx;
+    if (graphSelect) {
+      const prevGraphEx = graphSelect.value;
+      graphSelect.innerHTML = '';
+      exercises.forEach(ex => { graphSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
+      if (prevGraphEx && exercises.includes(prevGraphEx)) graphSelect.value = prevGraphEx;
+    }
+    
+    const reviewSelect = document.getElementById('review-target-exercise');
+    if (reviewSelect) {
+      const prevReviewEx = reviewSelect.value;
+      reviewSelect.innerHTML = '';
+      exercises.forEach(ex => { reviewSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
+      if (prevReviewEx && exercises.includes(prevReviewEx)) reviewSelect.value = prevReviewEx;
+    }
   }
 
   function addLog() {
@@ -1155,10 +1211,9 @@
     const timePart = document.getElementById('record-time').value;
     const datetime = `${datePart}T${timePart}`;
     
-    // 表示されている時だけ値を取得する
-    const isRatingVisible = document.getElementById('input-rating-section').style.display !== 'none';
-    const finalRating = isRatingVisible ? currentInputRating : 0;
-    const finalComment = isRatingVisible ? document.getElementById('input-comment').value.trim() : "";
+    // 表示状態にかかわらず、常に現在の入力データを取得する
+    const finalRating = currentInputRating;
+    const finalComment = document.getElementById('input-comment').value.trim();
     
     if (!exercise) { alert('種目を選択してくれ．'); return; }
 
@@ -1209,11 +1264,36 @@
       container.innerHTML = '<p>データがありません．</p>';
       return;
     }
+    
+    let filteredLogs = logs;
+    const useDateFilter = document.getElementById('review-date-filter-check').checked;
+    if (useDateFilter) {
+      const startDate = document.getElementById('review-start-date').value;
+      const endDate = document.getElementById('review-end-date').value;
+      filteredLogs = filteredLogs.filter(log => {
+        const logDate = log.date.split('T')[0];
+        if (startDate && logDate < startDate) return false;
+        if (endDate && logDate > endDate) return false;
+        return true;
+      });
+    }
+    
+    if (level === 'exercise' || level === 'set') {
+      const targetEx = document.getElementById('review-target-exercise').value;
+      if (targetEx) {
+        filteredLogs = filteredLogs.filter(log => log.exercise === targetEx);
+      }
+    }
+
+    if (filteredLogs.length === 0) {
+      container.innerHTML = '<p>指定された条件のデータがありません．</p>';
+      return;
+    }
 
     if (level === 'day') {
-      const dates = [...new Set(logs.map(l => l.date.split('T')[0]))].sort().reverse();
+      const dates = [...new Set(filteredLogs.map(l => l.date.split('T')[0]))].sort().reverse();
       dates.forEach(date => {
-        const dayLogs = logs.filter(l => l.date.startsWith(date));
+        const dayLogs = filteredLogs.filter(l => l.date.startsWith(date));
         const exNames = [...new Set(dayLogs.map(l => l.exercise))].join(', ');
         const evalData = dailyEvals[date] || { rating: 0, comment: '' };
         
@@ -1229,7 +1309,7 @@
         `;
       });
     } else if (level === 'exercise') {
-      const sortedLogs = [...logs].sort((a, b) => b.date.localeCompare(a.date));
+      const sortedLogs = [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date));
       sortedLogs.forEach(log => {
         const dtStr = log.date.replace('T', ' ');
         const setsSummary = log.sets.map(s => `第${s.setIndex}セット: ${s.weight}${s.unit} × ${s.reps}回`).join('<br>');
@@ -1246,7 +1326,7 @@
         `;
       });
     } else if (level === 'set') {
-      const sortedLogs = [...logs].sort((a, b) => b.date.localeCompare(a.date));
+      const sortedLogs = [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date));
       sortedLogs.forEach(log => {
         log.sets.forEach(set => {
           const dtStr = log.date.replace('T', ' ');
