@@ -11,7 +11,10 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V16</title>
+<title>Workout Tracker V18</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+
 <style>
   :root {
     --bg-color: #e8f4f8;
@@ -490,9 +493,17 @@
     </div>
   </div>
 
-  <div class="controls-row" style="margin-bottom: 0;">
-    <button class="glossy-btn" onclick="drawGraph()">グラフを描画</button>
-    <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563;" onclick="downloadGraphAsPNG()">画像を保存 (PNG)</button>
+  <div class="controls-row" style="margin-bottom: 0; align-items: stretch;">
+    <button class="glossy-btn" style="flex: 1;" onclick="drawGraph()">グラフを描画</button>
+    <div style="display: flex; gap: 5px; flex: 1;">
+      <select id="download-format" style="width: auto; flex-shrink: 0; padding: 10px;">
+        <option value="png">PNG</option>
+        <option value="jpeg">JPEG</option>
+        <option value="svg">SVG</option>
+        <option value="pdf">PDF</option>
+      </select>
+      <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563; flex: 1; margin-top: 0;" onclick="downloadGraph()">保存</button>
+    </div>
   </div>
 
   <div class="canvas-container" id="chart-container">
@@ -1340,15 +1351,34 @@
     container.innerHTML = svgHtml;
   }
 
-  function downloadGraphAsPNG() {
+  function downloadGraph() {
     const container = document.getElementById('chart-container');
     const svg = container.querySelector('svg');
-    if (!svg) {
+    if (!svg || svg.textContent.includes('データがありません')) {
       alert('ダウンロードするグラフが存在しない．先にグラフを描画してくれ．');
       return;
     }
 
-    // 600DPI相当（標準72DPIの約8.33倍）の解像度を得るため，スケールを8倍に設定
+    const format = document.getElementById('download-format').value;
+    const dateStr = new Date().toISOString().split('T')[0];
+    const exercise = document.getElementById('graph-exercise').value || 'graph';
+    const filename = `workout_${exercise}_${dateStr}.${format}`;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+
+    if (format === 'svg') {
+      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return;
+    }
+
     const scale = 8;
     const baseWidth = svg.viewBox.baseVal.width || 600;
     const baseHeight = svg.viewBox.baseVal.height || 400;
@@ -1362,23 +1392,33 @@
     ctx.fillStyle = isDark ? '#121212' : '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const svgData = new XMLSerializer().serializeToString(svg);
     const svgBase64 = btoa(unescape(encodeURIComponent(svgData)));
     const img = new Image();
     
     img.onload = function() {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const pngData = canvas.toDataURL('image/png');
       
-      const a = document.createElement('a');
-      a.href = pngData;
-      const dateStr = new Date().toISOString().split('T')[0];
-      const exercise = document.getElementById('graph-exercise').value || 'graph';
-      a.download = `workout_${exercise}_${dateStr}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.appendChild(a);
-      document.body.removeChild(a);
+      if (format === 'pdf') {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: baseWidth > baseHeight ? 'landscape' : 'portrait',
+          unit: 'pt',
+          format: [baseWidth, baseHeight]
+        });
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        pdf.addImage(imgData, 'JPEG', 0, 0, baseWidth, baseHeight);
+        pdf.save(filename);
+      } else {
+        const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+        const dataUrl = canvas.toDataURL(mimeType, 1.0);
+        
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     };
     img.src = 'data:image/svg+xml;base64,' + svgBase64;
   }
