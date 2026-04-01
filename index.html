@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V30</title>
+<title>Workout Tracker V31</title>
 
 <style>
   :root {
@@ -531,17 +531,11 @@
 <div id="tab-feedback" class="tab-content glass-panel">
   <h3>バグ報告・フィードバック</h3>
   <p style="font-size: 14px; margin-top: 0;">アプリのバグや改善案があれば，ここから開発者にメールで直接送信できる．</p>
-  
-  <div class="form-group">
-    <label for="feedback-body">内容</label>
-    <textarea id="feedback-body" placeholder="ここにバグの状況や追加してほしい機能のアイデアを記入してくれ..."></textarea>
-  </div>
-  
-  <button class="glossy-btn" onclick="sendFeedback()">メール作成画面を開く</button>
+  <button class="glossy-btn" onclick="sendFeedback()">ここからメールを作成</button>
 </div>
 
-<div class="glass-panel">
-  <h3>記録ログ</h3>
+<div id="log-section" class="glass-panel">
+  <h3>筋トレログ</h3>
   <div class="controls-row">
     <div class="form-group">
       <label for="log-view-mode">表示モード</label>
@@ -582,7 +576,7 @@
   </div>
 </div>
 
-<div class="glass-panel">
+<div id="graph-section" class="glass-panel">
   <h3>グラフ分析</h3>
   <div class="controls-row">
     <div class="form-group">
@@ -838,24 +832,16 @@
     }, 1500);
   }
 
-  // --- フィードバック送信ロジック ---
+  // --- 改修：フィードバック送信時にシンプルなメール作成画面を開く ---
   function sendFeedback() {
-    const bodyText = document.getElementById('feedback-body').value;
-    if (!bodyText.trim()) {
-      alert('フィードバックの内容を入力してくれ．');
-      return;
-    }
-    
     const email = 'saigouman+workout@gmail.com';
     const subject = '筋トレアプリのフィードバック';
+    const bodyText = 'ここにバグの状況や追加してほしい機能のアイデアを記入してくれ...\n\n';
     
-    // URLエンコードを施してmailtoの構文を組み立てる
     const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-    
-    // 端末のメーラーを起動
     window.location.href = mailtoUrl;
   }
-  // -------------------------
+  // --------------------------------------------------------
 
   function loadLocalCategories() {
     const saved = localStorage.getItem('workout_tracker_categories');
@@ -1135,6 +1121,7 @@
     if (document.getElementById('theme-select').value === 'system') { applyThemeLogic('system'); }
   });
 
+  // --- 改修：タブ切り替え時の表示制御 ---
   function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -1143,9 +1130,19 @@
     const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.innerText.includes(event.target.innerText));
     if (clickedBtn) clickedBtn.classList.add('active');
     
+    // ご意見タブの時はログとグラフを隠し、画面をシンプルにする
+    if (tabId === 'feedback') {
+      document.getElementById('log-section').style.display = 'none';
+      document.getElementById('graph-section').style.display = 'none';
+    } else {
+      document.getElementById('log-section').style.display = 'block';
+      document.getElementById('graph-section').style.display = 'block';
+    }
+    
     if (tabId === 'exercises') renderExerciseEditList();
     if (tabId === 'review') renderReviewList();
   }
+  // --------------------------------------
 
   function updateSettings() {
     currentUnit = document.getElementById('default-unit').value;
