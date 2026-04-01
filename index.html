@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V28</title>
+<title>Workout Tracker V29</title>
 
 <style>
   :root {
@@ -353,7 +353,7 @@
 
   <div class="form-group" id="input-rating-section" style="display:none; padding-top:10px; border-top:1px dashed var(--border-color);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-      <label style="margin: 0;">評価</label>
+      <label style="margin: 0;">全体評価</label>
       <button class="action-btn" style="margin: 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--btn-bottom); border: 1px solid var(--btn-bottom);" onclick="setRating('input', 0)">星をリセット</button>
     </div>
     <div class="star-rating-container" id="input-star-rating">
@@ -365,7 +365,7 @@
     </div>
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 10px;">
-      <label style="margin: 0;">コメント</label>
+      <label style="margin: 0;">全体コメント</label>
       <button class="action-btn" style="margin: 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--btn-bottom); border: 1px solid var(--btn-bottom);" onclick="document.getElementById('input-comment').value = ''">コメントを消去</button>
     </div>
     <textarea id="input-comment" placeholder="フォームの感覚や調子などのコメントを記録..."></textarea>
@@ -384,7 +384,6 @@
   <div id="set-inputs-container"></div>
 
   <button class="glossy-btn" onclick="addLog()">記録を追加</button>
-  <p style="font-size: 13px; text-align: center; margin-top: 15px; opacity: 0.8;">※各セットごとの詳細な評価やコメントは「振り返り」タブから追加できる．</p>
 </div>
 
 <div id="tab-review" class="tab-content glass-panel">
@@ -498,7 +497,12 @@
 
   <div class="form-group checkbox-group">
     <input type="checkbox" id="show-input-rating" checked onchange="updateSettings()">
-    <label for="show-input-rating" style="margin:0;">入力画面で評価とコメントを常に開いておく</label>
+    <label for="show-input-rating" style="margin:0;">入力画面で全体評価とコメントを常に開いておく</label>
+  </div>
+
+  <div class="form-group checkbox-group">
+    <input type="checkbox" id="show-set-comments" onchange="updateSettings()">
+    <label for="show-set-comments" style="margin:0;">入力画面で各セットごとのコメント欄を表示する</label>
   </div>
 
   <hr style="border-color: var(--border-color); margin: 20px 0;">
@@ -704,7 +708,6 @@
     } else {
       section.style.display = 'none';
       btn.innerText = '＋ 評価とコメントを追加 (任意)';
-      // 閉じる操作では値をリセットせず，裏側で保持し続ける
     }
   }
 
@@ -895,6 +898,7 @@
         }
         if (settings.defaultCommon !== undefined) document.getElementById('default-common').checked = settings.defaultCommon;
         if (settings.showInputRating !== undefined) document.getElementById('show-input-rating').checked = settings.showInputRating;
+        if (settings.showSetComments !== undefined) document.getElementById('show-set-comments').checked = settings.showSetComments;
         if (settings.arrowColor) document.getElementById('arrow-color').value = settings.arrowColor;
         if (settings.arrowThickness) document.getElementById('arrow-thickness').value = settings.arrowThickness;
         if (settings.showArrows !== undefined) document.getElementById('graph-show-arrows').checked = settings.showArrows;
@@ -912,6 +916,7 @@
       defaultSetCount: document.getElementById('default-set-count').value,
       defaultCommon: document.getElementById('default-common').checked,
       showInputRating: document.getElementById('show-input-rating').checked,
+      showSetComments: document.getElementById('show-set-comments').checked,
       arrowColor: document.getElementById('arrow-color').value,
       arrowThickness: document.getElementById('arrow-thickness').value,
       showArrows: document.getElementById('graph-show-arrows').checked
@@ -965,7 +970,7 @@
     if (showRatingDefault) {
         section.style.display = 'block';
         btn.innerText = 'ー 評価とコメントを閉じる';
-        setRating('input', 3);
+        setRating('input', 0); // 初期化時は0（未評価）に戻す
     } else {
         section.style.display = 'none';
         btn.innerText = '＋ 評価とコメントを追加 (任意)';
@@ -1144,17 +1149,31 @@
     const container = document.getElementById('set-inputs-container');
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
+    const showComments = document.getElementById('show-set-comments').checked;
+
     container.innerHTML = '';
     if (isCommon) {
-      container.innerHTML = createSetRowHTML('全セット', 0);
+      container.innerHTML = createSetRowHTML('全セット', 0, showComments);
     } else {
-      for (let i = 1; i <= setCount; i++) { container.innerHTML += createSetRowHTML(`セット ${i}`, i); }
+      for (let i = 1; i <= setCount; i++) { 
+        container.innerHTML += createSetRowHTML(`セット ${i}`, i, showComments); 
+      }
     }
   }
 
-  function createSetRowHTML(label, index) {
+  function createSetRowHTML(label, index, showComments) {
     const lbsSelected = currentUnit === 'lbs' ? 'selected' : '';
     const kgSelected = currentUnit === 'kg' ? 'selected' : '';
+    
+    let commentHtml = '';
+    if (showComments) {
+      commentHtml = `
+        <div style="flex: 1 1 100%; margin-top: 5px;">
+          <input type="text" id="set-comment-${index}" placeholder="セットのメモ（任意）..." style="font-size: 14px; padding: 8px;">
+        </div>
+      `;
+    }
+
     return `
       <div class="set-row">
         <div style="flex: 0.5;"><strong>${label}</strong></div>
@@ -1172,6 +1191,7 @@
           <label>回数</label>
           <input type="number" id="reps-${index}" min="0">
         </div>
+        ${commentHtml}
       </div>
     `;
   }
@@ -1211,14 +1231,15 @@
     const timePart = document.getElementById('record-time').value;
     const datetime = `${datePart}T${timePart}`;
     
-    // 表示状態にかかわらず、常に現在の入力データを取得する
-    const finalRating = currentInputRating;
-    const finalComment = document.getElementById('input-comment').value.trim();
+    const isRatingVisible = document.getElementById('input-rating-section').style.display !== 'none';
+    const finalRating = isRatingVisible ? currentInputRating : 0;
+    const finalComment = isRatingVisible ? document.getElementById('input-comment').value.trim() : "";
     
     if (!exercise) { alert('種目を選択してくれ．'); return; }
 
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
+    const showSetComments = document.getElementById('show-set-comments').checked;
     
     let logEntry = {
       id: Date.now(),
@@ -1234,15 +1255,19 @@
       const w = parseFloat(document.getElementById('weight-0').value) || 0;
       const u = document.getElementById('unit-0').value;
       const r = parseInt(document.getElementById('reps-0').value) || 0;
+      const c = showSetComments ? (document.getElementById('set-comment-0').value.trim()) : "";
+
       for (let i = 1; i <= setCount; i++) {
-        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r, rating: 0, comment: "" });
+        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r, rating: 0, comment: c });
       }
     } else {
       for (let i = 1; i <= setCount; i++) {
         const w = parseFloat(document.getElementById(`weight-${i}`).value) || 0;
         const u = document.getElementById(`unit-${i}`).value;
         const r = parseInt(document.getElementById(`reps-${i}`).value) || 0;
-        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r, rating: 0, comment: "" });
+        const c = showSetComments ? (document.getElementById(`set-comment-${i}`).value.trim()) : "";
+
+        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r, rating: 0, comment: c });
       }
     }
 
@@ -1294,6 +1319,7 @@
       const dates = [...new Set(filteredLogs.map(l => l.date.split('T')[0]))].sort().reverse();
       dates.forEach(date => {
         const dayLogs = filteredLogs.filter(l => l.date.startsWith(date));
+        if(dayLogs.length === 0) return;
         const exNames = [...new Set(dayLogs.map(l => l.exercise))].join(', ');
         const evalData = dailyEvals[date] || { rating: 0, comment: '' };
         
