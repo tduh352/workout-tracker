@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V37</title>
+<title>Workout Tracker V38</title>
 
 <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
 
@@ -611,7 +611,7 @@
       <button class="action-btn action-btn-danger btn-gdrive-logout" style="margin: 0; display: none;" onclick="handleSignoutClick()">解除する</button>
     </div>
     <div style="display: flex; gap: 10px;">
-      <button class="glossy-btn btn-gdrive-save" style="flex: 1; padding: 10px; font-size: 14px;" onclick="saveToDrive()" disabled>ドライブへ保存</button>
+      <button class="glossy-btn btn-gdrive-save" style="flex: 1; padding: 10px; font-size: 14px;" onclick="saveToDrive(false)" disabled>ドライブへ保存</button>
       <button class="glossy-btn btn-gdrive-load" style="flex: 1; padding: 10px; font-size: 14px; background: linear-gradient(to bottom, #ebba87 0%, #b47846 100%); border-color: #d2691e;" onclick="loadFromDrive()" disabled>ドライブから復元</button>
     </div>
   </div>
@@ -897,7 +897,7 @@
 
   function handleAuthClick() {
     if (typeof google === 'undefined' || !google.accounts || !tokenClient) {
-      alert("Googleの認証システムがまだ読み込まれていないか，通信環境によってブロックされている．ページを再読み込みしてみてくれ．");
+      alert("Googleの認証システムが読み込めなかった．\nPCのブラウザで「広告ブロッカー（AdBlockなど）」や「トラッキング防止機能（BraveのShield，Firefoxの厳格モードなど）」がオンになっていると，Googleのログイン機能が強制遮断されてしまう．\nこのサイトのドメイン（tduh352.github.io）のブロックをちょろんと解除して，ページを再読み込みしてみてくれ．");
       return;
     }
     if (!gAccessToken) {
