@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workout Tracker V11</title>
+<style>
+  :root {
+    --bg-color: #e8f4f8;
+    --panel-bg: rgba(255, 255, 255, 0.6);
+    --text-color: #333333;
+    --border-color: #b0c4de;
+    --btn-top: #87ceeb;
+    --btn-bottom: #4682b4;
+    --btn-border: #4169e1;
+    --btn-text: #ffffff;
+    --input-bg: #ffffff;
+    --shadow: rgba(0, 0, 0, 0.2);
+    --tooltip-bg: rgba(0, 0, 0, 0.8);
+    --tooltip-text: #ffffff;
+    --modal-overlay: rgba(0, 0, 0, 0.5);
+  }
+
+  body.dark-theme {
+    --bg-color: #121212;
+    --panel-bg: rgba(40, 40, 40, 0.6);
+    --text-color: #e0e0e0;
+    --border-color: #555555;
+    --btn-top: #555555;
+    --btn-bottom: #222222;
+    --btn-border: #000000;
+    --btn-text: #ffffff;
+    --input-bg: #333333;
+    --shadow: rgba(0, 0, 0, 0.7);
+    --tooltip-bg: rgba(255, 255, 255, 0.9);
+    --tooltip-text: #000000;
+    --modal-overlay: rgba(0, 0, 0, 0.7);
+  }
+
+  body {
+    font-family: sans-serif;
+    padding: 20px;
+    max-width: 800px;
+    margin: auto;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .glass-panel {
+    background: var(--panel-bg);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px var(--shadow);
+    backdrop-filter: blur(10px);
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+
+  .tab-buttons { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; }
+  .tab-btn {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-color);
+    outline: none;
+    font-size: 16px;
+  }
+  .tab-btn.active {
+    border: 2px solid var(--border-color);
+    border-bottom: 2px solid var(--bg-color);
+    margin-bottom: -2px;
+    font-weight: bold;
+    border-radius: 8px 8px 0 0;
+    background: var(--panel-bg);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .form-group { margin-bottom: 15px; }
+  label { display: block; margin-bottom: 5px; font-weight: bold; }
+  input[type="number"], input[type="text"], input[type="date"], input[type="datetime-local"], select, input[type="color"] {
+    padding: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+  }
+  
+  .checkbox-group { display: flex; align-items: center; }
+  .checkbox-group input { width: auto; margin-right: 10px; }
+
+  .set-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+    background: rgba(128, 128, 128, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    min-width: 400px;
+  }
+  .set-row > div { flex: 1; display: flex; flex-direction: column; }
+  .unit-select { width: 60px; display: inline-block; margin-left: 5px; }
+  .weight-input-group { display: flex; align-items: center; }
+
+  .glossy-btn {
+    padding: 12px 20px;
+    background: linear-gradient(to bottom, var(--btn-top) 0%, var(--btn-bottom) 100%);
+    color: var(--btn-text);
+    border: 1px solid var(--btn-border);
+    border-radius: 20px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    box-shadow: inset 0px 1px 0px rgba(255,255,255,0.4), 0px 4px 6px var(--shadow);
+    transition: all 0.2s;
+  }
+  .glossy-btn:active {
+    background: linear-gradient(to bottom, var(--btn-bottom) 0%, var(--btn-top) 100%);
+    box-shadow: inset 0px 2px 5px rgba(0,0,0,0.5);
+    transform: translateY(2px);
+  }
+  .danger-btn {
+    background: linear-gradient(to bottom, #ff7e7e 0%, #d63030 100%);
+    border: 1px solid #b52b2b;
+    margin-top: 10px;
+  }
+  .danger-btn:active {
+    background: linear-gradient(to bottom, #d63030 0%, #ff7e7e 100%);
+  }
+
+  .action-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid var(--btn-border);
+    border-radius: 4px;
+    background: var(--btn-top);
+    color: var(--btn-text);
+    cursor: pointer;
+    margin-right: 4px;
+  }
+  .action-btn-danger {
+    background: #d63030;
+    border: 1px solid #b52b2b;
+  }
+  .action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  table { width: 100%; border-collapse: collapse; min-width: 600px; }
+  th, td { border: 1px solid var(--border-color); padding: 8px; text-align: left; vertical-align: middle; }
+  th { background: rgba(128, 128, 128, 0.2); }
+
+  .canvas-container { position: relative; width: 100%; overflow-x: auto; }
+  .graph-svg {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: block;
+    width: 100%;
+    min-width: 600px;
+    height: 400px;
+    margin-top: 10px;
+  }
+  #tooltip {
+    position: absolute;
+    display: none;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-text);
+    padding: 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 100;
+    box-shadow: 0 2px 5px var(--shadow);
+  }
+  .controls-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: flex-end; }
+  .controls-row > div { flex: 1; min-width: 150px; }
+
+  #edit-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--modal-overlay);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  #edit-modal {
+    width: 90%;
+    max-width: 400px;
+    margin-bottom: 0;
+  }
+  .modal-buttons {
+    display: flex; gap: 10px; margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="tab-buttons">
+  <button class="tab-btn active" onclick="switchTab('input')">入力</button>
+  <button class="tab-btn" onclick="switchTab('exercises')">種目</button>
+  <button class="tab-btn" onclick="switchTab('settings')">設定</button>
+</div>
+
+<div id="tab-input" class="tab-content active glass-panel">
+  <div class="form-group">
+    <label for="record-datetime">記録日時</label>
+    <input type="datetime-local" id="record-datetime">
+  </div>
+
+  <div class="controls-row">
+    <div class="form-group">
+      <label for="category">カテゴリ</label>
+      <select id="category" onchange="updateExerciseList()">
+        <option value="マシン">マシン</option>
+        <option value="フリーウエイト">フリーウエイト</option>
+        <option value="ケーブル">ケーブル</option>
+        <option value="自重">自重</option>
+        <option value="有酸素">有酸素</option>
+      </select>
+    </div>
+    <div class="form-group" style="flex: 2;">
+      <label for="exercise">種目</label>
+      <input type="text" id="exercise" list="exercise-presets" placeholder="種目を入力または選択">
+      <datalist id="exercise-presets"></datalist>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="set-count">セット数</label>
+    <input type="number" id="set-count" min="1" onchange="renderSetInputs()">
+  </div>
+
+  <div class="form-group checkbox-group">
+    <input type="checkbox" id="common-check" checked onchange="renderSetInputs()">
+    <label for="common-check" style="margin:0;">全セット共通</label>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <div id="set-inputs-container"></div>
+  </div>
+
+  <button class="glossy-btn" onclick="addLog()">記録を追加</button>
+</div>
+
+<div id="tab-exercises" class="tab-content glass-panel">
+  <h3>種目リストの管理</h3>
+  <div class="form-group">
+    <label for="edit-category">編集するカテゴリ</label>
+    <select id="edit-category" onchange="renderExerciseEditList()">
+      <option value="マシン">マシン</option>
+      <option value="フリーウエイト">フリーウエイト</option>
+      <option value="ケーブル">ケーブル</option>
+      <option value="自重">自重</option>
+      <option value="有酸素">有酸素</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="new-exercise-name">新しい種目を追加</label>
+    <div style="display: flex; gap: 10px;">
+      <input type="text" id="new-exercise-name" placeholder="種目名を入力">
+      <button class="glossy-btn" style="width: auto; padding: 8px 20px;" onclick="addNewExercise()">追加</button>
+    </div>
+  </div>
+
+  <div class="controls-row" style="margin-bottom: 10px;">
+    <div>
+      <button class="action-btn" onclick="sortExercisesEdit('asc')">名前順 (昇順)</button>
+      <button class="action-btn" onclick="sortExercisesEdit('desc')">名前順 (降順)</button>
+    </div>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table style="min-width: 400px;">
+      <tr>
+        <th>種目名</th>
+        <th style="width: 200px;">操作 (並び替え / 編集)</th>
+      </tr>
+      <tbody id="exercise-edit-tbody">
+        </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="tab-settings" class="tab-content glass-panel">
+  <div class="form-group">
+    <label for="theme-select">テーマ</label>
+    <select id="theme-select" onchange="updateTheme()">
+      <option value="system">端末の設定に合わせる</option>
+      <option value="light">ライト</option>
+      <option value="dark">ダーク</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="default-unit">デフォルトの重量単位</label>
+    <select id="default-unit" onchange="updateSettings()">
+      <option value="lbs">lbs</option>
+      <option value="kg">kg</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="weight-step">重量の入力ステップ</label>
+    <input type="number" id="weight-step" value="0.5" step="0.1" min="0.1" onchange="updateSettings()">
+  </div>
+
+  <div class="form-group">
+    <label for="default-set-count">デフォルトのセット数</label>
+    <input type="number" id="default-set-count" value="3" min="1" onchange="updateSettings()">
+  </div>
+
+  <div class="form-group checkbox-group">
+    <input type="checkbox" id="default-common" checked onchange="updateSettings()">
+    <label for="default-common" style="margin:0;">全セット共通をデフォルトにする</label>
+  </div>
+
+  <hr style="border-color: var(--border-color); margin: 20px 0;">
+
+  <div class="form-group">
+    <label for="arrow-color">グラフの矢印の色</label>
+    <input type="color" id="arrow-color" value="#888888" onchange="updateSettings()">
+  </div>
+
+  <div class="form-group">
+    <label for="arrow-thickness">グラフの矢印の太さ</label>
+    <input type="number" id="arrow-thickness" value="2" min="0.5" step="0.5" onchange="updateSettings()">
+  </div>
+  
+  <hr style="border-color: var(--border-color); margin: 20px 0;">
+  
+  <div class="form-group">
+    <label>データの管理</label>
+    <p style="font-size: 14px; margin-top: 0;">記録や設定はすべてブラウザ内に自動保存されている．</p>
+    <button class="glossy-btn danger-btn" onclick="clearAllData()">全記録を削除する</button>
+    <button class="glossy-btn danger-btn" style="margin-top: 10px;" onclick="resetCategoriesData()">種目リストを初期状態に戻す</button>
+  </div>
+</div>
+
+<div class="glass-panel">
+  <h3>記録ログ</h3>
+  <div class="controls-row">
+    <div class="form-group">
+      <label for="log-view-mode">表示モード</label>
+      <select id="log-view-mode" onchange="updateLogUI()">
+        <option value="date">日付ごと</option>
+        <option value="exercise">種目ごと</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="date-range-group" style="flex: 2;">
+      <label>期間指定</label>
+      <div style="display: flex; gap: 5px; align-items: center;">
+        <input type="date" id="log-start-date" onchange="renderLogList()">
+        <span>〜</span>
+        <input type="date" id="log-end-date" onchange="renderLogList()">
+      </div>
+    </div>
+
+    <div class="form-group" id="exercise-select-group" style="display: none; flex: 2;">
+      <label for="log-target-exercise">対象種目</label>
+      <select id="log-target-exercise" onchange="renderLogList()"></select>
+    </div>
+
+    <div class="form-group" id="sort-control-group" style="display: none;">
+      <label for="log-sort-mode">ソート順</label>
+      <select id="log-sort-mode" onchange="renderLogList()">
+        <option value="date-desc">日時 (新しい順)</option>
+        <option value="date-asc">日時 (古い順)</option>
+        <option value="weight-desc">重量 (重い順)</option>
+        <option value="weight-asc">重量 (軽い順)</option>
+        <option value="reps-desc">回数 (多い順)</option>
+        <option value="reps-asc">回数 (少ない順)</option>
+      </select>
+    </div>
+  </div>
+  <div id="log-list" style="overflow-x: auto;"></div>
+</div>
+
+<div class="glass-panel">
+  <h3>グラフ分析</h3>
+  <div class="controls-row">
+    <div class="form-group">
+      <label for="graph-exercise">分析する種目</label>
+      <select id="graph-exercise" onchange="drawGraph()"></select>
+    </div>
+    <div class="form-group">
+      <label for="graph-unit">表示単位</label>
+      <select id="graph-unit" onchange="drawGraph()">
+        <option value="lbs">lbs</option>
+        <option value="kg">kg</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="controls-row">
+    <div class="form-group checkbox-group" style="flex: 1;">
+      <input type="checkbox" id="graph-date-filter-check" onchange="toggleGraphDateFilter()">
+      <label for="graph-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
+    </div>
+    <div class="form-group" id="graph-date-inputs" style="display: none; flex: 2;">
+      <div style="display: flex; gap: 5px; align-items: center;">
+        <input type="date" id="graph-start-date" onchange="drawGraph()">
+        <span>〜</span>
+        <input type="date" id="graph-end-date" onchange="drawGraph()">
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-row">
+    <div class="form-group checkbox-group">
+      <input type="checkbox" id="graph-show-arrows" checked onchange="updateSettings()">
+      <label for="graph-show-arrows" style="margin:0;">推移の矢印を表示する</label>
+    </div>
+  </div>
+
+  <button class="glossy-btn" onclick="drawGraph()">グラフを描画</button>
+  <div class="canvas-container" id="chart-container">
+    <svg viewBox="0 0 600 400" class="graph-svg">
+      <text x="20" y="30" fill="currentColor" font-size="14">種目を選択して描画してくれ．</text>
+    </svg>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<div id="edit-modal-overlay">
+  <div id="edit-modal" class="glass-panel">
+    <h3>記録の編集</h3>
+    <div class="form-group">
+      <label>重量</label>
+      <div class="weight-input-group">
+        <input type="number" id="edit-weight" min="0" step="0.1" style="width:100%;">
+        <select id="edit-unit" class="unit-select">
+          <option value="lbs">lbs</option>
+          <option value="kg">kg</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>回数</label>
+      <input type="number" id="edit-reps" min="0">
+    </div>
+    <div class="modal-buttons">
+      <button class="glossy-btn" onclick="saveEdit()">保存</button>
+      <button class="glossy-btn danger-btn" style="margin-top:0;" onclick="closeEditModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentUnit = 'lbs';
+  let currentStep = '0.5';
+  let currentDefaultSetCount = 3;
+  let logs = [];
+  
+  let editingLogId = null;
+  let editingSetIndex = null;
+
+  // デフォルトの種目リスト
+  const defaultExerciseCategories = {
+    "マシン": [
+      "インクラインプレス", "チェストプレス", "デルトイドフライ", "オーバーヘッドプレス",
+      "ラテラルライズ", "プルダウン", "ロウ", "アームカール", "アームエクステンション",
+      "トーソローテーション", "スタンディングカーフ", "レッグプレス", "レッグカール",
+      "レッグエクステンション", "アブドミナル", "バックエクステンション", "トータルヒップ",
+      "ヒップアダクション", "マルチネック", "アシストチン&ディップ", "アジャスタブルプーリー",
+      "リスト&フォアアーム", "エアロバイク"
+    ],
+    "フリーウエイト": [
+      "ベンチプレス", "スクワット", "デッドリフト", "バーベルカール", "フレンチプレス",
+      "ダンベルフライ", "ショルダープレス", "ベントオーバーロウ"
+    ],
+    "ケーブル": ["ケーブルクロスオーバー", "プレスダウン", "ケーブルカール", "フェイスプル", "ケーブルクランチ"],
+    "自重": ["懸垂", "腕立て伏せ", "クランチ", "プランク", "ディップス", "ランジ", "カーフレイズ"],
+    "有酸素": ["ランニング", "ウォーキング", "水泳", "自転車", "縄跳び", "ステアマスター"]
+  };
+  
+  // ユーザーが編集可能な種目リスト
+  let customExerciseCategories = {};
+
+  function loadLocalCategories() {
+    const saved = localStorage.getItem('workout_tracker_categories');
+    if (saved) {
+      try {
+        customExerciseCategories = JSON.parse(saved);
+      } catch (e) {
+        customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories));
+      }
+    } else {
+      customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories));
+    }
+  }
+
+  function saveLocalCategories() {
+    localStorage.setItem('workout_tracker_categories', JSON.stringify(customExerciseCategories));
+  }
+
+  function resetCategoriesData() {
+    if (confirm("種目リストを初期状態に戻すだろうか？　追加したカスタム種目は消去される．")) {
+      customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories));
+      saveLocalCategories();
+      renderExerciseEditList();
+      updateExerciseList();
+      alert("種目リストを初期化した．");
+    }
+  }
+
+  function loadLocalData() {
+    const savedLogs = localStorage.getItem('workout_tracker_logs');
+    if (savedLogs) {
+      try {
+        logs = JSON.parse(savedLogs);
+      } catch (e) {
+        console.error("データの読み込みに失敗した．");
+        logs = [];
+      }
+    }
+  }
+
+  function saveLocalData() {
+    localStorage.setItem('workout_tracker_logs', JSON.stringify(logs));
+  }
+
+  function loadLocalSettings() {
+    const savedSettings = localStorage.getItem('workout_tracker_settings');
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings);
+        if (settings.theme) document.getElementById('theme-select').value = settings.theme;
+        if (settings.defaultUnit) document.getElementById('default-unit').value = settings.defaultUnit;
+        if (settings.weightStep) document.getElementById('weight-step').value = settings.weightStep;
+        if (settings.defaultSetCount) {
+          document.getElementById('default-set-count').value = settings.defaultSetCount;
+          currentDefaultSetCount = parseInt(settings.defaultSetCount) || 3;
+        }
+        if (settings.defaultCommon !== undefined) document.getElementById('default-common').checked = settings.defaultCommon;
+        if (settings.arrowColor) document.getElementById('arrow-color').value = settings.arrowColor;
+        if (settings.arrowThickness) document.getElementById('arrow-thickness').value = settings.arrowThickness;
+        if (settings.showArrows !== undefined) document.getElementById('graph-show-arrows').checked = settings.showArrows;
+      } catch (e) {
+        console.error("設定の読み込みに失敗した．");
+      }
+    }
+  }
+
+  function saveLocalSettings() {
+    const settings = {
+      theme: document.getElementById('theme-select').value,
+      defaultUnit: document.getElementById('default-unit').value,
+      weightStep: document.getElementById('weight-step').value,
+      defaultSetCount: document.getElementById('default-set-count').value,
+      defaultCommon: document.getElementById('default-common').checked,
+      arrowColor: document.getElementById('arrow-color').value,
+      arrowThickness: document.getElementById('arrow-thickness').value,
+      showArrows: document.getElementById('graph-show-arrows').checked
+    };
+    localStorage.setItem('workout_tracker_settings', JSON.stringify(settings));
+  }
+
+  function clearAllData() {
+    if (confirm("本当にすべての記録を削除するだろうか？　この操作は取り消せない．")) {
+      logs = [];
+      saveLocalData();
+      updateGlobalExerciseOptions();
+      renderLogList();
+      drawGraph();
+      alert("全記録を削除した．");
+    }
+  }
+
+  function initDates() {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
+    document.getElementById('record-datetime').value = localISOTime;
+
+    const todayStr = (new Date(now - tzOffset)).toISOString().split('T')[0];
+    const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); 
+    const pastStr = (new Date(past - tzOffset)).toISOString().split('T')[0];
+    
+    document.getElementById('log-start-date').value = pastStr;
+    document.getElementById('log-end-date').value = todayStr;
+    document.getElementById('graph-start-date').value = pastStr;
+    document.getElementById('graph-end-date').value = todayStr;
+  }
+
+  function resetInputForm() {
+    document.getElementById('exercise').value = '';
+    document.getElementById('set-count').value = currentDefaultSetCount;
+    const isCommonDefault = document.getElementById('default-common').checked;
+    document.getElementById('common-check').checked = isCommonDefault;
+    initDates();
+    renderSetInputs();
+  }
+
+  function updateExerciseList() {
+    const cat = document.getElementById('category').value;
+    const datalist = document.getElementById('exercise-presets');
+    datalist.innerHTML = '';
+    if (customExerciseCategories[cat]) {
+      customExerciseCategories[cat].forEach(ex => {
+        datalist.innerHTML += `<option value="${ex}"></option>`;
+      });
+    }
+    document.getElementById('exercise').value = ''; 
+  }
+
+  // --- 種目編集タブのロジック ---
+  function renderExerciseEditList() {
+    const cat = document.getElementById('edit-category').value;
+    const list = customExerciseCategories[cat] || [];
+    const tbody = document.getElementById('exercise-edit-tbody');
+    tbody.innerHTML = '';
+    
+    list.forEach((ex, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${ex}</td>
+        <td style="white-space: nowrap;">
+          <button class="action-btn" onclick="moveExercise(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>↑</button>
+          <button class="action-btn" onclick="moveExercise(${idx}, 1)" ${idx === list.length - 1 ? 'disabled' : ''}>↓</button>
+          <button class="action-btn" onclick="renameExercise(${idx})">編集</button>
+          <button class="action-btn action-btn-danger" onclick="deleteExerciseFromList(${idx})">削除</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function moveExercise(index, direction) {
+    const cat = document.getElementById('edit-category').value;
+    const list = customExerciseCategories[cat];
+    if (!list) return;
+    
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= list.length) return;
+    
+    const temp = list[index];
+    list[index] = list[newIndex];
+    list[newIndex] = temp;
+    
+    saveLocalCategories();
+    renderExerciseEditList();
+    updateExerciseList();
+  }
+
+  function renameExercise(index) {
+    const cat = document.getElementById('edit-category').value;
+    const list = customExerciseCategories[cat];
+    if (!list) return;
+    
+    const currentName = list[index];
+    const newName = prompt("新しい種目名を入力してくれ．", currentName);
+    
+    if (newName && newName.trim() !== "" && newName !== currentName) {
+      if (list.includes(newName.trim())) {
+        alert("その種目名はすでに存在している．");
+        return;
+      }
+      list[index] = newName.trim();
+      saveLocalCategories();
+      renderExerciseEditList();
+      updateExerciseList();
+    }
+  }
+
+  function deleteExerciseFromList(index) {
+    const cat = document.getElementById('edit-category').value;
+    const list = customExerciseCategories[cat];
+    if (!list) return;
+    
+    if (confirm(`「${list[index]}」をリストから削除してもよいだろうか？\n※過去の記録データが消えることはない．`)) {
+      list.splice(index, 1);
+      saveLocalCategories();
+      renderExerciseEditList();
+      updateExerciseList();
+    }
+  }
+
+  function addNewExercise() {
+    const cat = document.getElementById('edit-category').value;
+    const inputEl = document.getElementById('new-exercise-name');
+    const newName = inputEl.value.trim();
+    
+    if (!newName) return;
+    
+    if (!customExerciseCategories[cat]) customExerciseCategories[cat] = [];
+    if (customExerciseCategories[cat].includes(newName)) {
+      alert("すでに存在する種目だ．");
+      return;
+    }
+    
+    customExerciseCategories[cat].push(newName);
+    inputEl.value = '';
+    saveLocalCategories();
+    renderExerciseEditList();
+    updateExerciseList();
+  }
+
+  function sortExercisesEdit(order) {
+    const cat = document.getElementById('edit-category').value;
+    if (!customExerciseCategories[cat]) return;
+    
+    customExerciseCategories[cat].sort((a, b) => {
+      if (order === 'asc') return a.localeCompare(b, 'ja');
+      else return b.localeCompare(a, 'ja');
+    });
+    saveLocalCategories();
+    renderExerciseEditList();
+    updateExerciseList();
+  }
+  // ---------------------------------
+
+  function applyThemeLogic(themeValue) {
+    if (themeValue === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.body.className = prefersDark ? 'dark-theme' : '';
+    } else if (themeValue === 'dark') {
+      document.body.className = 'dark-theme';
+    } else {
+      document.body.className = '';
+    }
+    if (logs.length > 0) drawGraph();
+  }
+
+  function updateTheme() {
+    const theme = document.getElementById('theme-select').value;
+    applyThemeLogic(theme);
+    saveLocalSettings();
+  }
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (document.getElementById('theme-select').value === 'system') {
+      applyThemeLogic('system');
+    }
+  });
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+    event.target.classList.add('active');
+    
+    if (tabId === 'exercises') {
+      renderExerciseEditList();
+    }
+  }
+
+  function updateSettings() {
+    currentUnit = document.getElementById('default-unit').value;
+    currentStep = document.getElementById('weight-step').value || '0.5';
+    currentDefaultSetCount = parseInt(document.getElementById('default-set-count').value) || 3;
+    const isCommonDefault = document.getElementById('default-common').checked;
+    document.getElementById('common-check').checked = isCommonDefault;
+    
+    document.getElementById('set-count').value = currentDefaultSetCount;
+    renderSetInputs();
+    drawGraph();
+    saveLocalSettings();
+  }
+
+  function toggleGraphDateFilter() {
+    const isChecked = document.getElementById('graph-date-filter-check').checked;
+    document.getElementById('graph-date-inputs').style.display = isChecked ? 'block' : 'none';
+    drawGraph();
+  }
+
+  function renderSetInputs() {
+    const container = document.getElementById('set-inputs-container');
+    const isCommon = document.getElementById('common-check').checked;
+    const setCount = parseInt(document.getElementById('set-count').value) || 1;
+
+    container.innerHTML = '';
+
+    if (isCommon) {
+      container.innerHTML = createSetRowHTML('全セット', 0);
+    } else {
+      for (let i = 1; i <= setCount; i++) {
+        container.innerHTML += createSetRowHTML(`セット ${i}`, i);
+      }
+    }
+  }
+
+  function createSetRowHTML(label, index) {
+    const lbsSelected = currentUnit === 'lbs' ? 'selected' : '';
+    const kgSelected = currentUnit === 'kg' ? 'selected' : '';
+    return `
+      <div class="set-row">
+        <div style="flex: 0.5;"><strong>${label}</strong></div>
+        <div>
+          <label>重量</label>
+          <div class="weight-input-group">
+            <input type="number" id="weight-${index}" min="0" step="${currentStep}" style="width:100%;">
+            <select id="unit-${index}" class="unit-select">
+              <option value="lbs" ${lbsSelected}>lbs</option>
+              <option value="kg" ${kgSelected}>kg</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label>回数</label>
+          <input type="number" id="reps-${index}" min="0">
+        </div>
+      </div>
+    `;
+  }
+
+  function updateGlobalExerciseOptions() {
+    const exercises = [...new Set(logs.map(log => log.exercise))];
+    
+    const logSelect = document.getElementById('log-target-exercise');
+    const prevLogEx = logSelect.value;
+    logSelect.innerHTML = '';
+    exercises.forEach(ex => {
+      logSelect.innerHTML += `<option value="${ex}">${ex}</option>`;
+    });
+    if (prevLogEx && exercises.includes(prevLogEx)) logSelect.value = prevLogEx;
+
+    const graphSelect = document.getElementById('graph-exercise');
+    const prevGraphEx = graphSelect.value;
+    graphSelect.innerHTML = '';
+    exercises.forEach(ex => {
+      graphSelect.innerHTML += `<option value="${ex}">${ex}</option>`;
+    });
+    if (prevGraphEx && exercises.includes(prevGraphEx)) graphSelect.value = prevGraphEx;
+  }
+
+  function addLog() {
+    const category = document.getElementById('category').value;
+    const exercise = document.getElementById('exercise').value;
+    const datetime = document.getElementById('record-datetime').value;
+    
+    if (!exercise) {
+      alert('種目を入力してくれ．');
+      return;
+    }
+
+    const isCommon = document.getElementById('common-check').checked;
+    const setCount = parseInt(document.getElementById('set-count').value) || 1;
+    let logEntry = {
+      id: Date.now(),
+      date: datetime,
+      category: category,
+      exercise: exercise,
+      sets: []
+    };
+
+    if (isCommon) {
+      const w = parseFloat(document.getElementById('weight-0').value) || 0;
+      const u = document.getElementById('unit-0').value;
+      const r = parseInt(document.getElementById('reps-0').value) || 0;
+      for (let i = 1; i <= setCount; i++) {
+        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r });
+      }
+    } else {
+      for (let i = 1; i <= setCount; i++) {
+        const w = parseFloat(document.getElementById(`weight-${i}`).value) || 0;
+        const u = document.getElementById(`unit-${i}`).value;
+        const r = parseInt(document.getElementById(`reps-${i}`).value) || 0;
+        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r });
+      }
+    }
+
+    logs.push(logEntry);
+    saveLocalData(); 
+    updateGlobalExerciseOptions();
+    renderLogList();
+    
+    resetInputForm();
+  }
+
+  function deleteSet(logId, setIndex) {
+    if (!confirm('このセットを削除してもよいだろうか？　')) return;
+    const logIndex = logs.findIndex(l => l.id === logId);
+    if (logIndex > -1) {
+      let log = logs[logIndex];
+      log.sets = log.sets.filter(s => s.setIndex !== setIndex);
+      
+      if (log.sets.length === 0) {
+        logs.splice(logIndex, 1);
+      } else {
+        log.sets.forEach((s, idx) => s.setIndex = idx + 1);
+      }
+      
+      saveLocalData();
+      renderLogList();
+      drawGraph();
+      updateGlobalExerciseOptions();
+    }
+  }
+
+  function openEditModal(logId, setIndex) {
+    const log = logs.find(l => l.id === logId);
+    const set = log.sets.find(s => s.setIndex === setIndex);
+    if (!log || !set) return;
+
+    editingLogId = logId;
+    editingSetIndex = setIndex;
+    
+    document.getElementById('edit-weight').value = set.weight;
+    document.getElementById('edit-unit').value = set.unit;
+    document.getElementById('edit-reps').value = set.reps;
+    document.getElementById('edit-weight').step = currentStep;
+    
+    document.getElementById('edit-modal-overlay').style.display = 'flex';
+  }
+
+  function closeEditModal() {
+    document.getElementById('edit-modal-overlay').style.display = 'none';
+    editingLogId = null;
+    editingSetIndex = null;
+  }
+
+  function saveEdit() {
+    if (editingLogId === null || editingSetIndex === null) return;
+    
+    const log = logs.find(l => l.id === editingLogId);
+    const set = log.sets.find(s => s.setIndex === editingSetIndex);
+    if (log && set) {
+      set.weight = parseFloat(document.getElementById('edit-weight').value) || 0;
+      set.unit = document.getElementById('edit-unit').value;
+      set.reps = parseInt(document.getElementById('edit-reps').value) || 0;
+      
+      saveLocalData();
+      renderLogList();
+      drawGraph();
+    }
+    closeEditModal();
+  }
+
+  function updateLogUI() {
+    const mode = document.getElementById('log-view-mode').value;
+    if (mode === 'date') {
+      document.getElementById('date-range-group').style.display = 'block';
+      document.getElementById('exercise-select-group').style.display = 'none';
+      document.getElementById('sort-control-group').style.display = 'none';
+    } else {
+      document.getElementById('date-range-group').style.display = 'none';
+      document.getElementById('exercise-select-group').style.display = 'block';
+      document.getElementById('sort-control-group').style.display = 'block';
+    }
+    renderLogList();
+  }
+
+  function renderLogList() {
+    const mode = document.getElementById('log-view-mode').value;
+    const container = document.getElementById('log-list');
+    container.innerHTML = '';
+
+    if (logs.length === 0) {
+      container.innerHTML = '<p>データがありません．</p>';
+      return;
+    }
+
+    if (mode === 'date') {
+      const startDate = document.getElementById('log-start-date').value;
+      const endDate = document.getElementById('log-end-date').value;
+      
+      let filteredLogs = logs.filter(log => {
+        const logDate = log.date.split('T')[0];
+        if (startDate && logDate < startDate) return false;
+        if (endDate && logDate > endDate) return false;
+        return true;
+      });
+
+      if (filteredLogs.length === 0) {
+        container.innerHTML = '<p>指定された期間のデータがありません．</p>';
+        return;
+      }
+
+      const groupedByDate = {};
+      filteredLogs.forEach(log => {
+        const dateOnly = log.date.split('T')[0];
+        if (!groupedByDate[dateOnly]) groupedByDate[dateOnly] = [];
+        groupedByDate[dateOnly].push(log);
+      });
+
+      const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
+
+      sortedDates.forEach(date => {
+        const dayLogs = groupedByDate[date].sort((a, b) => a.date.localeCompare(b.date));
+        let html = `<h4>${date}</h4><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+        
+        dayLogs.forEach(log => {
+          const timeStr = log.date.split('T')[1];
+          log.sets.forEach(s => {
+            html += `<tr>
+              <td>${timeStr}</td>
+              <td>${log.category}</td>
+              <td>${log.exercise}</td>
+              <td>${s.setIndex}</td>
+              <td>${s.weight}${s.unit}</td>
+              <td>${s.reps}</td>
+              <td style="white-space: nowrap;">
+                <button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button>
+                <button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button>
+              </td>
+            </tr>`;
+          });
+        });
+        html += `</table><br>`;
+        container.innerHTML += html;
+      });
+
+    } else if (mode === 'exercise') {
+      const targetEx = document.getElementById('log-target-exercise').value;
+      const sortMode = document.getElementById('log-sort-mode').value;
+
+      if (!targetEx) {
+        container.innerHTML = '<p>種目を選択してくれ．</p>';
+        return;
+      }
+
+      let setLogs = [];
+      logs.forEach(log => {
+        if (log.exercise === targetEx) {
+          log.sets.forEach(set => {
+            setLogs.push({
+              logId: log.id,
+              date: log.date,
+              setIndex: set.setIndex,
+              weight: set.weight,
+              unit: set.unit,
+              reps: set.reps
+            });
+          });
+        }
+      });
+
+      if (setLogs.length === 0) {
+         container.innerHTML = '<p>データがありません．</p>';
+         return;
+      }
+
+      setLogs.sort((a, b) => {
+        let wA = a.unit === 'kg' ? a.weight * 2.20462 : a.weight;
+        let wB = b.unit === 'kg' ? b.weight * 2.20462 : b.weight;
+        
+        switch(sortMode) {
+          case 'date-desc': return b.date.localeCompare(a.date);
+          case 'date-asc': return a.date.localeCompare(b.date);
+          case 'weight-desc': return wB - wA;
+          case 'weight-asc': return wA - wB;
+          case 'reps-desc': return b.reps - a.reps;
+          case 'reps-asc': return a.reps - b.reps;
+          default: return 0;
+        }
+      });
+
+      let html = `<h4>${targetEx}</h4><table><tr><th>日時</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+      setLogs.forEach(s => {
+        const dtStr = s.date.replace('T', ' ');
+        html += `<tr>
+          <td>${dtStr}</td>
+          <td>${s.setIndex}</td>
+          <td>${s.weight}${s.unit}</td>
+          <td>${s.reps}</td>
+          <td style="white-space: nowrap;">
+            <button class="action-btn" onclick="openEditModal(${s.logId}, ${s.setIndex})">編集</button>
+            <button class="action-btn action-btn-danger" onclick="deleteSet(${s.logId}, ${s.setIndex})">削除</button>
+          </td>
+        </tr>`;
+      });
+      html += `</table>`;
+      container.innerHTML = html;
+    }
+  }
+
+  function drawGraph() {
+    const container = document.getElementById('chart-container');
+    const exercise = document.getElementById('graph-exercise').value;
+    const targetUnit = document.getElementById('graph-unit').value; 
+    const isDark = document.body.classList.contains('dark-theme');
+    const axisColor = isDark ? '#ffffff' : '#000000';
+    const gridColor = isDark ? '#444444' : '#cccccc';
+    
+    container.innerHTML = '';
+
+    if (!exercise) {
+      container.innerHTML = `<svg viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">データがありません．</text></svg>`;
+      return;
+    }
+
+    let exLogs = logs.filter(log => log.exercise === exercise);
+
+    const useDateFilter = document.getElementById('graph-date-filter-check').checked;
+    if (useDateFilter) {
+      const startDate = document.getElementById('graph-start-date').value;
+      const endDate = document.getElementById('graph-end-date').value;
+      exLogs = exLogs.filter(log => {
+        const logDate = log.date.split('T')[0];
+        if (startDate && logDate < startDate) return false;
+        if (endDate && logDate > endDate) return false;
+        return true;
+      });
+    }
+
+    if (exLogs.length === 0) {
+      container.innerHTML = `<svg viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">指定範囲にデータがありません．</text></svg>`;
+      return;
+    }
+
+    let graphPoints = [];
+    exLogs.forEach((log, originalIndex) => {
+      log.sets.forEach(set => {
+        let r = parseFloat(set.reps) || 0;
+        let w = parseFloat(set.weight) || 0;
+        let originalW = w;
+        
+        if (targetUnit === 'lbs' && set.unit === 'kg') w *= 2.20462;
+        else if (targetUnit === 'kg' && set.unit === 'lbs') w /= 2.20462;
+
+        graphPoints.push({
+          timestamp: new Date(log.date).getTime(),
+          logColorIndex: originalIndex,
+          setIndex: set.setIndex,
+          r: r,
+          w: w,
+          originalW: originalW,
+          unit: set.unit,
+          dateStr: log.date.replace('T', ' ')
+        });
+      });
+    });
+
+    graphPoints.sort((a, b) => {
+      if (a.timestamp !== b.timestamp) return a.timestamp - b.timestamp;
+      return a.setIndex - b.setIndex;
+    });
+
+    let maxX = 5;
+    let maxYReal = 0;
+    graphPoints.forEach(pt => {
+      if (pt.r > maxX) maxX = pt.r;
+      if (pt.w > maxYReal) maxYReal = pt.w;
+    });
+
+    maxX = Math.ceil(maxX * 1.2);
+    let maxY = Math.ceil(maxYReal / 5) * 5;
+    if (maxY === 0) maxY = 5;
+    
+    const baseWidth = 600;
+    const baseHeight = 400;
+    const padLeft = 50;
+    const padRight = 30;
+    const padTop = 30;
+    const padBottom = 40;
+    const plotW = baseWidth - padLeft - padRight;
+    const plotH = baseHeight - padTop - padBottom;
+
+    let svgHtml = `<svg viewBox="0 0 ${baseWidth} ${baseHeight}" class="graph-svg" preserveAspectRatio="xMidYMid meet">`;
+
+    const showArrows = document.getElementById('graph-show-arrows').checked;
+    const arrowColor = document.getElementById('arrow-color').value;
+    const arrowThickness = document.getElementById('arrow-thickness').value;
+
+    if (showArrows) {
+      svgHtml += `
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="14" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="${arrowColor}" />
+          </marker>
+        </defs>
+      `;
+    }
+
+    const ySteps = maxY / 5;
+    for (let i = 0; i <= ySteps; i++) {
+      const yVal = maxY * (i / ySteps);
+      const py = padTop + plotH - (yVal / maxY) * plotH;
+      svgHtml += `<line x1="${padLeft}" y1="${py}" x2="${baseWidth - padRight}" y2="${py}" stroke="${gridColor}" stroke-width="1" />`;
+      svgHtml += `<text x="${padLeft - 5}" y="${py}" fill="${axisColor}" font-size="12" text-anchor="end" alignment-baseline="middle">${yVal.toFixed(1)}</text>`;
+    }
+
+    const xSteps = Math.min(maxX, 10);
+    for (let i = 0; i <= xSteps; i++) {
+      const xVal = maxX * (i / xSteps);
+      const px = padLeft + (xVal / maxX) * plotW;
+      svgHtml += `<line x1="${px}" y1="${padTop + plotH}" x2="${px}" y2="${padTop + plotH + 5}" stroke="${axisColor}" stroke-width="1" />`;
+      svgHtml += `<text x="${px}" y="${padTop + plotH + 20}" fill="${axisColor}" font-size="12" text-anchor="middle">${Math.round(xVal)}</text>`;
+    }
+
+    svgHtml += `<polyline points="${padLeft},${padTop} ${padLeft},${padTop + plotH} ${baseWidth - padRight},${padTop + plotH}" fill="none" stroke="${axisColor}" stroke-width="2" />`;
+    svgHtml += `<text x="${padLeft}" y="${padTop - 10}" fill="${axisColor}" font-size="12" text-anchor="start">重量(${targetUnit})</text>`;
+    svgHtml += `<text x="${baseWidth - padRight}" y="${padTop + plotH + 35}" fill="${axisColor}" font-size="12" text-anchor="end">回数</text>`;
+
+    if (showArrows && graphPoints.length > 1) {
+      for (let i = 0; i < graphPoints.length - 1; i++) {
+        const pt1 = graphPoints[i];
+        const pt2 = graphPoints[i+1];
+        const px1 = padLeft + (pt1.r / maxX) * plotW;
+        const py1 = padTop + plotH - (pt1.w / maxY) * plotH;
+        const px2 = padLeft + (pt2.r / maxX) * plotW;
+        const py2 = padTop + plotH - (pt2.w / maxY) * plotH;
+        
+        if (Math.abs(px1 - px2) > 0.1 || Math.abs(py1 - py2) > 0.1) {
+          svgHtml += `<line x1="${px1}" y1="${py1}" x2="${px2}" y2="${py2}" stroke="${arrowColor}" stroke-width="${arrowThickness}" marker-end="url(#arrowhead)" opacity="0.6"/>`;
+        }
+      }
+    }
+
+    graphPoints.forEach(pt => {
+      const hue = (pt.logColorIndex * 137) % 360;
+      const fillColor = `hsl(${hue}, 80%, 60%)`;
+      const strokeColor = `hsl(${hue}, 80%, 40%)`;
+
+      const px = padLeft + (pt.r / maxX) * plotW;
+      const py = padTop + plotH - (pt.w / maxY) * plotH;
+      
+      svgHtml += `<circle cx="${px}" cy="${py}" r="6" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" 
+        onmousemove="showTooltip(event, '${pt.dateStr}', ${pt.setIndex}, ${pt.originalW}, '${pt.unit}', ${pt.r})" 
+        onmouseleave="hideTooltip()" 
+        onmouseover="this.setAttribute('r', '9')" 
+        onmouseout="this.setAttribute('r', '6')" 
+        style="cursor: pointer; transition: r 0.1s;" />`;
+    });
+
+    svgHtml += `</svg>`;
+    container.innerHTML = svgHtml;
+  }
+
+  function showTooltip(e, date, setIndex, weight, unit, reps) {
+    const tooltip = document.getElementById('tooltip');
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.pageX + 15) + 'px';
+    tooltip.style.top = (e.pageY + 15) + 'px';
+    tooltip.innerHTML = `${date}<br>第${setIndex}セット: ${weight}${unit} × ${reps}回`;
+  }
+
+  function hideTooltip() {
+    const tooltip = document.getElementById('tooltip');
+    tooltip.style.display = 'none';
+  }
+
+  // 初期化の順序
+  loadLocalCategories();
+  loadLocalData();
+  loadLocalSettings();
+  resetInputForm();
+  applyThemeLogic(document.getElementById('theme-select').value);
+  updateExerciseList();
+  updateGlobalExerciseOptions();
+  updateLogUI();
+</script>
+</body>
+</html>
