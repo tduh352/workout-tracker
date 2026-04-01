@@ -59,7 +59,6 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     padding: 20px 15px;
     padding-top: env(safe-area-inset-top, 20px);
-    /* Safariのメニューバー被りを防ぐために下部の余白を拡張 */
     padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 60px);
     max-width: 800px;
     margin: auto;
@@ -491,9 +490,13 @@
     </div>
   </div>
 
-  <button class="glossy-btn" onclick="drawGraph()">グラフを描画</button>
+  <div class="controls-row" style="margin-bottom: 0;">
+    <button class="glossy-btn" onclick="drawGraph()">グラフを描画</button>
+    <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563;" onclick="downloadGraphAsPNG()">画像を保存 (PNG)</button>
+  </div>
+
   <div class="canvas-container" id="chart-container">
-    <svg viewBox="0 0 600 400" class="graph-svg">
+    <svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" viewBox="0 0 600 400" class="graph-svg">
       <text x="20" y="30" fill="currentColor" font-size="14">種目を選択して描画してくれ．</text>
     </svg>
   </div>
@@ -681,7 +684,6 @@
     const tzOffset = now.getTimezoneOffset() * 60000;
     const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
     
-    // 日付と時刻を分離して設定
     const [datePart, timePart] = localISOTime.split('T');
     document.getElementById('record-date').value = datePart;
     document.getElementById('record-time').value = timePart;
@@ -941,7 +943,6 @@
     const category = document.getElementById('category').value;
     const exercise = document.getElementById('exercise').value;
     
-    // 分割された日付と時刻を取得して結合
     const datePart = document.getElementById('record-date').value;
     const timePart = document.getElementById('record-time').value;
     const datetime = `${datePart}T${timePart}`;
@@ -1193,7 +1194,7 @@
     container.innerHTML = '';
 
     if (!exercise) {
-      container.innerHTML = `<svg width="600" height="400" viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">データがありません．</text></svg>`;
+      container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" width="600" height="400" viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">データがありません．</text></svg>`;
       return;
     }
 
@@ -1212,7 +1213,7 @@
     }
 
     if (exLogs.length === 0) {
-      container.innerHTML = `<svg width="600" height="400" viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">指定範囲にデータがありません．</text></svg>`;
+      container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" width="600" height="400" viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">指定範囲にデータがありません．</text></svg>`;
       return;
     }
 
@@ -1270,7 +1271,7 @@
     const plotW = Math.max(500, maxX * X_PIXELS_PER_STEP);
     const baseWidth = Math.max(600, plotW + padLeft + padRight);
 
-    let svgHtml = `<svg width="${baseWidth}" height="${baseHeight}" viewBox="0 0 ${baseWidth} ${baseHeight}" class="graph-svg">`;
+    let svgHtml = `<svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" width="${baseWidth}" height="${baseHeight}" viewBox="0 0 ${baseWidth} ${baseHeight}" class="graph-svg" preserveAspectRatio="xMidYMid meet">`;
 
     const showArrows = document.getElementById('graph-show-arrows').checked;
     const arrowColor = document.getElementById('arrow-color').value;
@@ -1337,6 +1338,49 @@
 
     svgHtml += `</svg>`;
     container.innerHTML = svgHtml;
+  }
+
+  function downloadGraphAsPNG() {
+    const container = document.getElementById('chart-container');
+    const svg = container.querySelector('svg');
+    if (!svg) {
+      alert('ダウンロードするグラフが存在しない．先にグラフを描画してくれ．');
+      return;
+    }
+
+    // 600DPI相当（標準72DPIの約8.33倍）の解像度を得るため，スケールを8倍に設定
+    const scale = 8;
+    const baseWidth = svg.viewBox.baseVal.width || 600;
+    const baseHeight = svg.viewBox.baseVal.height || 400;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = baseWidth * scale;
+    canvas.height = baseHeight * scale;
+    const ctx = canvas.getContext('2d');
+
+    const isDark = document.body.classList.contains('dark-theme');
+    ctx.fillStyle = isDark ? '#121212' : '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBase64 = btoa(unescape(encodeURIComponent(svgData)));
+    const img = new Image();
+    
+    img.onload = function() {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const pngData = canvas.toDataURL('image/png');
+      
+      const a = document.createElement('a');
+      a.href = pngData;
+      const dateStr = new Date().toISOString().split('T')[0];
+      const exercise = document.getElementById('graph-exercise').value || 'graph';
+      a.download = `workout_${exercise}_${dateStr}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.appendChild(a);
+      document.body.removeChild(a);
+    };
+    img.src = 'data:image/svg+xml;base64,' + svgBase64;
   }
 
   function showTooltip(e, date, setIndex, weight, unit, reps) {
