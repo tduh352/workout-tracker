@@ -2,19 +2,16 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V13</title>
+<title>Workout Tracker V14</title>
 <style>
   :root {
     --bg-color: #e8f4f8;
@@ -264,8 +261,7 @@
     </div>
     <div class="form-group" style="flex: 2;">
       <label for="exercise">種目</label>
-      <select id="exercise">
-        </select>
+      <select id="exercise"></select>
     </div>
   </div>
 
@@ -309,6 +305,7 @@
     <div>
       <button class="action-btn" onclick="sortExercisesEdit('asc')">名前順 (昇順)</button>
       <button class="action-btn" onclick="sortExercisesEdit('desc')">名前順 (降順)</button>
+      <button class="action-btn" style="background-color: var(--btn-bottom);" onclick="restoreCustomOrder()">カスタム順に戻す</button>
     </div>
   </div>
 
@@ -520,9 +517,12 @@
   };
   
   let customExerciseCategories = {};
+  let savedCustomOrders = {};
 
   function loadLocalCategories() {
     const saved = localStorage.getItem('workout_tracker_categories');
+    const savedOrders = localStorage.getItem('workout_tracker_custom_orders');
+    
     if (saved) {
       try {
         customExerciseCategories = JSON.parse(saved);
@@ -532,15 +532,44 @@
     } else {
       customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories));
     }
+
+    if (savedOrders) {
+      try {
+        savedCustomOrders = JSON.parse(savedOrders);
+      } catch (e) {
+        savedCustomOrders = JSON.parse(JSON.stringify(customExerciseCategories));
+      }
+    } else {
+      savedCustomOrders = JSON.parse(JSON.stringify(customExerciseCategories));
+    }
   }
 
   function saveLocalCategories() {
     localStorage.setItem('workout_tracker_categories', JSON.stringify(customExerciseCategories));
+    localStorage.setItem('workout_tracker_custom_orders', JSON.stringify(savedCustomOrders));
+  }
+
+  function saveCustomOrderState(cat) {
+    if (customExerciseCategories[cat]) {
+      savedCustomOrders[cat] = [...customExerciseCategories[cat]];
+    }
+    saveLocalCategories();
+  }
+
+  function restoreCustomOrder() {
+    const cat = document.getElementById('edit-category').value;
+    if (savedCustomOrders[cat]) {
+      customExerciseCategories[cat] = [...savedCustomOrders[cat]];
+      saveLocalCategories();
+      renderExerciseEditList();
+      updateExerciseList();
+    }
   }
 
   function resetCategoriesData() {
     if (confirm("種目リストを初期状態に戻すだろうか？　追加したカスタム種目は消去される．")) {
       customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories));
+      savedCustomOrders = JSON.parse(JSON.stringify(defaultExerciseCategories));
       saveLocalCategories();
       renderExerciseEditList();
       updateExerciseList();
@@ -640,7 +669,6 @@
     const cat = document.getElementById('category').value;
     const selectEl = document.getElementById('exercise');
     
-    // placeholder的な選択肢を先頭に作成
     selectEl.innerHTML = '<option value="" disabled selected style="display:none;">種目を選択してくれ</option>';
     
     if (customExerciseCategories[cat]) {
@@ -683,7 +711,7 @@
     list[index] = list[newIndex];
     list[newIndex] = temp;
     
-    saveLocalCategories();
+    saveCustomOrderState(cat);
     renderExerciseEditList();
     updateExerciseList();
   }
@@ -702,7 +730,7 @@
         return;
       }
       list[index] = newName.trim();
-      saveLocalCategories();
+      saveCustomOrderState(cat);
       renderExerciseEditList();
       updateExerciseList();
     }
@@ -715,7 +743,7 @@
     
     if (confirm(`「${list[index]}」をリストから削除してもよいだろうか？\n※過去の記録データが消えることはない．`)) {
       list.splice(index, 1);
-      saveLocalCategories();
+      saveCustomOrderState(cat);
       renderExerciseEditList();
       updateExerciseList();
     }
@@ -736,7 +764,7 @@
     
     customExerciseCategories[cat].push(newName);
     inputEl.value = '';
-    saveLocalCategories();
+    saveCustomOrderState(cat);
     renderExerciseEditList();
     updateExerciseList();
   }
@@ -749,6 +777,8 @@
       if (order === 'asc') return a.localeCompare(b, 'ja');
       else return b.localeCompare(a, 'ja');
     });
+    
+    // ソート時は custom のみを書き換え， savedCustomOrders は維持する
     saveLocalCategories();
     renderExerciseEditList();
     updateExerciseList();
@@ -874,7 +904,7 @@
     const datetime = document.getElementById('record-datetime').value;
     
     if (!exercise) {
-      alert('種目を入力するか選択してくれ．');
+      alert('種目を選択してくれ．');
       return;
     }
 
