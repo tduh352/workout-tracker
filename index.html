@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V20</title>
+<title>Workout Tracker V21</title>
 
 <style>
   :root {
@@ -497,7 +497,7 @@
       <select id="download-format" style="width: auto; flex-shrink: 0; padding: 10px;">
         <option value="png">PNG</option>
         <option value="jpeg">JPEG</option>
-        <option value="svg">SVG</option>
+        <option value="svg">SVG (推奨)</option>
       </select>
       <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563; flex: 1; margin-top: 0;" onclick="downloadGraph()">保存</button>
     </div>
@@ -1370,8 +1370,9 @@
       return;
     }
 
-    // PNG/JPEGのための高解像度（8倍）キャンバス作成処理
-    const scale = 8;
+    // PNG/JPEGのための高解像度キャンバス作成処理
+    // スマホのメモリが耐えられる限界ギリギリの10倍スケール（約800DPIから1000DPI相当）に設定
+    const scale = 10;
     const baseWidth = svg.viewBox.baseVal.width || 600;
     const baseHeight = svg.viewBox.baseVal.height || 400;
     
