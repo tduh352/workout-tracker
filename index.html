@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V14</title>
+<title>Workout Tracker V15</title>
 <style>
   :root {
     --bg-color: #e8f4f8;
@@ -105,9 +105,13 @@
 
   .form-group { margin-bottom: 15px; width: 100%; }
   label { display: block; margin-bottom: 5px; font-weight: bold; }
+  
   input[type="number"], input[type="text"], input[type="date"], input[type="datetime-local"], select, input[type="color"] {
     padding: 10px;
     width: 100%;
+    max-width: 100%; /* 横揺れ防止の制限 */
+    min-width: 0; /* はみ出し防止の設定 */
+    box-sizing: border-box;
     background: var(--input-bg);
     color: var(--text-color);
     border: 1px solid var(--border-color);
@@ -128,8 +132,9 @@
     padding: 10px;
     border-radius: 8px;
     width: 100%;
+    min-width: 0; /* 最小幅の撤廃 */
   }
-  .set-row > div { flex: 1 1 100px; display: flex; flex-direction: column; }
+  .set-row > div { flex: 1 1 100px; display: flex; flex-direction: column; min-width: 0; }
   .unit-select { width: 70px; display: inline-block; margin-left: 5px; }
   .weight-input-group { display: flex; align-items: center; width: 100%; }
 
@@ -181,8 +186,8 @@
     cursor: not-allowed;
   }
 
-  table { width: 100%; border-collapse: collapse; min-width: 400px; }
-  th, td { border: 1px solid var(--border-color); padding: 10px 8px; text-align: left; vertical-align: middle; }
+  table { width: 100%; border-collapse: collapse; min-width: 0; } /* テーブルの幅制限を柔軟に */
+  th, td { border: 1px solid var(--border-color); padding: 10px 8px; text-align: left; vertical-align: middle; word-break: break-word; }
   th { background: rgba(128, 128, 128, 0.2); }
 
   .canvas-container { 
@@ -213,7 +218,7 @@
     box-shadow: 0 2px 5px var(--shadow);
   }
   .controls-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: flex-end; }
-  .controls-row > div { flex: 1 1 150px; }
+  .controls-row > div { flex: 1 1 150px; min-width: 0; }
 
   #edit-modal-overlay {
     position: fixed;
@@ -231,6 +236,19 @@
   }
   .modal-buttons {
     display: flex; gap: 10px; margin-top: 20px;
+  }
+
+  /* スマホ向けの余白最適化 */
+  @media (max-width: 480px) {
+    .glass-panel {
+      padding: 15px 10px;
+    }
+    input[type="number"], input[type="text"], input[type="date"], input[type="datetime-local"], select, input[type="color"] {
+      padding: 8px;
+    }
+    .set-row {
+      padding: 8px;
+    }
   }
 </style>
 </head>
@@ -302,7 +320,7 @@
   </div>
 
   <div class="controls-row" style="margin-bottom: 10px;">
-    <div>
+    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
       <button class="action-btn" onclick="sortExercisesEdit('asc')">名前順 (昇順)</button>
       <button class="action-btn" onclick="sortExercisesEdit('desc')">名前順 (降順)</button>
       <button class="action-btn" style="background-color: var(--btn-bottom);" onclick="restoreCustomOrder()">カスタム順に戻す</button>
@@ -313,7 +331,7 @@
     <table style="min-width: 300px;">
       <tr>
         <th>種目名</th>
-        <th style="width: 150px;">操作</th>
+        <th style="width: 140px;">操作</th>
       </tr>
       <tbody id="exercise-edit-tbody">
       </tbody>
@@ -778,7 +796,6 @@
       else return b.localeCompare(a, 'ja');
     });
     
-    // ソート時は custom のみを書き換え， savedCustomOrders は維持する
     saveLocalCategories();
     renderExerciseEditList();
     updateExerciseList();
