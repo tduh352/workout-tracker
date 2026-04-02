@@ -11,9 +11,10 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V45</title>
+<title>Workout Tracker V46</title>
 
 <style>
+  /* 基本(ブルー)・ライトモード */
   :root {
     --bg-color: #e8f4f8;
     --panel-bg: rgba(255, 255, 255, 0.6);
@@ -31,6 +32,7 @@
     --card-bg: #ffffff;
   }
 
+  /* 共通・ダークモードベース */
   body.mode-dark {
     --bg-color: #121212;
     --panel-bg: rgba(40, 40, 40, 0.6);
@@ -44,6 +46,7 @@
     --card-bg: #2a2a2a;
   }
 
+  /* テーマカラー: ブルー (ダークモード) */
   body.mode-dark.color-blue {
     --bg-color: #121518;
     --border-color: #334455;
@@ -52,6 +55,7 @@
     --btn-border: #000080;
   }
 
+  /* テーマカラー: グリーン */
   body.color-green {
     --bg-color: #e8f8e8;
     --border-color: #b0deb0;
@@ -67,6 +71,7 @@
     --btn-border: #004d00;
   }
 
+  /* テーマカラー: オレンジ */
   body.color-orange {
     --bg-color: #f8eee8;
     --border-color: #decab0;
@@ -82,6 +87,7 @@
     --btn-border: #a0522d;
   }
 
+  /* テーマカラー: モノクロ */
   body.color-mono {
     --bg-color: #f0f0f0;
     --border-color: #cccccc;
@@ -392,6 +398,7 @@
 <div class="tab-buttons">
   <button class="tab-btn active" onclick="switchTab('input')">入力</button>
   <button class="tab-btn" onclick="switchTab('review')">振り返り</button>
+  <button class="tab-btn" onclick="switchTab('logs')">ログ</button>
   <button class="tab-btn" onclick="switchTab('exercises')">種目</button>
   <button class="tab-btn" onclick="switchTab('settings')">設定</button>
   <button class="tab-btn" onclick="switchTab('feedback')">ご意見</button>
@@ -495,6 +502,114 @@
   </div>
 
   <div id="review-container"></div>
+</div>
+
+<div id="tab-logs" class="tab-content">
+  <div id="log-section" class="glass-panel">
+    <h3>筋トレログ</h3>
+    <div class="controls-row">
+      <div class="form-group">
+        <label for="log-view-mode">表示モード</label>
+        <select id="log-view-mode" onchange="updateLogUI()">
+          <option value="date">日付ごと</option>
+          <option value="exercise">種目ごと</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="exercise-select-group" style="display: none; flex: 2;">
+        <label for="log-target-exercise">対象種目</label>
+        <select id="log-target-exercise" onchange="renderLogList()"></select>
+      </div>
+
+      <div class="form-group" id="sort-control-group" style="display: none;">
+        <label for="log-sort-mode">ソート順</label>
+        <select id="log-sort-mode" onchange="renderLogList()">
+          <option value="date-desc">日時 (新しい順)</option>
+          <option value="date-asc">日時 (古い順)</option>
+          <option value="weight-desc">最大重量 (重い順)</option>
+          <option value="weight-asc">最大重量 (軽い順)</option>
+          <option value="reps-desc">最大回数 (多い順)</option>
+          <option value="reps-asc">最大回数 (少ない順)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="form-group checkbox-group" style="flex: 1;">
+        <input type="checkbox" id="log-date-filter-check" onchange="updateLogUI()">
+        <label for="log-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
+      </div>
+      <div class="form-group" id="log-date-inputs" style="display: none; flex: 2;">
+        <div class="date-range-flex">
+          <input type="date" id="log-start-date" onchange="renderLogList()">
+          <span>〜</span>
+          <input type="date" id="log-end-date" onchange="renderLogList()">
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-wrapper">
+      <div id="log-list"></div>
+    </div>
+  </div>
+
+  <div id="graph-section" class="glass-panel">
+    <h3>グラフ分析</h3>
+    <div class="controls-row">
+      <div class="form-group">
+        <label for="graph-exercise">分析する種目</label>
+        <select id="graph-exercise" onchange="drawGraph()"></select>
+      </div>
+      <div class="form-group">
+        <label for="graph-unit">表示単位</label>
+        <select id="graph-unit" onchange="drawGraph()">
+          <option value="lbs">lbs</option>
+          <option value="kg">kg</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="form-group checkbox-group" style="flex: 1;">
+        <input type="checkbox" id="graph-date-filter-check" onchange="toggleGraphDateFilter()">
+        <label for="graph-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
+      </div>
+      <div class="form-group" id="graph-date-inputs" style="display: none; flex: 2;">
+        <div class="date-range-flex">
+          <input type="date" id="graph-start-date" onchange="drawGraph()">
+          <span>〜</span>
+          <input type="date" id="graph-end-date" onchange="drawGraph()">
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="form-group checkbox-group">
+        <input type="checkbox" id="graph-show-arrows" checked onchange="updateSettings()">
+        <label for="graph-show-arrows" style="margin:0;">推移の矢印を表示する</label>
+      </div>
+    </div>
+
+    <div class="controls-row" style="margin-bottom: 0; align-items: center;">
+      <div class="form-group" style="margin-bottom: 0; flex: 1;">
+        <button class="glossy-btn" onclick="drawGraph()">グラフを描画</button>
+      </div>
+      <div style="display: flex; gap: 5px; flex: 1;">
+        <select id="download-format" style="width: auto; flex-shrink: 0; padding: 10px;">
+          <option value="png">PNG</option>
+          <option value="jpeg">JPEG</option>
+          <option value="svg">SVG</option>
+        </select>
+        <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563; margin-top: 0; flex: 1;" onclick="downloadGraph()">保存</button>
+      </div>
+    </div>
+
+    <div class="canvas-container" id="chart-container">
+      <svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" viewBox="0 0 600 400" class="graph-svg">
+        <text x="20" y="30" fill="currentColor" font-size="14">種目を選択して描画してくれ．</text>
+      </svg>
+    </div>
+  </div>
 </div>
 
 <div id="tab-exercises" class="tab-content glass-panel">
@@ -635,108 +750,6 @@
   <p style="font-size: 14px; margin-top: 0;">アプリのバグや改善案があれば，ここから開発者に直接メールを送信できる．</p>
   <button class="glossy-btn" onclick="sendFeedback()">ここからメールを作成</button>
 </div>
-
-<div id="log-section" class="glass-panel">
-  <h3>筋トレログ</h3>
-  <div class="controls-row">
-    <div class="form-group">
-      <label for="log-view-mode">表示モード</label>
-      <select id="log-view-mode" onchange="updateLogUI()">
-        <option value="date">日付ごと</option>
-        <option value="exercise">種目ごと</option>
-      </select>
-    </div>
-
-    <div class="form-group" id="date-range-group" style="flex: 2;">
-      <label>期間指定</label>
-      <div class="date-range-flex">
-        <input type="date" id="log-start-date" onchange="renderLogList()">
-        <span>〜</span>
-        <input type="date" id="log-end-date" onchange="renderLogList()">
-      </div>
-    </div>
-
-    <div class="form-group" id="exercise-select-group" style="display: none; flex: 2;">
-      <label for="log-target-exercise">対象種目</label>
-      <select id="log-target-exercise" onchange="renderLogList()"></select>
-    </div>
-
-    <div class="form-group" id="sort-control-group" style="display: none;">
-      <label for="log-sort-mode">ソート順</label>
-      <select id="log-sort-mode" onchange="renderLogList()">
-        <option value="date-desc">日時 (新しい順)</option>
-        <option value="date-asc">日時 (古い順)</option>
-        <option value="weight-desc">重量 (重い順)</option>
-        <option value="weight-asc">重量 (軽い順)</option>
-        <option value="reps-desc">回数 (多い順)</option>
-        <option value="reps-asc">回数 (少ない順)</option>
-      </select>
-    </div>
-  </div>
-  <div class="scroll-wrapper">
-    <div id="log-list"></div>
-  </div>
-</div>
-
-<div id="graph-section" class="glass-panel">
-  <h3>グラフ分析</h3>
-  <div class="controls-row">
-    <div class="form-group">
-      <label for="graph-exercise">分析する種目</label>
-      <select id="graph-exercise" onchange="drawGraph()"></select>
-    </div>
-    <div class="form-group">
-      <label for="graph-unit">表示単位</label>
-      <select id="graph-unit" onchange="drawGraph()">
-        <option value="lbs">lbs</option>
-        <option value="kg">kg</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="controls-row">
-    <div class="form-group checkbox-group" style="flex: 1;">
-      <input type="checkbox" id="graph-date-filter-check" onchange="toggleGraphDateFilter()">
-      <label for="graph-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
-    </div>
-    <div class="form-group" id="graph-date-inputs" style="display: none; flex: 2;">
-      <div class="date-range-flex">
-        <input type="date" id="graph-start-date" onchange="drawGraph()">
-        <span>〜</span>
-        <input type="date" id="graph-end-date" onchange="drawGraph()">
-      </div>
-    </div>
-  </div>
-
-  <div class="controls-row">
-    <div class="form-group checkbox-group">
-      <input type="checkbox" id="graph-show-arrows" checked onchange="updateSettings()">
-      <label for="graph-show-arrows" style="margin:0;">推移の矢印を表示する</label>
-    </div>
-  </div>
-
-  <div class="controls-row" style="margin-bottom: 0; align-items: center;">
-    <div class="form-group" style="margin-bottom: 0; flex: 1;">
-      <button class="glossy-btn" onclick="drawGraph()">グラフを描画</button>
-    </div>
-    <div style="display: flex; gap: 5px; flex: 1;">
-      <select id="download-format" style="width: auto; flex-shrink: 0; padding: 10px;">
-        <option value="png">PNG</option>
-        <option value="jpeg">JPEG</option>
-        <option value="svg">SVG</option>
-      </select>
-      <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563; margin-top: 0; flex: 1;" onclick="downloadGraph()">保存</button>
-    </div>
-  </div>
-
-  <div class="canvas-container" id="chart-container">
-    <svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" viewBox="0 0 600 400" class="graph-svg">
-      <text x="20" y="30" fill="currentColor" font-size="14">種目を選択して描画してくれ．</text>
-    </svg>
-  </div>
-</div>
-
-<div id="tooltip"></div>
 
 <div id="edit-modal-overlay">
   <div id="edit-modal" class="glass-panel">
@@ -1425,10 +1438,10 @@
     document.getElementById('tab-' + tabId).classList.add('active');
     const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.innerText.includes(event.target.innerText));
     if (clickedBtn) clickedBtn.classList.add('active');
-    if (tabId === 'feedback') { document.getElementById('log-section').style.display = 'none'; document.getElementById('graph-section').style.display = 'none'; }
-    else { document.getElementById('log-section').style.display = 'block'; document.getElementById('graph-section').style.display = 'block'; }
+    
     if (tabId === 'exercises') renderExerciseEditList();
     if (tabId === 'review') renderReviewList();
+    if (tabId === 'logs') { updateLogUI(); drawGraph(); }
   }
 
   function updateSettings() {
@@ -1504,111 +1517,112 @@
     if (gAccessToken && isGapiLoaded) saveToDrive(true);
   }
 
-  function renderReviewList() {
-    const level = document.getElementById('review-level').value;
-    const container = document.getElementById('review-container');
-    container.innerHTML = '';
-    if (logs.length === 0) { container.innerHTML = '<p>データがありません．</p>'; return; }
-    let filteredLogs = logs;
-    const useDateFilter = document.getElementById('review-date-filter-check').checked;
-    if (useDateFilter) {
-      const start = document.getElementById('review-start-date').value, end = document.getElementById('review-end-date').value;
-      filteredLogs = filteredLogs.filter(log => { const d = log.date.split('T')[0]; return (!start || d >= start) && (!end || d <= end); });
-    }
-    if (level === 'exercise' || level === 'set') {
-      const target = document.getElementById('review-target-exercise').value;
-      if (target) filteredLogs = filteredLogs.filter(log => log.exercise === target);
-    }
-    if (filteredLogs.length === 0) { container.innerHTML = '<p>条件に合うデータがありません．</p>'; return; }
-    if (level === 'day') {
-      const dates = [...new Set(filteredLogs.map(l => l.date.split('T')[0]))].sort().reverse();
-      dates.forEach(date => {
-        const dayLogs = filteredLogs.filter(l => l.date.startsWith(date));
-        if(dayLogs.length === 0) return;
-        const exNames = [...new Set(dayLogs.map(l => l.exercise))].join(', ');
-        const evalData = dailyEvals[date] || { rating: 0, comment: '' };
-        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button></div>`;
-      });
-    } else if (level === 'exercise') {
-      [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
-        const setsSummary = log.sets.map(s => `第${s.setIndex}セット: ${s.weight}${s.unit} × ${s.reps}回`).join('<br>');
-        container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise}</div><div class="review-card-context">${setsSummary}</div><label>評価</label>${getDynamicStarHtml('exercise', log.id, log.rating || 0)}<textarea id="comment-exercise-${log.id}" placeholder="フォームの感覚などを記録...">${log.comment || ''}</textarea><button id="save-btn-exercise-${log.id}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('exercise', '${log.id}')">コメントを保存</button></div>`;
-      });
-    } else if (level === 'set') {
-      [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
-        log.sets.forEach(set => {
-          const identifier = `${log.id}_${set.setIndex}`;
-          container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise} (第${set.setIndex}セット)</div><div class="review-card-context">重量: ${set.weight}${set.unit} / 回数: ${set.reps}回</div><label>評価</label>${getDynamicStarHtml('set', identifier, set.rating || 0)}<textarea id="comment-set-${identifier}" placeholder="セットの限界度などを記録...">${set.comment || ''}</textarea><button id="save-btn-set-${identifier}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('set', '${identifier}')">コメントを保存</button></div>`;
-        });
-      });
-    }
-  }
-
-  function deleteSet(logId, setIndex) {
-    if (!confirm('このセットを削除してもよいだろうか？')) return;
-    const logIndex = logs.findIndex(l => l.id === logId);
-    if (logIndex > -1) {
-      let log = logs[logIndex]; log.sets = log.sets.filter(s => s.setIndex !== setIndex);
-      if (log.sets.length === 0) logs.splice(logIndex, 1); else log.sets.forEach((s, idx) => s.setIndex = idx + 1);
-      saveLocalData(); renderLogList(); drawGraph(); renderReviewList(); updateGlobalExerciseOptions();
-      if (gAccessToken && isGapiLoaded) saveToDrive(true);
-    }
-  }
-
-  function openEditModal(logId, setIndex) {
-    const log = logs.find(l => l.id === logId), set = log.sets.find(s => s.setIndex === setIndex);
-    editingLogId = logId; editingSetIndex = setIndex; currentEditRating = log.rating || 0;
-    updateStarUI('edit-star-rating', currentEditRating);
-    document.getElementById('edit-weight').value = set.weight; document.getElementById('edit-unit').value = set.unit;
-    document.getElementById('edit-reps').value = set.reps; document.getElementById('edit-weight').step = currentStep;
-    document.getElementById('edit-modal-overlay').style.display = 'flex';
-  }
-
-  function closeEditModal() { document.getElementById('edit-modal-overlay').style.display = 'none'; }
-  function saveEdit() {
-    const log = logs.find(l => l.id === editingLogId), set = log.sets.find(s => s.setIndex === editingSetIndex);
-    if (log && set) {
-      log.rating = currentEditRating; set.weight = parseFloat(document.getElementById('edit-weight').value) || 0;
-      set.unit = document.getElementById('edit-unit').value; set.reps = parseInt(document.getElementById('edit-reps').value) || 0;
-      saveLocalData(); renderLogList(); drawGraph(); renderReviewList(); if (gAccessToken && isGapiLoaded) saveToDrive(true);
-    }
-    closeEditModal();
-  }
-
   function updateLogUI() {
     const mode = document.getElementById('log-view-mode').value;
-    document.getElementById('date-range-group').style.display = mode === 'date' ? 'block' : 'none';
-    document.getElementById('exercise-select-group').style.display = mode === 'exercise' ? 'block' : 'none';
-    document.getElementById('sort-control-group').style.display = mode === 'exercise' ? 'block' : 'none';
+    const useDateFilter = document.getElementById('log-date-filter-check').checked;
+    
+    document.getElementById('log-date-inputs').style.display = useDateFilter ? 'block' : 'none';
+    
+    if (mode === 'date') {
+      document.getElementById('exercise-select-group').style.display = 'none';
+      document.getElementById('sort-control-group').style.display = 'none';
+    } else {
+      document.getElementById('exercise-select-group').style.display = 'block';
+      document.getElementById('sort-control-group').style.display = 'block';
+    }
     renderLogList();
   }
 
   function renderLogList() {
-    const mode = document.getElementById('log-view-mode').value, container = document.getElementById('log-list');
-    container.innerHTML = ''; if (logs.length === 0) { container.innerHTML = '<p>データがありません．</p>'; return; }
+    const mode = document.getElementById('log-view-mode').value;
+    const container = document.getElementById('log-list');
+    container.innerHTML = ''; 
+    
+    if (logs.length === 0) { 
+      container.innerHTML = '<p>データがありません．</p>'; 
+      return; 
+    }
+    
+    let filteredLogs = logs;
+    const useDateFilter = document.getElementById('log-date-filter-check').checked;
+    if (useDateFilter) {
+      const start = document.getElementById('log-start-date').value;
+      const end = document.getElementById('log-end-date').value;
+      filteredLogs = filteredLogs.filter(log => { 
+        const d = log.date.split('T')[0]; 
+        return (!start || d >= start) && (!end || d <= end); 
+      });
+    }
+
+    if (filteredLogs.length === 0) { 
+      container.innerHTML = '<p>指定された条件のデータがありません．</p>'; 
+      return; 
+    }
+
     if (mode === 'date') {
-      const start = document.getElementById('log-start-date').value, end = document.getElementById('log-end-date').value;
-      let filtered = logs.filter(log => { const d = log.date.split('T')[0]; return (!start || d >= start) && (!end || d <= end); });
-      if (filtered.length === 0) { container.innerHTML = '<p>指定された期間のデータがありません．</p>'; return; }
-      const grouped = {}; filtered.forEach(log => { const d = log.date.split('T')[0]; if (!grouped[d]) grouped[d] = []; grouped[d].push(log); });
+      const grouped = {}; 
+      filteredLogs.forEach(log => { 
+        const d = log.date.split('T')[0]; 
+        if (!grouped[d]) grouped[d] = []; 
+        grouped[d].push(log); 
+      });
       Object.keys(grouped).sort((a, b) => b.localeCompare(a)).forEach(date => {
         let html = `<h4>${date} <span style="font-size:16px;">${dailyEvals[date] ? getStaticStarHtml(dailyEvals[date].rating) : ''}</span></h4><div class="scroll-wrapper"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
         grouped[date].sort((a, b) => a.date.localeCompare(b.date)).forEach(log => {
           const time = log.date.split('T')[1];
-          log.sets.forEach(s => { html += `<tr><td>${time}</td><td>${log.category}</td><td>${log.exercise}<br><span style="font-size:14px;">${getStaticStarHtml(log.rating)}</span></td><td>${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td>${s.weight}${s.unit}</td><td>${s.reps}</td><td style="white-space: nowrap;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`; });
+          log.sets.forEach(s => { 
+            html += `<tr><td>${time}</td><td>${log.category}</td><td>${log.exercise}<br><span style="font-size:14px;">${getStaticStarHtml(log.rating)}</span></td><td>${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td>${s.weight}${s.unit}</td><td>${s.reps}</td><td style="white-space: nowrap;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`; 
+          });
         });
         container.innerHTML += html + `</table></div><br>`;
       });
     } else if (mode === 'exercise') {
-      const target = document.getElementById('log-target-exercise').value, sort = document.getElementById('log-sort-mode').value;
-      if (!target) { container.innerHTML = '<p>種目を選択してくれ．</p>'; return; }
-      let setLogs = []; logs.forEach(log => { if (log.exercise === target) log.sets.forEach(set => setLogs.push({ logId: log.id, date: log.date, logRating: log.rating, setRating: set.rating, setIndex: set.setIndex, weight: set.weight, unit: set.unit, reps: set.reps })); });
-      setLogs.sort((a, b) => {
-        let wA = a.unit === 'kg' ? a.weight * 2.20462 : a.weight, wB = b.unit === 'kg' ? b.weight * 2.20462 : b.weight;
-        switch(sort) { case 'date-desc': return b.date.localeCompare(a.date); case 'date-asc': return a.date.localeCompare(b.date); case 'weight-desc': return wB - wA; case 'weight-asc': return wA - wB; case 'reps-desc': return b.reps - a.reps; case 'reps-asc': return a.reps - b.reps; default: return 0; }
+      const target = document.getElementById('log-target-exercise').value;
+      const sort = document.getElementById('log-sort-mode').value;
+      if (!target) { 
+        container.innerHTML = '<p>種目を選択してくれ．</p>'; 
+        return; 
+      }
+      
+      let exLogs = filteredLogs.filter(log => log.exercise === target);
+      if (exLogs.length === 0) { 
+         container.innerHTML = '<p>指定された条件のデータがありません．</p>'; 
+         return; 
+      }
+
+      exLogs.sort((a, b) => {
+        let maxWA = Math.max(...a.sets.map(s => s.unit === 'kg' ? s.weight * 2.20462 : s.weight), 0);
+        let maxWB = Math.max(...b.sets.map(s => s.unit === 'kg' ? s.weight * 2.20462 : s.weight), 0);
+        let maxRA = Math.max(...a.sets.map(s => s.reps), 0);
+        let maxRB = Math.max(...b.sets.map(s => s.reps), 0);
+
+        switch(sort) { 
+          case 'date-desc': return b.date.localeCompare(a.date); 
+          case 'date-asc': return a.date.localeCompare(b.date); 
+          case 'weight-desc': return maxWB - maxWA; 
+          case 'weight-asc': return maxWA - maxWB; 
+          case 'reps-desc': return maxRB - maxRA; 
+          case 'reps-asc': return maxRA - maxRB; 
+          default: return 0; 
+        }
       });
+
       let html = `<h4>${target}</h4><div class="scroll-wrapper"><table><tr><th>日時</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
-      setLogs.forEach(s => { html += `<tr><td>${s.date.replace('T', ' ')}<br><span style="font-size:14px;">${getStaticStarHtml(s.logRating)}</span></td><td>${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.setRating)}</span></td><td>${s.weight}${s.unit}</td><td>${s.reps}</td><td style="white-space: nowrap;"><button class="action-btn" onclick="openEditModal(${s.logId}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${s.logId}, ${s.setIndex})">削除</button></td></tr>`; });
+      exLogs.forEach(log => { 
+        const dtStr = log.date.replace('T', ' '); 
+        const setHtml = log.sets.map(s => `<div style="padding:6px 4px; min-height:40px; display:flex; align-items:center;">${s.setIndex}<span style="font-size:12px; margin-left:8px;">${getStaticStarHtml(s.rating)}</span></div>`).join('<hr style="margin:0; border:none; border-top:1px solid var(--border-color); opacity:0.5;">');
+        const weightHtml = log.sets.map(s => `<div style="padding:6px 4px; min-height:40px; display:flex; align-items:center;">${s.weight}${s.unit}</div>`).join('<hr style="margin:0; border:none; border-top:1px solid var(--border-color); opacity:0.5;">');
+        const repsHtml = log.sets.map(s => `<div style="padding:6px 4px; min-height:40px; display:flex; align-items:center;">${s.reps}</div>`).join('<hr style="margin:0; border:none; border-top:1px solid var(--border-color); opacity:0.5;">');
+        const actionHtml = log.sets.map(s => `<div style="padding:6px 4px; min-height:40px; display:flex; align-items:center;"><button class="action-btn" style="margin:0 4px 0 0;" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" style="margin:0;" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></div>`).join('<hr style="margin:0; border:none; border-top:1px solid var(--border-color); opacity:0.5;">');
+
+        html += `<tr>
+          <td style="vertical-align: top; padding:10px 8px;">${dtStr}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>
+          <td style="padding:0; vertical-align: top;">${setHtml}</td>
+          <td style="padding:0; vertical-align: top;">${weightHtml}</td>
+          <td style="padding:0; vertical-align: top;">${repsHtml}</td>
+          <td style="padding:0; vertical-align: top; white-space: nowrap;">${actionHtml}</td>
+        </tr>`; 
+      });
       container.innerHTML = html + `</table></div>`;
     }
   }
@@ -1651,7 +1665,17 @@
   function showTooltip(e, d, si, w, u, r) { const t = document.getElementById('tooltip'); t.style.display = 'block'; t.style.left = (e.pageX + 15) + 'px'; t.style.top = (e.pageY + 15) + 'px'; t.innerHTML = `${d}<br>第${si}セット: ${w}${u} × ${r}回`; }
   function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
 
-  window.onload = function() { loadLocalCategories(); loadLocalData(); loadLocalSettings(); resetInputForm(); updateTheme(); updateGlobalExerciseOptions(); updateLogUI(); };
+  window.onload = function() { 
+    loadLocalCategories(); 
+    loadLocalData(); 
+    loadLocalSettings(); 
+    resetInputForm(); 
+    updateTheme(); 
+    updateGlobalExerciseOptions(); 
+    
+    // アプリ起動時は強制的に「入力」タブを表示させる
+    switchTab('input');
+  };
 </script>
 
 <script src="https://apis.google.com/js/api.js" async defer onload="gapiLoaded()"></script>
