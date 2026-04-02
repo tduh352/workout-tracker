@@ -11,12 +11,12 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V42</title>
+<title>Workout Tracker V43</title>
 
+<script src="https://apis.google.com/js/api.js" async defer onload="gapiLoaded()"></script>
 <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
 
 <style>
-  /* 基本(ブルー)・ライトモード */
   :root {
     --bg-color: #e8f4f8;
     --panel-bg: rgba(255, 255, 255, 0.6);
@@ -34,7 +34,6 @@
     --card-bg: #ffffff;
   }
 
-  /* 共通・ダークモードベース */
   body.mode-dark {
     --bg-color: #121212;
     --panel-bg: rgba(40, 40, 40, 0.6);
@@ -48,7 +47,6 @@
     --card-bg: #2a2a2a;
   }
 
-  /* テーマカラー: ブルー (ダークモード) */
   body.mode-dark.color-blue {
     --bg-color: #121518;
     --border-color: #334455;
@@ -57,7 +55,6 @@
     --btn-border: #000080;
   }
 
-  /* テーマカラー: グリーン */
   body.color-green {
     --bg-color: #e8f8e8;
     --border-color: #b0deb0;
@@ -73,7 +70,6 @@
     --btn-border: #004d00;
   }
 
-  /* テーマカラー: オレンジ */
   body.color-orange {
     --bg-color: #f8eee8;
     --border-color: #decab0;
@@ -89,7 +85,6 @@
     --btn-border: #a0522d;
   }
 
-  /* テーマカラー: モノクロ */
   body.color-mono {
     --bg-color: #f0f0f0;
     --border-color: #cccccc;
@@ -840,11 +835,13 @@
   let customExerciseCategories = {};
   let savedCustomOrders = {};
 
-  // --- Google ドライブ連携のロジック ---
+  // --- Google ドライブ連携のロジック (gapi.client使用) ---
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
   const SCOPES = 'https://www.googleapis.com/auth/drive.file';
   let tokenClient;
   let gAccessToken = null;
+  let isGapiLoaded = false;
+  let isGisLoaded = false;
 
   function updateSyncStatus(msg, color) {
     const statusTexts = document.querySelectorAll('.gdrive-status-text');
@@ -874,20 +871,31 @@
     }
   }
 
+  function gapiLoaded() {
+    gapi.load('client', () => {
+      gapi.client.init({}).then(() => {
+        isGapiLoaded = true;
+        checkAndRestoreToken();
+      });
+    });
+  }
+
   function gisLoaded() {
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
-          // 【超重要改修】ユーザーが手動でチェックボックスを入れたかどうかの判定
           const hasAccess = google.accounts.oauth2.hasGrantedAllScopes(tokenResponse, SCOPES);
           if (hasAccess) {
             gAccessToken = tokenResponse.access_token;
             sessionStorage.setItem('gdrive_access_token', gAccessToken);
+            if (isGapiLoaded) {
+              gapi.client.setToken({access_token: gAccessToken});
+            }
             updateDriveUI(true);
           } else {
-            alert("【重要】Googleドライブへのアクセス権限が許可されなかった．\n連携画面で「Google ドライブのファイルの表示、編集、作成、削除」のチェックボックスに必ずチェックを入れてから続行してくれ．");
+            alert("【重要】Googleドライブへのアクセス権限が許可されなかった．\n連携画面で「Google ドライブのファイルの表示，編集，作成，削除」のチェックボックスに必ずチェックを入れてから続行してくれ．");
             google.accounts.oauth2.revoke(tokenResponse.access_token, () => {});
             gAccessToken = null;
             updateDriveUI(false);
@@ -895,11 +903,18 @@
         }
       },
     });
+    isGisLoaded = true;
+    checkAndRestoreToken();
+  }
 
-    const savedToken = sessionStorage.getItem('gdrive_access_token');
-    if (savedToken) {
-      gAccessToken = savedToken;
-      updateDriveUI(true);
+  function checkAndRestoreToken() {
+    if (isGapiLoaded && isGisLoaded) {
+      const savedToken = sessionStorage.getItem('gdrive_access_token');
+      if (savedToken) {
+        gAccessToken = savedToken;
+        gapi.client.setToken({access_token: gAccessToken});
+        updateDriveUI(true);
+      }
     }
   }
 
@@ -912,11 +927,10 @@
   }
 
   function handleAuthClick() {
-    if (typeof google === 'undefined' || !google.accounts || !tokenClient) {
-      alert("Googleの認証システムが読み込めなかった．\n広告ブロッカーやトラッキング防止機能がオンになっていると，Googleのログイン機能が強制遮断されてしまう．\nこのサイトのドメイン（tduh352.github.io）のブロックをちょろんと解除して，ページを再読み込みしてみてくれ．");
+    if (typeof google === 'undefined' || !google.accounts || !tokenClient || !isGapiLoaded) {
+      alert("Googleの認証システムが読み込めなかった．\n広告ブロッカーやトラッキング防止機能がオンになっていると，Googleのログイン機能が強制遮断されてしまう．\nこのサイトのドメインのブロックを解除して，ページを再読み込みしてみてくれ．");
       return;
     }
-    // 常に同意画面を強制表示し、チェックボックスをやり直せるようにする
     tokenClient.requestAccessToken({prompt: 'consent'});
   }
 
@@ -931,20 +945,17 @@
   }
 
   async function findDriveFile() {
-    const query = encodeURIComponent("name='workout_tracker_backup.json' and trashed=false");
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive`, {
-      headers: { 'Authorization': `Bearer ${gAccessToken}` }
+    const res = await gapi.client.request({
+      path: '/drive/v3/files',
+      method: 'GET',
+      params: { q: "name='workout_tracker_backup.json' and trashed=false", spaces: 'drive' }
     });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`検索エラー (${res.status}): ${errText}`);
-    }
-    const data = await res.json();
+    const data = res.result;
     return data.files && data.files.length > 0 ? data.files[0].id : null;
   }
 
   async function saveToDrive(isBackground = false) {
-    if(!gAccessToken) return;
+    if(!gAccessToken || !isGapiLoaded) return;
     
     if (!isBackground) {
       const saveBtns = document.querySelectorAll('.btn-gdrive-save');
@@ -964,34 +975,20 @@
 
       let fileId = await findDriveFile();
       if (!fileId) {
-        const metaRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+        const createRes = await gapi.client.request({
+          path: '/drive/v3/files',
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${gAccessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ name: 'workout_tracker_backup.json' })
+          body: { name: 'workout_tracker_backup.json' }
         });
-        if (!metaRes.ok) {
-          const errText = await metaRes.text();
-          throw new Error(`ファイル作成エラー (${metaRes.status}): ${errText}`);
-        }
-        const metaData = await metaRes.json();
-        fileId = metaData.id;
+        fileId = createRes.result.id;
       }
 
-      const uploadRes = await fetch(`https://upload.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+      await gapi.client.request({
+        path: '/upload/drive/v3/files/' + fileId,
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${gAccessToken}`,
-          'Content-Type': 'application/json'
-        },
+        params: { uploadType: 'media' },
         body: backupData
       });
-      if (!uploadRes.ok) {
-        const errText = await uploadRes.text();
-        throw new Error(`アップロードエラー (${uploadRes.status}): ${errText}`);
-      }
       
       if (!isBackground) {
         alert('Googleドライブへのバックアップが完了した．');
@@ -1000,8 +997,9 @@
         setTimeout(() => { if (gAccessToken) updateSyncStatus('接続済み', 'var(--btn-bottom)'); }, 3000);
       }
     } catch(e) {
+      let errMsg = e.result && e.result.error ? e.result.error.message : e.message;
       if (!isBackground) {
-        alert('保存エラー: ' + e.message + '\n※Google Cloudの設定が反映されていないか，ネットワークの不具合だ．');
+        alert('保存エラー: ' + errMsg);
       } else {
         updateSyncStatus('自動保存失敗', 'red');
       }
@@ -1014,26 +1012,31 @@
   }
 
   async function loadFromDrive() {
-    if(!gAccessToken) return;
+    if(!gAccessToken || !isGapiLoaded) return;
     if(!confirm('現在の端末のデータがドライブのデータで完全に上書きされるが，本当によいだろうか？')) return;
     
     const loadBtns = document.querySelectorAll('.btn-gdrive-load');
     loadBtns.forEach(btn => btn.innerText = '復元中...');
     
     try {
-      const fileId = await findDriveFile();
+      let fileId = await findDriveFile();
       if (!fileId) {
         alert('ドライブにバックアップデータが見つからない．');
         return;
       }
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-        headers: { 'Authorization': `Bearer ${gAccessToken}` }
+      
+      const res = await gapi.client.request({
+        path: '/drive/v3/files/' + fileId,
+        method: 'GET',
+        params: { alt: 'media' }
       });
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`ダウンロードエラー (${res.status}): ${errText}`);
+      
+      let data = res.result;
+      if (typeof data === 'string') {
+        data = JSON.parse(data);
+      } else if (!data && res.body) {
+        data = JSON.parse(res.body);
       }
-      const data = await res.json();
 
       if(data.logs) logs = data.logs;
       if(data.dailyEvals) dailyEvals = data.dailyEvals;
@@ -1052,7 +1055,8 @@
 
       alert('復元が完了した．');
     } catch(e) {
-      alert('復元エラー: ' + e.message);
+      let errMsg = e.result && e.result.error ? e.result.error.message : e.message;
+      alert('復元エラー: ' + errMsg);
     } finally {
       loadBtns.forEach(btn => btn.innerText = 'ドライブから復元');
     }
@@ -1142,7 +1146,7 @@
       }
     }
     saveLocalData();
-    if (gAccessToken) saveToDrive(true);
+    if (gAccessToken && isGapiLoaded) saveToDrive(true);
     
     const container = document.getElementById(`star-container-${level}-${identifier}`);
     if (container) {
@@ -1175,7 +1179,7 @@
       }
     }
     saveLocalData();
-    if (gAccessToken) saveToDrive(true);
+    if (gAccessToken && isGapiLoaded) saveToDrive(true);
     
     const btn = document.getElementById(`save-btn-${level}-${identifier}`);
     const originalText = btn.innerText;
@@ -1233,7 +1237,7 @@
       saveLocalCategories();
       renderExerciseEditList();
       updateExerciseList();
-      if (gAccessToken) saveToDrive(true);
+      if (gAccessToken && isGapiLoaded) saveToDrive(true);
     }
   }
 
@@ -1304,7 +1308,7 @@
       renderLogList();
       drawGraph();
       renderReviewList();
-      if (gAccessToken) saveToDrive(true);
+      if (gAccessToken && isGapiLoaded) saveToDrive(true);
     }
   }
 
@@ -1500,7 +1504,7 @@
       }
     }
     logs.push(logEntry); saveLocalData(); updateGlobalExerciseOptions(); renderLogList(); renderReviewList(); resetInputForm();
-    if (gAccessToken) saveToDrive(true);
+    if (gAccessToken && isGapiLoaded) saveToDrive(true);
   }
 
   function renderReviewList() {
@@ -1550,7 +1554,7 @@
       let log = logs[logIndex]; log.sets = log.sets.filter(s => s.setIndex !== setIndex);
       if (log.sets.length === 0) logs.splice(logIndex, 1); else log.sets.forEach((s, idx) => s.setIndex = idx + 1);
       saveLocalData(); renderLogList(); drawGraph(); renderReviewList(); updateGlobalExerciseOptions();
-      if (gAccessToken) saveToDrive(true);
+      if (gAccessToken && isGapiLoaded) saveToDrive(true);
     }
   }
 
@@ -1569,7 +1573,7 @@
     if (log && set) {
       log.rating = currentEditRating; set.weight = parseFloat(document.getElementById('edit-weight').value) || 0;
       set.unit = document.getElementById('edit-unit').value; set.reps = parseInt(document.getElementById('edit-reps').value) || 0;
-      saveLocalData(); renderLogList(); drawGraph(); renderReviewList(); if (gAccessToken) saveToDrive(true);
+      saveLocalData(); renderLogList(); drawGraph(); renderReviewList(); if (gAccessToken && isGapiLoaded) saveToDrive(true);
     }
     closeEditModal();
   }
