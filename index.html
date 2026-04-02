@@ -11,11 +11,12 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V39</title>
+<title>Workout Tracker V41</title>
 
 <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
 
 <style>
+  /* 基本(ブルー)・ライトモード */
   :root {
     --bg-color: #e8f4f8;
     --panel-bg: rgba(255, 255, 255, 0.6);
@@ -33,6 +34,7 @@
     --card-bg: #ffffff;
   }
 
+  /* 共通・ダークモードベース */
   body.mode-dark {
     --bg-color: #121212;
     --panel-bg: rgba(40, 40, 40, 0.6);
@@ -46,6 +48,7 @@
     --card-bg: #2a2a2a;
   }
 
+  /* テーマカラー: ブルー (ダークモード) */
   body.mode-dark.color-blue {
     --bg-color: #121518;
     --border-color: #334455;
@@ -54,6 +57,7 @@
     --btn-border: #000080;
   }
 
+  /* テーマカラー: グリーン */
   body.color-green {
     --bg-color: #e8f8e8;
     --border-color: #b0deb0;
@@ -69,6 +73,7 @@
     --btn-border: #004d00;
   }
 
+  /* テーマカラー: オレンジ */
   body.color-orange {
     --bg-color: #f8eee8;
     --border-color: #decab0;
@@ -84,6 +89,7 @@
     --btn-border: #a0522d;
   }
 
+  /* テーマカラー: モノクロ */
   body.color-mono {
     --bg-color: #f0f0f0;
     --border-color: #cccccc;
@@ -387,7 +393,7 @@
 
 <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
   <button onclick="openLoginModal()" style="background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px var(--shadow); display: flex; align-items: center; gap: 8px;">
-    <span>👤</span> <span id="header-login-text">未接続</span>
+    <span>👤</span> <span id="header-login-text" class="gdrive-status-text">未接続</span>
   </button>
 </div>
 
@@ -843,8 +849,6 @@
   function updateSyncStatus(msg, color) {
     const statusTexts = document.querySelectorAll('.gdrive-status-text');
     statusTexts.forEach(el => { el.innerText = msg; el.style.color = color; });
-    document.getElementById('header-login-text').innerText = msg;
-    document.getElementById('header-login-text').style.color = color;
   }
 
   function updateDriveUI(isConnected) {
@@ -898,7 +902,7 @@
 
   function handleAuthClick() {
     if (typeof google === 'undefined' || !google.accounts || !tokenClient) {
-      alert("Googleの認証システムが読み込めなかった．\nPCのブラウザで「広告ブロッカー」や「トラッキング防止機能」がオンになっていると，Googleのログイン機能が強制遮断されてしまう．\nこのサイトのドメインのブロックを解除して，ページを再読み込みしてみてくれ．");
+      alert("Googleの認証システムが読み込めなかった．\n広告ブロッカーやトラッキング防止機能がオンになっていると，Googleのログイン機能が強制遮断されてしまう．\nこのサイトのドメイン（tduh352.github.io）のブロックをちょろんと解除して，ページを再読み込みしてみてくれ．");
       return;
     }
     if (!gAccessToken) {
@@ -922,9 +926,9 @@
 
   async function findDriveFile() {
     const query = encodeURIComponent("name='workout_tracker_backup.json' and trashed=false");
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive`, {
-      headers: { 'Authorization': `Bearer ${gAccessToken}` },
-      cache: 'no-cache'
+    // cache: 'no-cache' を削除し、代わりにURLに現在時刻（タイムスタンプ）を付与してCORSのPreflightエラーを回避する
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive&_t=${Date.now()}`, {
+      headers: { 'Authorization': `Bearer ${gAccessToken}` }
     });
     if (!res.ok) {
       const errText = await res.text();
@@ -991,16 +995,10 @@
         setTimeout(() => { if (gAccessToken) updateSyncStatus('接続済み', 'var(--btn-bottom)'); }, 3000);
       }
     } catch(e) {
-      let errorMsg = e.message;
-      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('Load failed')) {
-        errorMsg = "通信がブロックされた．\n1. Google Cloudの「承認済みの JavaScript 生成元」にURLが正しく設定されているか確認してくれ．\n2. iPhoneの「設定」>「Safari」>「サイト越えトラッキングを防ぐ」をオフにして試してみてくれ．";
-      }
-      
       if (!isBackground) {
-        alert('保存エラー: ' + errorMsg);
+        alert('保存エラー: ' + e.message + '\n※Google Cloudの設定が反映されていないか，ネットワークの不具合だ．');
       } else {
         updateSyncStatus('自動保存失敗', 'red');
-        console.error('バックグラウンド保存エラー:', e);
       }
     } finally {
       if (!isBackground) {
@@ -1020,17 +1018,16 @@
     try {
       const fileId = await findDriveFile();
       if (!fileId) {
-        alert('ドライブにバックアップデータが見つからない．先に「ドライブへ保存」を実行してくれ．');
-        loadBtns.forEach(btn => btn.innerText = 'ドライブから復元');
+        alert('ドライブにバックアップデータが見つからない．');
         return;
       }
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-        headers: { 'Authorization': `Bearer ${gAccessToken}` },
-        cache: 'no-cache'
+      // cache: 'no-cache' を削除し、タイムスタンプを付与
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&_t=${Date.now()}`, {
+        headers: { 'Authorization': `Bearer ${gAccessToken}` }
       });
       if (!res.ok) {
         const errText = await res.text();
-        throw new Error(`データのダウンロードに失敗 (${res.status}): ${errText}`);
+        throw new Error(`ダウンロードエラー (${res.status}): ${errText}`);
       }
       const data = await res.json();
 
@@ -1049,13 +1046,9 @@
       renderReviewList();
       renderExerciseEditList();
 
-      alert('ドライブからの復元が完了し，画面を更新した．');
+      alert('復元が完了した．');
     } catch(e) {
-      let errorMsg = e.message;
-      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('Load failed')) {
-        errorMsg = "通信がブロックされた．\nGoogle Cloudの設定か，iPhoneの「サイト越えトラッキングを防ぐ」機能が原因の可能性が高い．";
-      }
-      alert('復元エラー: ' + errorMsg);
+      alert('復元エラー: ' + e.message);
     } finally {
       loadBtns.forEach(btn => btn.innerText = 'ドライブから復元');
     }
@@ -1145,6 +1138,7 @@
       }
     }
     saveLocalData();
+    if (gAccessToken) saveToDrive(true);
     
     const container = document.getElementById(`star-container-${level}-${identifier}`);
     if (container) {
@@ -1155,7 +1149,6 @@
       });
     }
     renderLogList();
-    if (gAccessToken) saveToDrive(true);
   }
 
   function saveReviewComment(level, identifier) {
@@ -1178,6 +1171,7 @@
       }
     }
     saveLocalData();
+    if (gAccessToken) saveToDrive(true);
     
     const btn = document.getElementById(`save-btn-${level}-${identifier}`);
     const originalText = btn.innerText;
@@ -1187,7 +1181,6 @@
       btn.innerText = originalText;
       btn.style.background = "";
     }, 1500);
-    if (gAccessToken) saveToDrive(true);
   }
 
   function sendFeedback() {
@@ -1623,7 +1616,7 @@
       const start = document.getElementById('graph-start-date').value, end = document.getElementById('graph-end-date').value;
       exLogs = exLogs.filter(log => { const d = log.date.split('T')[0]; return (!start || d >= start) && (!end || d <= end); });
     }
-    if (exLogs.length === 0) { container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><text x="20" y="30" fill="${isDark?'#fff':'#000'}" font-size="14">データがありません．</text></svg>`; return; }
+    if (exLogs.length === 0) { container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><text x="20" y="30" fill="${isDark?'#fff':'#000'}" font-size="14">指定範囲にデータがありません．</text></svg>`; return; }
     let pts = []; exLogs.forEach((log, idx) => log.sets.forEach(set => { let w = parseFloat(set.weight) || 0; if (targetUnit === 'lbs' && set.unit === 'kg') w *= 2.20462; else if (targetUnit === 'kg' && set.unit === 'lbs') w /= 2.20462; pts.push({ t: new Date(log.date).getTime(), idx: idx, sIdx: set.setIndex, r: parseFloat(set.reps) || 0, w: w, ow: set.weight, u: set.unit, d: log.date.replace('T', ' ') }); }));
     pts.sort((a, b) => a.t !== b.t ? a.t - b.t : a.sIdx - b.sIdx);
     let maxX = Math.ceil(Math.max(...pts.map(p => p.r), 5) * 1.2), maxYReal = Math.max(...pts.map(p => p.w), 5), maxY = Math.ceil(maxYReal / 5) * 5;
