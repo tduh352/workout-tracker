@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V58</title>
+<title>Workout Tracker V59</title>
 
 <style>
   :root {
@@ -113,8 +113,19 @@
 
   .scroll-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-  .tab-buttons { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; width: 100%; overflow-x: auto; scrollbar-width: none; }
+  /* タブの縦スクロールと揺れを防止する修正 */
+  .tab-buttons { 
+    display: flex; 
+    border-bottom: 2px solid var(--border-color); 
+    margin-bottom: 20px; 
+    width: 100%; 
+    overflow-x: auto; 
+    overflow-y: hidden;
+    touch-action: pan-x;
+    scrollbar-width: none; 
+  }
   .tab-buttons::-webkit-scrollbar { display: none; }
+  
   .tab-btn { padding: 12px 10px; cursor: pointer; border: 1px solid transparent; background: transparent; color: var(--text-color); outline: none; font-size: 14px; flex: 1; text-align: center; white-space: nowrap; min-width: 60px; }
   .tab-btn.active { border: 2px solid var(--border-color); border-bottom: 2px solid var(--bg-color); margin-bottom: -2px; font-weight: bold; border-radius: 8px 8px 0 0; background: var(--panel-bg); }
   .tab-content { display: none; }
@@ -179,7 +190,6 @@
   .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
 
   #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 400px; }
-
   .date-nav-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); font-size: 18px; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
   .date-nav-btn:active { background: var(--border-color); }
 
@@ -802,7 +812,6 @@
     input.dispatchEvent(new Event('change'));
   }
 
-  // --- Google ドライブ連携のロジック ---
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
   const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
   let tokenClient;
@@ -868,13 +877,11 @@
     const loadBtns = document.querySelectorAll('.btn-gdrive-load');
     if (isConnected) {
       updateSyncStatus('接続済み', 'var(--btn-bottom)');
-      loginBtns.forEach(el => el.style.display = 'none');
-      logoutBtns.forEach(el => el.style.display = 'inline-block');
+      loginBtns.forEach(el => el.style.display = 'none'); logoutBtns.forEach(el => el.style.display = 'inline-block');
       saveBtns.forEach(el => el.disabled = false); loadBtns.forEach(el => el.disabled = false);
     } else {
       updateSyncStatus('未接続', 'var(--text-color)');
-      loginBtns.forEach(el => el.style.display = 'inline-block');
-      logoutBtns.forEach(el => el.style.display = 'none');
+      loginBtns.forEach(el => el.style.display = 'inline-block'); logoutBtns.forEach(el => el.style.display = 'none');
       saveBtns.forEach(el => el.disabled = true); loadBtns.forEach(el => el.disabled = true);
     }
   }
@@ -987,7 +994,6 @@
     }
   }
 
-  // --- UI・汎用ロジック ---
   function toggleInputRating() {
     const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
     if (section.style.display === 'none') { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; } 
@@ -1549,7 +1555,7 @@
         
         let logHtml = '';
         if (currentViewMode === 'single') {
-          logHtml += `<hr style="border-color: var(--border-color); margin: 20px 0;"><div style="font-weight: bold; margin-bottom: 10px;">${date} の記録一覧</div><div class="scroll-wrapper" style="margin-bottom: 5px;"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+          logHtml += `<div class="scroll-wrapper" style="margin-top: 20px; border-top: 1px dashed var(--border-color); padding-top: 15px;"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
           let sortedLogs = [...dayLogs].sort((a, b) => a.date.localeCompare(b.date));
           sortedLogs.forEach(log => {
             const rowCount = log.sets.length; const time = log.date.split('T')[1];
@@ -1564,7 +1570,7 @@
           logHtml += `</table></div>`;
         }
         
-        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; padding:8px; margin-bottom:15px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button>${logHtml}</div>`;
+        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; margin-bottom:10px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button>${logHtml}</div>`;
       });
     } else if (level === 'exercise') {
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
