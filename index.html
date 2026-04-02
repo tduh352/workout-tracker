@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V49</title>
+<title>Workout Tracker V50</title>
 
 <style>
   :root {
@@ -982,18 +982,6 @@
     }
   }
 
-  function saveLocalSettings() {
-    const settings = {
-      themeMode: document.getElementById('theme-mode').value, themeColor: document.getElementById('theme-color').value,
-      defaultUnit: document.getElementById('default-unit').value, weightStep: document.getElementById('weight-step').value,
-      defaultSetCount: document.getElementById('default-set-count').value, dateViewMode: document.getElementById('date-view-mode').value,
-      defaultCommon: document.getElementById('default-common').checked, showInputRating: document.getElementById('show-input-rating').checked,
-      showSetComments: document.getElementById('show-set-comments').checked, arrowColor: document.getElementById('arrow-color').value,
-      arrowThickness: document.getElementById('arrow-thickness').value, showArrows: document.getElementById('graph-show-arrows').checked
-    };
-    localStorage.setItem('workout_tracker_settings', JSON.stringify(settings));
-  }
-
   function clearAllData() {
     if (confirm("本当にすべての記録を削除するだろうか？　この操作は取り消せない．")) {
       logs = []; dailyEvals = {}; saveLocalData(); updateGlobalExerciseOptions(); updateLogUI(); drawGraph(); updateReviewUI();
@@ -1161,8 +1149,8 @@
     const mode = document.getElementById('log-view-mode').value;
     const useDateFilter = document.getElementById('log-date-filter-check').checked;
     
-    document.getElementById('exercise-select-group').style.display = mode === 'exercise' ? 'block' : 'none';
-    document.getElementById('sort-control-group').style.display = mode === 'exercise' ? 'block' : 'none';
+    document.getElementById('log-exercise-select-group').style.display = mode === 'exercise' ? 'block' : 'none';
+    document.getElementById('log-sort-control-group').style.display = mode === 'exercise' ? 'block' : 'none';
 
     if (mode === 'date') {
       if (dateViewMode === 'single') {
@@ -1171,12 +1159,13 @@
       } else {
         document.getElementById('log-single-ui').style.display = 'none';
         document.getElementById('log-list-ui').style.display = 'block';
+        document.getElementById('log-list-sort-group').style.display = 'block';
         document.getElementById('log-date-inputs').style.display = useDateFilter ? 'block' : 'none';
       }
     } else {
       document.getElementById('log-single-ui').style.display = 'none';
       document.getElementById('log-list-ui').style.display = 'block';
-      document.getElementById('log-list-sort-group').style.display = 'none'; // 種目モード時は種目用ソートを使うので隠す
+      document.getElementById('log-list-sort-group').style.display = 'none'; 
       document.getElementById('log-date-inputs').style.display = useDateFilter ? 'block' : 'none';
     }
     renderLogList();
