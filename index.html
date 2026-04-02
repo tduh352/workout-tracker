@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V41</title>
+<title>Workout Tracker V42</title>
 
 <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
 
@@ -849,6 +849,8 @@
   function updateSyncStatus(msg, color) {
     const statusTexts = document.querySelectorAll('.gdrive-status-text');
     statusTexts.forEach(el => { el.innerText = msg; el.style.color = color; });
+    document.getElementById('header-login-text').innerText = msg;
+    document.getElementById('header-login-text').style.color = color;
   }
 
   function updateDriveUI(isConnected) {
@@ -878,9 +880,18 @@
       scope: SCOPES,
       callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
-          gAccessToken = tokenResponse.access_token;
-          sessionStorage.setItem('gdrive_access_token', gAccessToken);
-          updateDriveUI(true);
+          // 【超重要改修】ユーザーが手動でチェックボックスを入れたかどうかの判定
+          const hasAccess = google.accounts.oauth2.hasGrantedAllScopes(tokenResponse, SCOPES);
+          if (hasAccess) {
+            gAccessToken = tokenResponse.access_token;
+            sessionStorage.setItem('gdrive_access_token', gAccessToken);
+            updateDriveUI(true);
+          } else {
+            alert("【重要】Googleドライブへのアクセス権限が許可されなかった．\n連携画面で「Google ドライブのファイルの表示、編集、作成、削除」のチェックボックスに必ずチェックを入れてから続行してくれ．");
+            google.accounts.oauth2.revoke(tokenResponse.access_token, () => {});
+            gAccessToken = null;
+            updateDriveUI(false);
+          }
         }
       },
     });
@@ -905,13 +916,8 @@
       alert("Googleの認証システムが読み込めなかった．\n広告ブロッカーやトラッキング防止機能がオンになっていると，Googleのログイン機能が強制遮断されてしまう．\nこのサイトのドメイン（tduh352.github.io）のブロックをちょろんと解除して，ページを再読み込みしてみてくれ．");
       return;
     }
-    if (!gAccessToken) {
-      try {
-        tokenClient.requestAccessToken({prompt: 'consent'});
-      } catch(e) {
-        alert("ログイン画面の起動に失敗した: " + e.message);
-      }
-    }
+    // 常に同意画面を強制表示し、チェックボックスをやり直せるようにする
+    tokenClient.requestAccessToken({prompt: 'consent'});
   }
 
   function handleSignoutClick() {
@@ -926,8 +932,7 @@
 
   async function findDriveFile() {
     const query = encodeURIComponent("name='workout_tracker_backup.json' and trashed=false");
-    // cache: 'no-cache' を削除し、代わりにURLに現在時刻（タイムスタンプ）を付与してCORSのPreflightエラーを回避する
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive&_t=${Date.now()}`, {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&spaces=drive`, {
       headers: { 'Authorization': `Bearer ${gAccessToken}` }
     });
     if (!res.ok) {
@@ -1021,8 +1026,7 @@
         alert('ドライブにバックアップデータが見つからない．');
         return;
       }
-      // cache: 'no-cache' を削除し、タイムスタンプを付与
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&_t=${Date.now()}`, {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { 'Authorization': `Bearer ${gAccessToken}` }
       });
       if (!res.ok) {
