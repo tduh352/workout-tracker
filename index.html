@@ -9,7 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Workout">
+
 <link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png" type="image/png">
 
 <title>Workout Tracker V56</title>
 
@@ -524,7 +526,7 @@
       <label for="log-exercise-view-mode">ログ(種目ごと)：表示モード</label>
       <select id="log-exercise-view-mode" onchange="updateSettings()">
         <option value="list">一覧表示 (範囲指定・ソート可)</option>
-        <option value="single">単一表示 (矢印で1つずつ移動)</option>
+        <option value="single">単一表示 (矢印で1日ずつ移動)</option>
       </select>
     </div>
   </div>
@@ -540,7 +542,7 @@
       <label for="review-exercise-date-view-mode">振り返り(種目ごと)：表示モード</label>
       <select id="review-exercise-date-view-mode" onchange="updateSettings()">
         <option value="list">一覧表示 (範囲指定・ソート可)</option>
-        <option value="single">単一表示 (矢印で1つずつ移動)</option>
+        <option value="single">単一表示 (矢印で1日ずつ移動)</option>
       </select>
     </div>
   </div>
@@ -549,7 +551,7 @@
       <label for="review-set-date-view-mode">振り返り(セットごと)：表示モード</label>
       <select id="review-set-date-view-mode" onchange="updateSettings()">
         <option value="list">一覧表示 (範囲指定・ソート可)</option>
-        <option value="single">単一表示 (矢印で1つずつ移動)</option>
+        <option value="single">単一表示 (矢印で1日ずつ移動)</option>
       </select>
     </div>
   </div>
@@ -775,9 +777,7 @@
     input.dispatchEvent(new Event('change'));
   }
 
-  // --- Google ドライブ連携のロジック ---
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
-  // 【新設】ユーザーのプロフィール情報を読み取るためのスコープを追加
   const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
   let tokenClient;
   let gAccessToken = null;
@@ -804,7 +804,6 @@
     }
   }
 
-  // 【新設】取得したユーザー情報をUIに反映する関数
   function displayUserInfoUI(user) {
     const headerIcon = document.getElementById('header-login-icon');
     const profileCards = document.querySelectorAll('.user-profile-card');
@@ -823,7 +822,6 @@
     }
   }
 
-  // 【新設】Googleからユーザープロフィールを非同期で取得する関数
   async function fetchUserInfo() {
     if (!gAccessToken) return;
     try {
@@ -833,8 +831,6 @@
         sessionStorage.setItem('gdrive_user_info', JSON.stringify(data));
         displayUserInfoUI(data);
         updateSyncStatus('接続済み', 'var(--btn-bottom)');
-      } else {
-        console.warn('ユーザー情報の取得に失敗した．古いスコープのままかもしれない．');
       }
     } catch(e) { console.error('Failed to fetch user info:', e); }
   }
@@ -865,9 +861,7 @@
           if (google.accounts.oauth2.hasGrantedAllScopes(tokenResponse, SCOPES)) {
             gAccessToken = tokenResponse.access_token; sessionStorage.setItem('gdrive_access_token', gAccessToken);
             if (isGapiLoaded) gapi.client.setToken({access_token: gAccessToken});
-            updateDriveUI(true); 
-            fetchUserInfo(); // ログイン直後にユーザー情報を取得
-            showToast('Googleドライブに接続したぞ！', 'success');
+            updateDriveUI(true); fetchUserInfo(); showToast('Googleドライブに接続したぞ！', 'success');
           } else {
             alert("【重要】必要な権限が許可されなかった．連携画面でチェックボックスにチェックを入れてくれ．");
             google.accounts.oauth2.revoke(tokenResponse.access_token, () => {});
@@ -1524,7 +1518,7 @@
           logHtml += `</table></div>`;
         }
         
-        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button>${logHtml}</div>`;
+        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; padding:8px; margin-bottom:15px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button>${logHtml}</div>`;
       });
     } else if (level === 'exercise') {
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
@@ -1549,7 +1543,7 @@
   function updateReviewRating(level, identifier, rating) {
     if (level === 'day') { if (!dailyEvals[identifier]) dailyEvals[identifier] = { rating: 0, comment: '' }; dailyEvals[identifier].rating = rating; } 
     else if (level === 'exercise') { const log = logs.find(l => l.id == identifier); if (log) log.rating = rating; } 
-    else if (level === 'set') { const [logId, setIdx] = split('_'); const log = logs.find(l => l.id == logId); if (log) { const set = log.sets.find(s => s.setIndex == setIdx); if (set) set.rating = rating; } }
+    else if (level === 'set') { const [logId, setIdx] = identifier.split('_'); const log = logs.find(l => l.id == logId); if (log) { const set = log.sets.find(s => s.setIndex == setIdx); if (set) set.rating = rating; } }
     saveLocalData(); if (gAccessToken && isGapiLoaded) saveToDrive(true);
     const container = document.getElementById(`star-container-${level}-${identifier}`);
     if (container) container.querySelectorAll('.star').forEach((star, index) => { if (index < rating) star.classList.add('active'); else star.classList.remove('active'); });
