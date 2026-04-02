@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V59</title>
+<title>Workout Tracker V60</title>
 
 <style>
   :root {
@@ -113,19 +113,8 @@
 
   .scroll-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-  /* タブの縦スクロールと揺れを防止する修正 */
-  .tab-buttons { 
-    display: flex; 
-    border-bottom: 2px solid var(--border-color); 
-    margin-bottom: 20px; 
-    width: 100%; 
-    overflow-x: auto; 
-    overflow-y: hidden;
-    touch-action: pan-x;
-    scrollbar-width: none; 
-  }
+  .tab-buttons { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; width: 100%; overflow-x: auto; overflow-y: hidden; touch-action: pan-x; scrollbar-width: none; }
   .tab-buttons::-webkit-scrollbar { display: none; }
-  
   .tab-btn { padding: 12px 10px; cursor: pointer; border: 1px solid transparent; background: transparent; color: var(--text-color); outline: none; font-size: 14px; flex: 1; text-align: center; white-space: nowrap; min-width: 60px; }
   .tab-btn.active { border: 2px solid var(--border-color); border-bottom: 2px solid var(--bg-color); margin-bottom: -2px; font-weight: bold; border-radius: 8px 8px 0 0; background: var(--panel-bg); }
   .tab-content { display: none; }
@@ -813,7 +802,7 @@
   }
 
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
-  const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
+  const SCOPES = 'https://www.googleapis.com/auth/drive.file';
   let tokenClient;
   let gAccessToken = null;
   let isGapiLoaded = false;
@@ -828,7 +817,7 @@
     if (msg === '未接続' || msg === '同期中...') {
        headerText.innerText = msg; headerText.style.color = color;
     } else {
-       const savedUser = sessionStorage.getItem('gdrive_user_info');
+       const savedUser = localStorage.getItem('gdrive_user_info');
        if (savedUser) {
          const user = JSON.parse(savedUser);
          headerText.innerText = user.name || '接続済み';
@@ -863,7 +852,7 @@
       const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: `Bearer ${gAccessToken}` } });
       if (res.ok) {
         const data = await res.json();
-        sessionStorage.setItem('gdrive_user_info', JSON.stringify(data));
+        localStorage.setItem('gdrive_user_info', JSON.stringify(data));
         displayUserInfoUI(data);
         updateSyncStatus('接続済み', 'var(--btn-bottom)');
       }
@@ -894,7 +883,8 @@
       callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
           if (google.accounts.oauth2.hasGrantedAnyScope(tokenResponse, 'https://www.googleapis.com/auth/drive.file')) {
-            gAccessToken = tokenResponse.access_token; sessionStorage.setItem('gdrive_access_token', gAccessToken);
+            gAccessToken = tokenResponse.access_token; 
+            localStorage.setItem('gdrive_access_token', gAccessToken);
             if (isGapiLoaded) gapi.client.setToken({access_token: gAccessToken});
             updateDriveUI(true); fetchUserInfo(); showToast('Googleドライブに接続したぞ！', 'success');
           } else {
@@ -910,11 +900,11 @@
 
   function checkAndRestoreToken() {
     if (isGapiLoaded && isGisLoaded) {
-      const savedToken = sessionStorage.getItem('gdrive_access_token');
+      const savedToken = localStorage.getItem('gdrive_access_token');
       if (savedToken) { 
         gAccessToken = savedToken; gapi.client.setToken({access_token: gAccessToken}); 
         updateDriveUI(true); 
-        const savedUser = sessionStorage.getItem('gdrive_user_info');
+        const savedUser = localStorage.getItem('gdrive_user_info');
         if (savedUser) { displayUserInfoUI(JSON.parse(savedUser)); updateSyncStatus('接続済み', 'var(--btn-bottom)'); }
         else { fetchUserInfo(); }
       }
@@ -930,7 +920,9 @@
   function handleSignoutClick() {
     if (gAccessToken) {
       google.accounts.oauth2.revoke(gAccessToken, () => {
-        gAccessToken = null; sessionStorage.removeItem('gdrive_access_token'); sessionStorage.removeItem('gdrive_user_info');
+        gAccessToken = null; 
+        localStorage.removeItem('gdrive_access_token'); 
+        localStorage.removeItem('gdrive_user_info');
         displayUserInfoUI(null); updateDriveUI(false); showToast('連携を解除した．', 'info');
       });
     }
@@ -1555,7 +1547,7 @@
         
         let logHtml = '';
         if (currentViewMode === 'single') {
-          logHtml += `<div class="scroll-wrapper" style="margin-top: 20px; border-top: 1px dashed var(--border-color); padding-top: 15px;"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+          logHtml += `<hr style="border-color: var(--border-color); margin: 20px 0;"><div style="font-weight: bold; margin-bottom: 10px;">${date} の記録一覧</div><div class="scroll-wrapper" style="margin-bottom: 5px;"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
           let sortedLogs = [...dayLogs].sort((a, b) => a.date.localeCompare(b.date));
           sortedLogs.forEach(log => {
             const rowCount = log.sets.length; const time = log.date.split('T')[1];
@@ -1570,7 +1562,7 @@
           logHtml += `</table></div>`;
         }
         
-        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; margin-bottom:10px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button>${logHtml}</div>`;
+        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; margin-bottom:15px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button>${logHtml}</div>`;
       });
     } else if (level === 'exercise') {
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
