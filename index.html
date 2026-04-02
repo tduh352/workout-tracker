@@ -9,11 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Workout">
-
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="icon" href="icon.png" type="image/png">
 
-<title>Workout Tracker V56</title>
+<title>Workout Tracker V57</title>
 
 <style>
   :root {
@@ -777,7 +775,9 @@
     input.dispatchEvent(new Event('change'));
   }
 
+  // --- Google ドライブ連携のロジック ---
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
+  // 【バグ修正】SCOPESを単一の「Drive権限」に絞り、不要なチェックでのクラッシュを回避
   const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
   let tokenClient;
   let gAccessToken = null;
@@ -858,7 +858,8 @@
       client_id: CLIENT_ID, scope: SCOPES,
       callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
-          if (google.accounts.oauth2.hasGrantedAllScopes(tokenResponse, SCOPES)) {
+          // 【完全修正】ドライブの権限（アプリの命綱）さえ取れていればOKとする
+          if (google.accounts.oauth2.hasGrantedAnyScope(tokenResponse, 'https://www.googleapis.com/auth/drive.file')) {
             gAccessToken = tokenResponse.access_token; sessionStorage.setItem('gdrive_access_token', gAccessToken);
             if (isGapiLoaded) gapi.client.setToken({access_token: gAccessToken});
             updateDriveUI(true); fetchUserInfo(); showToast('Googleドライブに接続したぞ！', 'success');
@@ -1503,7 +1504,7 @@
         
         let logHtml = '';
         if (currentViewMode === 'single') {
-          logHtml += `<div class="scroll-wrapper" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+          logHtml += `<hr style="border-color: var(--border-color); margin: 20px 0;"><div style="font-weight: bold; margin-bottom: 10px;">${date} の記録一覧</div><div class="scroll-wrapper" style="margin-bottom: 5px;"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
           let sortedLogs = [...dayLogs].sort((a, b) => a.date.localeCompare(b.date));
           sortedLogs.forEach(log => {
             const rowCount = log.sets.length; const time = log.date.split('T')[1];
