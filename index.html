@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V53</title>
+<title>Workout Tracker V54</title>
 
 <style>
   :root {
@@ -284,7 +284,10 @@
         <option value="set">セットごと (個別の評価)</option>
       </select>
     </div>
-    <div class="form-group" id="review-exercise-group" style="display: none; flex: 2;">
+  </div>
+
+  <div class="controls-row" id="review-exercise-row" style="display: none;">
+    <div class="form-group">
       <label for="review-target-exercise">対象種目</label>
       <select id="review-target-exercise" onchange="renderReviewList()"></select>
     </div>
@@ -336,10 +339,6 @@
         <option value="exercise">種目ごと</option>
       </select>
     </div>
-    <div class="form-group" id="log-exercise-select-group" style="display: none; flex: 2;">
-      <label for="log-target-exercise">対象種目</label>
-      <select id="log-target-exercise" onchange="renderLogList()"></select>
-    </div>
     <div class="form-group" id="log-sort-control-group" style="display: none;">
       <label for="log-sort-mode">ソート順</label>
       <select id="log-sort-mode" onchange="renderLogList()">
@@ -350,6 +349,13 @@
         <option value="reps-desc">最大回数 (多い順)</option>
         <option value="reps-asc">最大回数 (少ない順)</option>
       </select>
+    </div>
+  </div>
+
+  <div class="controls-row" id="log-exercise-select-row" style="display: none;">
+    <div class="form-group">
+      <label for="log-target-exercise">対象種目</label>
+      <select id="log-target-exercise" onchange="renderLogList()"></select>
     </div>
   </div>
 
@@ -539,6 +545,13 @@
     </div>
   </div>
 
+  <div class="form-group checkbox-group">
+    <input type="checkbox" id="show-log-set-details" onchange="updateSettings()">
+    <label for="show-log-set-details" style="margin:0;">ログ・振り返りの種目別で各セットの星とコメントを詳細表示する</label>
+  </div>
+
+  <hr style="border-color: var(--border-color); margin: 20px 0;">
+
   <div class="form-group">
     <label for="default-unit">デフォルトの重量単位</label>
     <select id="default-unit" onchange="updateSettings()">
@@ -673,6 +686,7 @@
   let reviewDayDateViewMode = 'list';
   let reviewExerciseDateViewMode = 'list';
   let reviewSetDateViewMode = 'list';
+  let showLogSetDetails = false;
   let logs = [];
   
   let editingLogId = null;
@@ -733,7 +747,6 @@
     input.dispatchEvent(new Event('change'));
   }
 
-  // --- Google ドライブ連携のロジック ---
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
   const SCOPES = 'https://www.googleapis.com/auth/drive.file';
   let tokenClient;
@@ -869,7 +882,6 @@
     }
   }
 
-  // --- UI・汎用ロジック ---
   function toggleInputRating() {
     const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
     if (section.style.display === 'none') { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; } 
@@ -938,6 +950,7 @@
     reviewDayDateViewMode = document.getElementById('review-day-date-view-mode').value;
     reviewExerciseDateViewMode = document.getElementById('review-exercise-date-view-mode').value;
     reviewSetDateViewMode = document.getElementById('review-set-date-view-mode').value;
+    showLogSetDetails = document.getElementById('show-log-set-details').checked;
 
     document.getElementById('common-check').checked = document.getElementById('default-common').checked;
     const showRatingDefault = document.getElementById('show-input-rating').checked;
@@ -1005,6 +1018,7 @@
         if (settings.reviewDayDateViewMode) { document.getElementById('review-day-date-view-mode').value = settings.reviewDayDateViewMode; reviewDayDateViewMode = settings.reviewDayDateViewMode; }
         if (settings.reviewExerciseDateViewMode) { document.getElementById('review-exercise-date-view-mode').value = settings.reviewExerciseDateViewMode; reviewExerciseDateViewMode = settings.reviewExerciseDateViewMode; }
         if (settings.reviewSetDateViewMode) { document.getElementById('review-set-date-view-mode').value = settings.reviewSetDateViewMode; reviewSetDateViewMode = settings.reviewSetDateViewMode; }
+        if (settings.showLogSetDetails !== undefined) { document.getElementById('show-log-set-details').checked = settings.showLogSetDetails; showLogSetDetails = settings.showLogSetDetails; }
 
         if (settings.defaultCommon !== undefined) document.getElementById('default-common').checked = settings.defaultCommon;
         if (settings.showInputRating !== undefined) document.getElementById('show-input-rating').checked = settings.showInputRating;
@@ -1025,6 +1039,7 @@
       reviewDayDateViewMode: document.getElementById('review-day-date-view-mode').value,
       reviewExerciseDateViewMode: document.getElementById('review-exercise-date-view-mode').value,
       reviewSetDateViewMode: document.getElementById('review-set-date-view-mode').value,
+      showLogSetDetails: document.getElementById('show-log-set-details').checked,
       defaultCommon: document.getElementById('default-common').checked, showInputRating: document.getElementById('show-input-rating').checked,
       showSetComments: document.getElementById('show-set-comments').checked, arrowColor: document.getElementById('arrow-color').value,
       arrowThickness: document.getElementById('arrow-thickness').value, showArrows: document.getElementById('graph-show-arrows').checked
@@ -1061,10 +1076,8 @@
     document.getElementById('review-end-date').value = datePart;
   }
 
-  // 【完全修正】記録ボタンを押した後のスマートなリセット処理
   function resetAfterSubmit() {
     document.getElementById('exercise').selectedIndex = 0;
-    
     setRating('input', 0);
     document.getElementById('input-comment').value = '';
     
@@ -1086,7 +1099,6 @@
     }
   }
 
-  // 初期読み込み時や設定変更時の完全リセット用
   function resetInputForm() {
     document.getElementById('category').selectedIndex = 0; updateExerciseList();
     document.getElementById('set-count').value = currentDefaultSetCount;
@@ -1234,7 +1246,7 @@
     const mode = document.getElementById('log-view-mode').value;
     const useDateFilter = document.getElementById('log-date-filter-check').checked;
     
-    document.getElementById('log-exercise-select-group').style.display = mode === 'exercise' ? 'block' : 'none';
+    document.getElementById('log-exercise-select-row').style.display = mode === 'exercise' ? 'flex' : 'none';
     document.getElementById('log-sort-control-group').style.display = mode === 'exercise' ? 'block' : 'none';
 
     if (mode === 'date') {
@@ -1275,8 +1287,7 @@
     } else {
       const useDateFilter = document.getElementById('log-date-filter-check').checked;
       if (useDateFilter) {
-        const start = document.getElementById('log-start-date').value;
-        const end = document.getElementById('log-end-date').value;
+        const start = document.getElementById('log-start-date').value, end = document.getElementById('log-end-date').value;
         filteredLogs = filteredLogs.filter(log => { 
           const d = log.date.split('T')[0]; 
           return (!start || d >= start) && (!end || d <= end); 
@@ -1327,13 +1338,20 @@
         switch(sort) { case 'date-desc': return b.date.localeCompare(a.date); case 'date-asc': return a.date.localeCompare(b.date); case 'weight-desc': return maxWB - maxWA; case 'weight-asc': return maxWA - maxWB; case 'reps-desc': return maxRB - maxRA; case 'reps-asc': return maxRA - maxRB; default: return 0; }
       });
 
-      let html = `<h4>${target}</h4><div class="scroll-wrapper"><table><tr><th>日時</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+      let html = `<h4>${target}</h4><div class="scroll-wrapper"><table><tr><th>日時</th><th>セット</th><th>重量</th><th>回数</th>${showLogSetDetails ? '<th>詳細(評価/コメント)</th>' : ''}<th>操作</th></tr>`;
       exLogs.forEach(log => { 
         const dtStr = log.date.replace('T', ' '), rowCount = log.sets.length;
         log.sets.forEach((s, idx) => {
           html += `<tr>`;
           if (idx === 0) { html += `<td rowspan="${rowCount}" style="vertical-align: top;">${dtStr}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`; }
-          html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${s.reps}</td><td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
+          
+          if (showLogSetDetails) {
+            html += `<td style="vertical-align: top;">${s.setIndex}</td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${s.reps}</td><td style="vertical-align: top;"><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span><div style="font-size:12px; margin-top:4px; color:var(--text-color); opacity:0.8;">${s.comment || ''}</div></td>`;
+          } else {
+            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${s.reps}</td>`;
+          }
+          
+          html += `<td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
         });
       });
       container.innerHTML = html + `</table></div>`;
@@ -1343,7 +1361,7 @@
   // --- 振り返りUI・レンダリング ---
   function updateReviewUI() {
     const level = document.getElementById('review-level').value;
-    const exGroup = document.getElementById('review-exercise-group');
+    const exRow = document.getElementById('review-exercise-row');
     const useDateFilter = document.getElementById('review-date-filter-check').checked;
 
     let currentViewMode = 'list';
@@ -1352,9 +1370,9 @@
     else if (level === 'set') currentViewMode = reviewSetDateViewMode;
 
     if (level === 'exercise' || level === 'set') {
-      exGroup.style.display = 'block'; 
+      exRow.style.display = 'flex'; 
     } else {
-      exGroup.style.display = 'none'; 
+      exRow.style.display = 'none'; 
     }
 
     if (currentViewMode === 'single') {
@@ -1437,7 +1455,12 @@
       });
     } else if (level === 'exercise') {
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
-        const setsSummary = log.sets.map(s => `第${s.setIndex}セット: ${s.weight}${s.unit} × ${s.reps}回`).join('<br>');
+        let setsSummary = '';
+        if (showLogSetDetails) {
+          setsSummary = log.sets.map(s => `第${s.setIndex}セット: ${s.weight}${s.unit} × ${s.reps}回 <span style="font-size:12px; margin-left:8px;">${getStaticStarHtml(s.rating)}</span><br><span style="font-size:12px; opacity:0.8;">${s.comment || ''}</span>`).join('<hr style="margin:6px 0; border:none; border-top:1px dashed var(--border-color);">');
+        } else {
+          setsSummary = log.sets.map(s => `第${s.setIndex}セット: ${s.weight}${s.unit} × ${s.reps}回`).join('<br>');
+        }
         container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise}</div><div class="review-card-context">${setsSummary}</div><label>評価</label>${getDynamicStarHtml('exercise', log.id, log.rating || 0)}<textarea id="comment-exercise-${log.id}" placeholder="フォームの感覚などを記録...">${log.comment || ''}</textarea><button id="save-btn-exercise-${log.id}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('exercise', '${log.id}')">コメントを保存</button></div>`;
       });
     } else if (level === 'set') {
