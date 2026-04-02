@@ -11,12 +11,11 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V38</title>
+<title>Workout Tracker V39</title>
 
 <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
 
 <style>
-  /* 基本(ブルー)・ライトモード */
   :root {
     --bg-color: #e8f4f8;
     --panel-bg: rgba(255, 255, 255, 0.6);
@@ -34,7 +33,6 @@
     --card-bg: #ffffff;
   }
 
-  /* 共通・ダークモードベース */
   body.mode-dark {
     --bg-color: #121212;
     --panel-bg: rgba(40, 40, 40, 0.6);
@@ -48,7 +46,6 @@
     --card-bg: #2a2a2a;
   }
 
-  /* テーマカラー: ブルー (ダークモード) */
   body.mode-dark.color-blue {
     --bg-color: #121518;
     --border-color: #334455;
@@ -57,7 +54,6 @@
     --btn-border: #000080;
   }
 
-  /* テーマカラー: グリーン */
   body.color-green {
     --bg-color: #e8f8e8;
     --border-color: #b0deb0;
@@ -73,7 +69,6 @@
     --btn-border: #004d00;
   }
 
-  /* テーマカラー: オレンジ */
   body.color-orange {
     --bg-color: #f8eee8;
     --border-color: #decab0;
@@ -89,7 +84,6 @@
     --btn-border: #a0522d;
   }
 
-  /* テーマカラー: モノクロ */
   body.color-mono {
     --bg-color: #f0f0f0;
     --border-color: #cccccc;
@@ -788,7 +782,7 @@
     <p style="font-size: 14px; line-height: 1.5; margin-bottom: 15px;">
       <strong>【利用目的】</strong><br>
       記録データをクラウドにバックアップし，機種変更時などに復元できるようにするため．<br><br>
-      ※このアプリは専用のバックアップファイル（workout_tracker_backup.json）にのみアクセスする．君の個人的な写真や他のファイルを見ることは技術的に不可能な安全な設計になっている．
+      ※このアプリは専用のバックアップファイル（workout_tracker_backup.json）にのみアクセスする安全な設計になっている．
     </p>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);">
@@ -881,10 +875,17 @@
       callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
           gAccessToken = tokenResponse.access_token;
+          sessionStorage.setItem('gdrive_access_token', gAccessToken);
           updateDriveUI(true);
         }
       },
     });
+
+    const savedToken = sessionStorage.getItem('gdrive_access_token');
+    if (savedToken) {
+      gAccessToken = savedToken;
+      updateDriveUI(true);
+    }
   }
 
   function openLoginModal() {
@@ -897,7 +898,7 @@
 
   function handleAuthClick() {
     if (typeof google === 'undefined' || !google.accounts || !tokenClient) {
-      alert("Googleの認証システムが読み込めなかった．\nPCのブラウザで「広告ブロッカー（AdBlockなど）」や「トラッキング防止機能（BraveのShield，Firefoxの厳格モードなど）」がオンになっていると，Googleのログイン機能が強制遮断されてしまう．\nこのサイトのドメイン（tduh352.github.io）のブロックをちょろんと解除して，ページを再読み込みしてみてくれ．");
+      alert("Googleの認証システムが読み込めなかった．\nPCのブラウザで「広告ブロッカー」や「トラッキング防止機能」がオンになっていると，Googleのログイン機能が強制遮断されてしまう．\nこのサイトのドメインのブロックを解除して，ページを再読み込みしてみてくれ．");
       return;
     }
     if (!gAccessToken) {
@@ -913,6 +914,7 @@
     if (gAccessToken) {
       google.accounts.oauth2.revoke(gAccessToken, () => {
         gAccessToken = null;
+        sessionStorage.removeItem('gdrive_access_token');
         updateDriveUI(false);
       });
     }
@@ -939,7 +941,7 @@
       const saveBtns = document.querySelectorAll('.btn-gdrive-save');
       saveBtns.forEach(btn => btn.innerText = '保存中...');
     } else {
-      updateSyncStatus('自動保存中...', '#888888');
+      updateSyncStatus('同期中...', '#888888');
     }
     
     try {
@@ -963,7 +965,7 @@
         });
         if (!metaRes.ok) {
           const errText = await metaRes.text();
-          throw new Error(`ファイルの作成に失敗 (${metaRes.status}): ${errText}`);
+          throw new Error(`ファイル作成エラー (${metaRes.status}): ${errText}`);
         }
         const metaData = await metaRes.json();
         fileId = metaData.id;
@@ -979,20 +981,23 @@
       });
       if (!uploadRes.ok) {
         const errText = await uploadRes.text();
-        throw new Error(`データのアップロードに失敗 (${uploadRes.status}): ${errText}`);
+        throw new Error(`アップロードエラー (${uploadRes.status}): ${errText}`);
       }
       
       if (!isBackground) {
         alert('Googleドライブへのバックアップが完了した．');
       } else {
         updateSyncStatus('同期完了', 'var(--btn-bottom)');
-        setTimeout(() => {
-           if (gAccessToken) updateSyncStatus('接続済み', 'var(--btn-bottom)');
-        }, 3000);
+        setTimeout(() => { if (gAccessToken) updateSyncStatus('接続済み', 'var(--btn-bottom)'); }, 3000);
       }
     } catch(e) {
+      let errorMsg = e.message;
+      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('Load failed')) {
+        errorMsg = "通信がブロックされた．\n1. Google Cloudの「承認済みの JavaScript 生成元」にURLが正しく設定されているか確認してくれ．\n2. iPhoneの「設定」>「Safari」>「サイト越えトラッキングを防ぐ」をオフにして試してみてくれ．";
+      }
+      
       if (!isBackground) {
-        alert('保存エラー: ' + e.message + '\n※Google Cloud ConsoleのCORS設定が反映されていないか，ネットワークの問題だ．反映まで時間がかかることもある．');
+        alert('保存エラー: ' + errorMsg);
       } else {
         updateSyncStatus('自動保存失敗', 'red');
         console.error('バックグラウンド保存エラー:', e);
@@ -1046,7 +1051,11 @@
 
       alert('ドライブからの復元が完了し，画面を更新した．');
     } catch(e) {
-      alert('復元エラー: ' + e.message);
+      let errorMsg = e.message;
+      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('Load failed')) {
+        errorMsg = "通信がブロックされた．\nGoogle Cloudの設定か，iPhoneの「サイト越えトラッキングを防ぐ」機能が原因の可能性が高い．";
+      }
+      alert('復元エラー: ' + errorMsg);
     } finally {
       loadBtns.forEach(btn => btn.innerText = 'ドライブから復元');
     }
@@ -1136,7 +1145,6 @@
       }
     }
     saveLocalData();
-    if (gAccessToken) saveToDrive(true);
     
     const container = document.getElementById(`star-container-${level}-${identifier}`);
     if (container) {
@@ -1147,6 +1155,7 @@
       });
     }
     renderLogList();
+    if (gAccessToken) saveToDrive(true);
   }
 
   function saveReviewComment(level, identifier) {
@@ -1169,7 +1178,6 @@
       }
     }
     saveLocalData();
-    if (gAccessToken) saveToDrive(true);
     
     const btn = document.getElementById(`save-btn-${level}-${identifier}`);
     const originalText = btn.innerText;
@@ -1179,6 +1187,7 @@
       btn.innerText = originalText;
       btn.style.background = "";
     }, 1500);
+    if (gAccessToken) saveToDrive(true);
   }
 
   function sendFeedback() {
@@ -1252,13 +1261,8 @@
     if (savedSettings) {
       try {
         const settings = JSON.parse(savedSettings);
-        if (settings.themeMode) {
-          document.getElementById('theme-mode').value = settings.themeMode;
-        } else if (settings.theme) {
-          document.getElementById('theme-mode').value = settings.theme;
-        }
+        if (settings.themeMode) document.getElementById('theme-mode').value = settings.themeMode;
         if (settings.themeColor) document.getElementById('theme-color').value = settings.themeColor;
-        
         if (settings.defaultUnit) document.getElementById('default-unit').value = settings.defaultUnit;
         if (settings.weightStep) document.getElementById('weight-step').value = settings.weightStep;
         if (settings.defaultSetCount) {
@@ -1272,7 +1276,7 @@
         if (settings.arrowThickness) document.getElementById('arrow-thickness').value = settings.arrowThickness;
         if (settings.showArrows !== undefined) document.getElementById('graph-show-arrows').checked = settings.showArrows;
       } catch (e) {
-        console.error("設定の読み込みに失敗した．");
+        console.error("設定読み込み失敗．");
       }
     }
   }
@@ -1311,21 +1315,15 @@
     const now = new Date();
     const tzOffset = now.getTimezoneOffset() * 60000;
     const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
-    
     const [datePart, timePart] = localISOTime.split('T');
     document.getElementById('record-date').value = datePart;
     document.getElementById('record-time').value = timePart;
-
-    const todayStr = datePart;
-    const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); 
-    const pastStr = (new Date(past - tzOffset)).toISOString().split('T')[0];
-    
-    document.getElementById('log-start-date').value = pastStr;
-    document.getElementById('log-end-date').value = todayStr;
-    document.getElementById('graph-start-date').value = pastStr;
-    document.getElementById('graph-end-date').value = todayStr;
-    document.getElementById('review-start-date').value = pastStr;
-    document.getElementById('review-end-date').value = todayStr;
+    document.getElementById('log-start-date').value = datePart;
+    document.getElementById('log-end-date').value = datePart;
+    document.getElementById('graph-start-date').value = datePart;
+    document.getElementById('graph-end-date').value = datePart;
+    document.getElementById('review-start-date').value = datePart;
+    document.getElementById('review-end-date').value = datePart;
   }
 
   function resetInputForm() {
@@ -1333,21 +1331,12 @@
     document.getElementById('set-count').value = currentDefaultSetCount;
     const isCommonDefault = document.getElementById('default-common').checked;
     document.getElementById('common-check').checked = isCommonDefault;
-    
     const showRatingDefault = document.getElementById('show-input-rating').checked;
     const section = document.getElementById('input-rating-section');
     const btn = document.getElementById('toggle-rating-btn');
-    if (showRatingDefault) {
-        section.style.display = 'block';
-        btn.innerText = 'ー 評価とコメントを閉じる';
-        setRating('input', 0); 
-    } else {
-        section.style.display = 'none';
-        btn.innerText = '＋ 評価とコメントを追加 (任意)';
-        setRating('input', 0);
-    }
+    if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; setRating('input', 0); }
+    else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; setRating('input', 0); }
     document.getElementById('input-comment').value = '';
-    
     initDates();
     renderSetInputs();
   }
@@ -1357,9 +1346,7 @@
     const selectEl = document.getElementById('exercise');
     selectEl.innerHTML = '<option value="" disabled selected style="display:none;">種目を選択してくれ</option>';
     if (customExerciseCategories[cat]) {
-      customExerciseCategories[cat].forEach(ex => {
-        selectEl.innerHTML += `<option value="${ex}">${ex}</option>`;
-      });
+      customExerciseCategories[cat].forEach(ex => { selectEl.innerHTML += `<option value="${ex}">${ex}</option>`; });
     }
   }
 
@@ -1368,18 +1355,9 @@
     const list = customExerciseCategories[cat] || [];
     const tbody = document.getElementById('exercise-edit-tbody');
     tbody.innerHTML = '';
-    
     list.forEach((ex, idx) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${ex}</td>
-        <td style="white-space: nowrap;">
-          <button class="action-btn" onclick="moveExercise(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>↑</button>
-          <button class="action-btn" onclick="moveExercise(${idx}, 1)" ${idx === list.length - 1 ? 'disabled' : ''}>↓</button>
-          <button class="action-btn" onclick="renameExercise(${idx})">編集</button>
-          <button class="action-btn action-btn-danger" onclick="deleteExerciseFromList(${idx})">削除</button>
-        </td>
-      `;
+      tr.innerHTML = `<td>${ex}</td><td style="white-space: nowrap;"><button class="action-btn" onclick="moveExercise(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>↑</button><button class="action-btn" onclick="moveExercise(${idx}, 1)" ${idx === list.length - 1 ? 'disabled' : ''}>↓</button><button class="action-btn" onclick="renameExercise(${idx})">編集</button><button class="action-btn action-btn-danger" onclick="deleteExerciseFromList(${idx})">削除</button></td>`;
       tbody.appendChild(tr);
     });
   }
@@ -1387,41 +1365,28 @@
   function moveExercise(index, direction) {
     const cat = document.getElementById('edit-category').value;
     const list = customExerciseCategories[cat];
-    if (!list) return;
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= list.length) return;
-    const temp = list[index];
-    list[index] = list[newIndex];
-    list[newIndex] = temp;
-    saveCustomOrderState(cat);
-    renderExerciseEditList();
-    updateExerciseList();
+    const temp = list[index]; list[index] = list[newIndex]; list[newIndex] = temp;
+    saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList();
   }
 
   function renameExercise(index) {
     const cat = document.getElementById('edit-category').value;
     const list = customExerciseCategories[cat];
-    if (!list) return;
     const currentName = list[index];
     const newName = prompt("新しい種目名を入力してくれ．", currentName);
     if (newName && newName.trim() !== "" && newName !== currentName) {
-      if (list.includes(newName.trim())) { alert("その種目名はすでに存在している．"); return; }
-      list[index] = newName.trim();
-      saveCustomOrderState(cat);
-      renderExerciseEditList();
-      updateExerciseList();
+      if (list.includes(newName.trim())) { alert("すでに存在する種目名だ．"); return; }
+      list[index] = newName.trim(); saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList();
     }
   }
 
   function deleteExerciseFromList(index) {
     const cat = document.getElementById('edit-category').value;
     const list = customExerciseCategories[cat];
-    if (!list) return;
-    if (confirm(`「${list[index]}」をリストから削除してもよいだろうか？\n※過去の記録データが消えることはない．`)) {
-      list.splice(index, 1);
-      saveCustomOrderState(cat);
-      renderExerciseEditList();
-      updateExerciseList();
+    if (confirm(`「${list[index]}」をリストから削除してもよいだろうか？`)) {
+      list.splice(index, 1); saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList();
     }
   }
 
@@ -1432,63 +1397,38 @@
     if (!newName) return;
     if (!customExerciseCategories[cat]) customExerciseCategories[cat] = [];
     if (customExerciseCategories[cat].includes(newName)) { alert("すでに存在する種目だ．"); return; }
-    customExerciseCategories[cat].push(newName);
-    inputEl.value = '';
-    saveCustomOrderState(cat);
-    renderExerciseEditList();
-    updateExerciseList();
+    customExerciseCategories[cat].push(newName); inputEl.value = ''; saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList();
   }
 
   function sortExercisesEdit(order) {
     const cat = document.getElementById('edit-category').value;
     if (!customExerciseCategories[cat]) return;
-    customExerciseCategories[cat].sort((a, b) => {
-      if (order === 'asc') return a.localeCompare(b, 'ja');
-      else return b.localeCompare(a, 'ja');
-    });
-    saveLocalCategories();
-    renderExerciseEditList();
-    updateExerciseList();
+    customExerciseCategories[cat].sort((a, b) => order === 'asc' ? a.localeCompare(b, 'ja') : b.localeCompare(a, 'ja'));
+    saveLocalCategories(); renderExerciseEditList(); updateExerciseList();
   }
 
   function applyThemeLogic(modeValue, colorValue) {
-    let isDark = false;
-    if (modeValue === 'system') {
-      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    } else if (modeValue === 'dark') {
-      isDark = true;
-    }
-    
+    let isDark = modeValue === 'system' ? window.matchMedia('(prefers-color-scheme: dark)').matches : modeValue === 'dark';
     document.body.className = '';
     if (isDark) document.body.classList.add('mode-dark');
     document.body.classList.add('color-' + colorValue);
-    
     if (logs.length > 0) drawGraph();
   }
 
   function updateTheme() {
     const mode = document.getElementById('theme-mode').value;
     const color = document.getElementById('theme-color').value;
-    applyThemeLogic(mode, color);
-    saveLocalSettings();
+    applyThemeLogic(mode, color); saveLocalSettings();
   }
 
   function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tabId).classList.add('active');
-    
     const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.innerText.includes(event.target.innerText));
     if (clickedBtn) clickedBtn.classList.add('active');
-    
-    if (tabId === 'feedback') {
-      document.getElementById('log-section').style.display = 'none';
-      document.getElementById('graph-section').style.display = 'none';
-    } else {
-      document.getElementById('log-section').style.display = 'block';
-      document.getElementById('graph-section').style.display = 'block';
-    }
-    
+    if (tabId === 'feedback') { document.getElementById('log-section').style.display = 'none'; document.getElementById('graph-section').style.display = 'none'; }
+    else { document.getElementById('log-section').style.display = 'block'; document.getElementById('graph-section').style.display = 'block'; }
     if (tabId === 'exercises') renderExerciseEditList();
     if (tabId === 'review') renderReviewList();
   }
@@ -1499,22 +1439,13 @@
     currentDefaultSetCount = parseInt(document.getElementById('default-set-count').value) || 3;
     const isCommonDefault = document.getElementById('default-common').checked;
     document.getElementById('common-check').checked = isCommonDefault;
-    
     const showRatingDefault = document.getElementById('show-input-rating').checked;
     const section = document.getElementById('input-rating-section');
     const btn = document.getElementById('toggle-rating-btn');
-    if (showRatingDefault) {
-      section.style.display = 'block';
-      btn.innerText = 'ー 評価とコメントを閉じる';
-    } else {
-      section.style.display = 'none';
-      btn.innerText = '＋ 評価とコメントを追加 (任意)';
-    }
-    
+    if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; }
+    else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; }
     document.getElementById('set-count').value = currentDefaultSetCount;
-    renderSetInputs();
-    drawGraph();
-    saveLocalSettings();
+    renderSetInputs(); drawGraph(); saveLocalSettings();
   }
 
   function toggleGraphDateFilter() {
@@ -1528,174 +1459,69 @@
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
     const showComments = document.getElementById('show-set-comments').checked;
-
     container.innerHTML = '';
-    if (isCommon) {
-      container.innerHTML = createSetRowHTML('全セット', 0, showComments);
-    } else {
-      for (let i = 1; i <= setCount; i++) { 
-        container.innerHTML += createSetRowHTML(`セット ${i}`, i, showComments); 
-      }
-    }
+    if (isCommon) { container.innerHTML = createSetRowHTML('全セット', 0, showComments); }
+    else { for (let i = 1; i <= setCount; i++) { container.innerHTML += createSetRowHTML(`セット ${i}`, i, showComments); } }
   }
 
   function createSetRowHTML(label, index, showComments) {
     const lbsSelected = currentUnit === 'lbs' ? 'selected' : '';
     const kgSelected = currentUnit === 'kg' ? 'selected' : '';
-    
-    let commentHtml = '';
-    if (showComments) {
-      commentHtml = `
-        <div style="flex: 1 1 100%; margin-top: 5px;">
-          <input type="text" id="set-comment-${index}" placeholder="セットのメモ（任意）..." style="font-size: 14px; padding: 8px;">
-        </div>
-      `;
-    }
-
-    return `
-      <div class="set-row">
-        <div style="flex: 0.5;"><strong>${label}</strong></div>
-        <div>
-          <label>重量</label>
-          <div class="weight-input-group">
-            <input type="number" id="weight-${index}" min="0" step="${currentStep}">
-            <select id="unit-${index}" class="unit-select">
-              <option value="lbs" ${lbsSelected}>lbs</option>
-              <option value="kg" ${kgSelected}>kg</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label>回数</label>
-          <input type="number" id="reps-${index}" min="0">
-        </div>
-        ${commentHtml}
-      </div>
-    `;
+    let commentHtml = showComments ? `<div style="flex: 1 1 100%; margin-top: 5px;"><input type="text" id="set-comment-${index}" placeholder="セットのメモ（任意）..." style="font-size: 14px; padding: 8px;"></div>` : '';
+    return `<div class="set-row"><div style="flex: 0.5;"><strong>${label}</strong></div><div><label>重量</label><div class="weight-input-group"><input type="number" id="weight-${index}" min="0" step="${currentStep}"><select id="unit-${index}" class="unit-select"><option value="lbs" ${lbsSelected}>lbs</option><option value="kg" ${kgSelected}>kg</option></select></div></div><div><label>回数</label><input type="number" id="reps-${index}" min="0"></div>${commentHtml}</div>`;
   }
 
   function updateGlobalExerciseOptions() {
     const exercises = [...new Set(logs.map(log => log.exercise))];
-    
     const logSelect = document.getElementById('log-target-exercise');
-    if (logSelect) {
-      const prevLogEx = logSelect.value;
-      logSelect.innerHTML = '';
-      exercises.forEach(ex => { logSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
-      if (prevLogEx && exercises.includes(prevLogEx)) logSelect.value = prevLogEx;
-    }
-
+    if (logSelect) { const prev = logSelect.value; logSelect.innerHTML = ''; exercises.forEach(ex => { logSelect.innerHTML += `<option value="${ex}">${ex}</option>`; }); if (prev && exercises.includes(prev)) logSelect.value = prev; }
     const graphSelect = document.getElementById('graph-exercise');
-    if (graphSelect) {
-      const prevGraphEx = graphSelect.value;
-      graphSelect.innerHTML = '';
-      exercises.forEach(ex => { graphSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
-      if (prevGraphEx && exercises.includes(prevGraphEx)) graphSelect.value = prevGraphEx;
-    }
-    
+    if (graphSelect) { const prev = graphSelect.value; graphSelect.innerHTML = ''; exercises.forEach(ex => { graphSelect.innerHTML += `<option value="${ex}">${ex}</option>`; }); if (prev && exercises.includes(prev)) graphSelect.value = prev; }
     const reviewSelect = document.getElementById('review-target-exercise');
-    if (reviewSelect) {
-      const prevReviewEx = reviewSelect.value;
-      reviewSelect.innerHTML = '';
-      exercises.forEach(ex => { reviewSelect.innerHTML += `<option value="${ex}">${ex}</option>`; });
-      if (prevReviewEx && exercises.includes(prevReviewEx)) reviewSelect.value = prevReviewEx;
-    }
+    if (reviewSelect) { const prev = reviewSelect.value; reviewSelect.innerHTML = ''; exercises.forEach(ex => { reviewSelect.innerHTML += `<option value="${ex}">${ex}</option>`; }); if (prev && exercises.includes(prev)) reviewSelect.value = prev; }
   }
 
   function addLog() {
     const category = document.getElementById('category').value;
     const exercise = document.getElementById('exercise').value;
-    const datePart = document.getElementById('record-date').value;
-    const timePart = document.getElementById('record-time').value;
-    const datetime = `${datePart}T${timePart}`;
-    
+    const datetime = `${document.getElementById('record-date').value}T${document.getElementById('record-time').value}`;
     const isRatingVisible = document.getElementById('input-rating-section').style.display !== 'none';
     const finalRating = isRatingVisible ? currentInputRating : 0;
     const finalComment = isRatingVisible ? document.getElementById('input-comment').value.trim() : "";
-    
-    if (!exercise) { return; }
-
+    if (!exercise) return;
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
     const showSetComments = document.getElementById('show-set-comments').checked;
-    
-    let logEntry = {
-      id: Date.now(),
-      date: datetime,
-      category: category,
-      exercise: exercise,
-      rating: finalRating,
-      comment: finalComment,
-      sets: []
-    };
-
+    let logEntry = { id: Date.now(), date: datetime, category: category, exercise: exercise, rating: finalRating, comment: finalComment, sets: [] };
     if (isCommon) {
-      const w = parseFloat(document.getElementById('weight-0').value) || 0;
-      const u = document.getElementById('unit-0').value;
-      const r = parseInt(document.getElementById('reps-0').value) || 0;
-      const c = showSetComments ? (document.getElementById('set-comment-0').value.trim()) : "";
-
-      for (let i = 1; i <= setCount; i++) {
-        logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r, rating: 0, comment: c });
-      }
+      const w = parseFloat(document.getElementById('weight-0').value) || 0, u = document.getElementById('unit-0').value, r = parseInt(document.getElementById('reps-0').value) || 0, c = showSetComments ? document.getElementById('set-comment-0').value.trim() : "";
+      for (let i = 1; i <= setCount; i++) logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r, rating: 0, comment: c });
     } else {
       for (let i = 1; i <= setCount; i++) {
-        const w = parseFloat(document.getElementById(`weight-${i}`).value) || 0;
-        const u = document.getElementById(`unit-${i}`).value;
-        const r = parseInt(document.getElementById(`reps-${i}`).value) || 0;
-        const c = showSetComments ? (document.getElementById(`set-comment-${i}`).value.trim()) : "";
-
+        const w = parseFloat(document.getElementById(`weight-${i}`).value) || 0, u = document.getElementById(`unit-${i}`).value, r = parseInt(document.getElementById(`reps-${i}`).value) || 0, c = showSetComments ? document.getElementById(`set-comment-${i}`).value.trim() : "";
         logEntry.sets.push({ setIndex: i, weight: w, unit: u, reps: r, rating: 0, comment: c });
       }
     }
-
-    logs.push(logEntry);
-    saveLocalData(); 
-    updateGlobalExerciseOptions();
-    renderLogList();
-    renderReviewList();
-    resetInputForm();
-    
-    if (gAccessToken) {
-      saveToDrive(true);
-    }
+    logs.push(logEntry); saveLocalData(); updateGlobalExerciseOptions(); renderLogList(); renderReviewList(); resetInputForm();
+    if (gAccessToken) saveToDrive(true);
   }
 
   function renderReviewList() {
     const level = document.getElementById('review-level').value;
     const container = document.getElementById('review-container');
     container.innerHTML = '';
-
-    if (logs.length === 0) {
-      container.innerHTML = '<p>データがありません．</p>';
-      return;
-    }
-    
+    if (logs.length === 0) { container.innerHTML = '<p>データがありません．</p>'; return; }
     let filteredLogs = logs;
     const useDateFilter = document.getElementById('review-date-filter-check').checked;
     if (useDateFilter) {
-      const startDate = document.getElementById('review-start-date').value;
-      const endDate = document.getElementById('review-end-date').value;
-      filteredLogs = filteredLogs.filter(log => {
-        const logDate = log.date.split('T')[0];
-        if (startDate && logDate < startDate) return false;
-        if (endDate && logDate > endDate) return false;
-        return true;
-      });
+      const start = document.getElementById('review-start-date').value, end = document.getElementById('review-end-date').value;
+      filteredLogs = filteredLogs.filter(log => { const d = log.date.split('T')[0]; return (!start || d >= start) && (!end || d <= end); });
     }
-    
     if (level === 'exercise' || level === 'set') {
-      const targetEx = document.getElementById('review-target-exercise').value;
-      if (targetEx) {
-        filteredLogs = filteredLogs.filter(log => log.exercise === targetEx);
-      }
+      const target = document.getElementById('review-target-exercise').value;
+      if (target) filteredLogs = filteredLogs.filter(log => log.exercise === target);
     }
-
-    if (filteredLogs.length === 0) {
-      container.innerHTML = '<p>指定された条件のデータがありません．</p>';
-      return;
-    }
-
+    if (filteredLogs.length === 0) { container.innerHTML = '<p>条件に合うデータがありません．</p>'; return; }
     if (level === 'day') {
       const dates = [...new Set(filteredLogs.map(l => l.date.split('T')[0]))].sort().reverse();
       dates.forEach(date => {
@@ -1703,519 +1529,131 @@
         if(dayLogs.length === 0) return;
         const exNames = [...new Set(dayLogs.map(l => l.exercise))].join(', ');
         const evalData = dailyEvals[date] || { rating: 0, comment: '' };
-        
-        container.innerHTML += `
-          <div class="review-card">
-            <div class="review-card-header">${date} のトレーニング全体</div>
-            <div class="review-card-context">実行した種目: ${exNames}</div>
-            <label>評価</label>
-            ${getDynamicStarHtml('day', date, evalData.rating)}
-            <textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea>
-            <button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button>
-          </div>
-        `;
+        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button></div>`;
       });
     } else if (level === 'exercise') {
-      const sortedLogs = [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date));
-      sortedLogs.forEach(log => {
-        const dtStr = log.date.replace('T', ' ');
+      [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
         const setsSummary = log.sets.map(s => `第${s.setIndex}セット: ${s.weight}${s.unit} × ${s.reps}回`).join('<br>');
-        
-        container.innerHTML += `
-          <div class="review-card">
-            <div class="review-card-header">${dtStr} - ${log.exercise}</div>
-            <div class="review-card-context">${setsSummary}</div>
-            <label>評価</label>
-            ${getDynamicStarHtml('exercise', log.id, log.rating || 0)}
-            <textarea id="comment-exercise-${log.id}" placeholder="この種目に関するフォームの感覚などを記録...">${log.comment || ''}</textarea>
-            <button id="save-btn-exercise-${log.id}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('exercise', '${log.id}')">コメントを保存</button>
-          </div>
-        `;
+        container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise}</div><div class="review-card-context">${setsSummary}</div><label>評価</label>${getDynamicStarHtml('exercise', log.id, log.rating || 0)}<textarea id="comment-exercise-${log.id}" placeholder="フォームの感覚などを記録...">${log.comment || ''}</textarea><button id="save-btn-exercise-${log.id}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('exercise', '${log.id}')">コメントを保存</button></div>`;
       });
     } else if (level === 'set') {
-      const sortedLogs = [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date));
-      sortedLogs.forEach(log => {
+      [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
         log.sets.forEach(set => {
-          const dtStr = log.date.replace('T', ' ');
           const identifier = `${log.id}_${set.setIndex}`;
-          
-          container.innerHTML += `
-            <div class="review-card">
-              <div class="review-card-header">${dtStr} - ${log.exercise} (第${set.setIndex}セット)</div>
-              <div class="review-card-context">重量: ${set.weight}${set.unit} / 回数: ${set.reps}回</div>
-              <label>評価</label>
-              ${getDynamicStarHtml('set', identifier, set.rating || 0)}
-              <textarea id="comment-set-${identifier}" placeholder="このセットの限界度や軌道などを記録...">${set.comment || ''}</textarea>
-              <button id="save-btn-set-${identifier}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('set', '${identifier}')">コメントを保存</button>
-            </div>
-          `;
+          container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise} (第${set.setIndex}セット)</div><div class="review-card-context">重量: ${set.weight}${set.unit} / 回数: ${set.reps}回</div><label>評価</label>${getDynamicStarHtml('set', identifier, set.rating || 0)}<textarea id="comment-set-${identifier}" placeholder="セットの限界度などを記録...">${set.comment || ''}</textarea><button id="save-btn-set-${identifier}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('set', '${identifier}')">コメントを保存</button></div>`;
         });
       });
     }
   }
 
   function deleteSet(logId, setIndex) {
-    if (!confirm('このセットを削除してもよいだろうか？　')) return;
+    if (!confirm('このセットを削除してもよいだろうか？')) return;
     const logIndex = logs.findIndex(l => l.id === logId);
     if (logIndex > -1) {
-      let log = logs[logIndex];
-      log.sets = log.sets.filter(s => s.setIndex !== setIndex);
-      if (log.sets.length === 0) {
-        logs.splice(logIndex, 1);
-      } else {
-        log.sets.forEach((s, idx) => s.setIndex = idx + 1);
-      }
-      saveLocalData();
-      renderLogList();
-      drawGraph();
-      renderReviewList();
-      updateGlobalExerciseOptions();
+      let log = logs[logIndex]; log.sets = log.sets.filter(s => s.setIndex !== setIndex);
+      if (log.sets.length === 0) logs.splice(logIndex, 1); else log.sets.forEach((s, idx) => s.setIndex = idx + 1);
+      saveLocalData(); renderLogList(); drawGraph(); renderReviewList(); updateGlobalExerciseOptions();
       if (gAccessToken) saveToDrive(true);
     }
   }
 
   function openEditModal(logId, setIndex) {
-    const log = logs.find(l => l.id === logId);
-    const set = log.sets.find(s => s.setIndex === setIndex);
-    if (!log || !set) return;
-
-    editingLogId = logId;
-    editingSetIndex = setIndex;
-    
-    currentEditRating = log.rating || 0;
+    const log = logs.find(l => l.id === logId), set = log.sets.find(s => s.setIndex === setIndex);
+    editingLogId = logId; editingSetIndex = setIndex; currentEditRating = log.rating || 0;
     updateStarUI('edit-star-rating', currentEditRating);
-
-    document.getElementById('edit-weight').value = set.weight;
-    document.getElementById('edit-unit').value = set.unit;
-    document.getElementById('edit-reps').value = set.reps;
-    document.getElementById('edit-weight').step = currentStep;
-    
+    document.getElementById('edit-weight').value = set.weight; document.getElementById('edit-unit').value = set.unit;
+    document.getElementById('edit-reps').value = set.reps; document.getElementById('edit-weight').step = currentStep;
     document.getElementById('edit-modal-overlay').style.display = 'flex';
   }
 
-  function closeEditModal() {
-    document.getElementById('edit-modal-overlay').style.display = 'none';
-    editingLogId = null;
-    editingSetIndex = null;
-  }
-
+  function closeEditModal() { document.getElementById('edit-modal-overlay').style.display = 'none'; }
   function saveEdit() {
-    if (editingLogId === null || editingSetIndex === null) return;
-    const log = logs.find(l => l.id === editingLogId);
-    const set = log.sets.find(s => s.setIndex === editingSetIndex);
+    const log = logs.find(l => l.id === editingLogId), set = log.sets.find(s => s.setIndex === editingSetIndex);
     if (log && set) {
-      log.rating = currentEditRating;
-      set.weight = parseFloat(document.getElementById('edit-weight').value) || 0;
-      set.unit = document.getElementById('edit-unit').value;
-      set.reps = parseInt(document.getElementById('edit-reps').value) || 0;
-      saveLocalData();
-      renderLogList();
-      drawGraph();
-      renderReviewList();
-      if (gAccessToken) saveToDrive(true);
+      log.rating = currentEditRating; set.weight = parseFloat(document.getElementById('edit-weight').value) || 0;
+      set.unit = document.getElementById('edit-unit').value; set.reps = parseInt(document.getElementById('edit-reps').value) || 0;
+      saveLocalData(); renderLogList(); drawGraph(); renderReviewList(); if (gAccessToken) saveToDrive(true);
     }
     closeEditModal();
   }
 
   function updateLogUI() {
     const mode = document.getElementById('log-view-mode').value;
-    if (mode === 'date') {
-      document.getElementById('date-range-group').style.display = 'block';
-      document.getElementById('exercise-select-group').style.display = 'none';
-      document.getElementById('sort-control-group').style.display = 'none';
-    } else {
-      document.getElementById('date-range-group').style.display = 'none';
-      document.getElementById('exercise-select-group').style.display = 'block';
-      document.getElementById('sort-control-group').style.display = 'block';
-    }
+    document.getElementById('date-range-group').style.display = mode === 'date' ? 'block' : 'none';
+    document.getElementById('exercise-select-group').style.display = mode === 'exercise' ? 'block' : 'none';
+    document.getElementById('sort-control-group').style.display = mode === 'exercise' ? 'block' : 'none';
     renderLogList();
   }
 
   function renderLogList() {
-    const mode = document.getElementById('log-view-mode').value;
-    const container = document.getElementById('log-list');
-    container.innerHTML = '';
-
-    if (logs.length === 0) {
-      container.innerHTML = '<p>データがありません．</p>';
-      return;
-    }
-
+    const mode = document.getElementById('log-view-mode').value, container = document.getElementById('log-list');
+    container.innerHTML = ''; if (logs.length === 0) { container.innerHTML = '<p>データがありません．</p>'; return; }
     if (mode === 'date') {
-      const startDate = document.getElementById('log-start-date').value;
-      const endDate = document.getElementById('log-end-date').value;
-      
-      let filteredLogs = logs.filter(log => {
-        const logDate = log.date.split('T')[0];
-        if (startDate && logDate < startDate) return false;
-        if (endDate && logDate > endDate) return false;
-        return true;
-      });
-
-      if (filteredLogs.length === 0) {
-        container.innerHTML = '<p>指定された期間のデータがありません．</p>';
-        return;
-      }
-
-      const groupedByDate = {};
-      filteredLogs.forEach(log => {
-        const dateOnly = log.date.split('T')[0];
-        if (!groupedByDate[dateOnly]) groupedByDate[dateOnly] = [];
-        groupedByDate[dateOnly].push(log);
-      });
-
-      const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
-
-      sortedDates.forEach(date => {
-        const dayEval = dailyEvals[date] ? getStaticStarHtml(dailyEvals[date].rating) : '';
-        const dayLogs = groupedByDate[date].sort((a, b) => a.date.localeCompare(b.date));
-        
-        let html = `<h4>${date} <span style="font-size:16px;">${dayEval}</span></h4><div class="scroll-wrapper"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
-        
-        dayLogs.forEach(log => {
-          const timeStr = log.date.split('T')[1];
-          log.sets.forEach(s => {
-            html += `<tr>
-              <td>${timeStr}</td>
-              <td>${log.category}</td>
-              <td>${log.exercise}<br><span style="font-size:14px; display:inline-block; margin-top:2px;">${getStaticStarHtml(log.rating)}</span></td>
-              <td>${s.setIndex}<br><span style="font-size:12px; display:inline-block; margin-top:2px;">${getStaticStarHtml(s.rating)}</span></td>
-              <td>${s.weight}${s.unit}</td>
-              <td>${s.reps}</td>
-              <td style="white-space: nowrap;">
-                <button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button>
-                <button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button>
-              </td>
-            </tr>`;
-          });
+      const start = document.getElementById('log-start-date').value, end = document.getElementById('log-end-date').value;
+      let filtered = logs.filter(log => { const d = log.date.split('T')[0]; return (!start || d >= start) && (!end || d <= end); });
+      if (filtered.length === 0) { container.innerHTML = '<p>指定された期間のデータがありません．</p>'; return; }
+      const grouped = {}; filtered.forEach(log => { const d = log.date.split('T')[0]; if (!grouped[d]) grouped[d] = []; grouped[d].push(log); });
+      Object.keys(grouped).sort((a, b) => b.localeCompare(a)).forEach(date => {
+        let html = `<h4>${date} <span style="font-size:16px;">${dailyEvals[date] ? getStaticStarHtml(dailyEvals[date].rating) : ''}</span></h4><div class="scroll-wrapper"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+        grouped[date].sort((a, b) => a.date.localeCompare(b.date)).forEach(log => {
+          const time = log.date.split('T')[1];
+          log.sets.forEach(s => { html += `<tr><td>${time}</td><td>${log.category}</td><td>${log.exercise}<br><span style="font-size:14px;">${getStaticStarHtml(log.rating)}</span></td><td>${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td>${s.weight}${s.unit}</td><td>${s.reps}</td><td style="white-space: nowrap;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`; });
         });
-        html += `</table></div><br>`;
-        container.innerHTML += html;
+        container.innerHTML += html + `</table></div><br>`;
       });
-
     } else if (mode === 'exercise') {
-      const targetEx = document.getElementById('log-target-exercise').value;
-      const sortMode = document.getElementById('log-sort-mode').value;
-
-      if (!targetEx) {
-        container.innerHTML = '<p>種目を選択してくれ．</p>';
-        return;
-      }
-
-      let setLogs = [];
-      logs.forEach(log => {
-        if (log.exercise === targetEx) {
-          log.sets.forEach(set => {
-            setLogs.push({
-              logId: log.id,
-              date: log.date,
-              logRating: log.rating,
-              setRating: set.rating,
-              setIndex: set.setIndex,
-              weight: set.weight,
-              unit: set.unit,
-              reps: set.reps
-            });
-          });
-        }
-      });
-
-      if (setLogs.length === 0) {
-         container.innerHTML = '<p>データがありません．</p>';
-         return;
-      }
-
+      const target = document.getElementById('log-target-exercise').value, sort = document.getElementById('log-sort-mode').value;
+      if (!target) { container.innerHTML = '<p>種目を選択してくれ．</p>'; return; }
+      let setLogs = []; logs.forEach(log => { if (log.exercise === target) log.sets.forEach(set => setLogs.push({ logId: log.id, date: log.date, logRating: log.rating, setRating: set.rating, setIndex: set.setIndex, weight: set.weight, unit: set.unit, reps: set.reps })); });
       setLogs.sort((a, b) => {
-        let wA = a.unit === 'kg' ? a.weight * 2.20462 : a.weight;
-        let wB = b.unit === 'kg' ? b.weight * 2.20462 : b.weight;
-        switch(sortMode) {
-          case 'date-desc': return b.date.localeCompare(a.date);
-          case 'date-asc': return a.date.localeCompare(b.date);
-          case 'weight-desc': return wB - wA;
-          case 'weight-asc': return wA - wB;
-          case 'reps-desc': return b.reps - a.reps;
-          case 'reps-asc': return a.reps - b.reps;
-          default: return 0;
-        }
+        let wA = a.unit === 'kg' ? a.weight * 2.20462 : a.weight, wB = b.unit === 'kg' ? b.weight * 2.20462 : b.weight;
+        switch(sort) { case 'date-desc': return b.date.localeCompare(a.date); case 'date-asc': return a.date.localeCompare(b.date); case 'weight-desc': return wB - wA; case 'weight-asc': return wA - wB; case 'reps-desc': return b.reps - a.reps; case 'reps-asc': return a.reps - b.reps; default: return 0; }
       });
-
-      let html = `<h4>${targetEx}</h4><div class="scroll-wrapper"><table><tr><th>日時</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
-      setLogs.forEach(s => {
-        const dtStr = s.date.replace('T', ' ');
-        html += `<tr>
-          <td>${dtStr}<br><span style="font-size:14px; display:inline-block; margin-top:2px;">${getStaticStarHtml(s.logRating)}</span></td>
-          <td>${s.setIndex}<br><span style="font-size:12px; display:inline-block; margin-top:2px;">${getStaticStarHtml(s.setRating)}</span></td>
-          <td>${s.weight}${s.unit}</td>
-          <td>${s.reps}</td>
-          <td style="white-space: nowrap;">
-            <button class="action-btn" onclick="openEditModal(${s.logId}, ${s.setIndex})">編集</button>
-            <button class="action-btn action-btn-danger" onclick="deleteSet(${s.logId}, ${s.setIndex})">削除</button>
-          </td>
-        </tr>`;
-      });
-      html += `</table></div>`;
-      container.innerHTML = html;
+      let html = `<h4>${target}</h4><div class="scroll-wrapper"><table><tr><th>日時</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+      setLogs.forEach(s => { html += `<tr><td>${s.date.replace('T', ' ')}<br><span style="font-size:14px;">${getStaticStarHtml(s.logRating)}</span></td><td>${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.setRating)}</span></td><td>${s.weight}${s.unit}</td><td>${s.reps}</td><td style="white-space: nowrap;"><button class="action-btn" onclick="openEditModal(${s.logId}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${s.logId}, ${s.setIndex})">削除</button></td></tr>`; });
+      container.innerHTML = html + `</table></div>`;
     }
   }
 
   function drawGraph() {
-    const container = document.getElementById('chart-container');
-    const exercise = document.getElementById('graph-exercise').value;
-    const targetUnit = document.getElementById('graph-unit').value; 
-    const isDark = document.body.classList.contains('mode-dark');
-    const axisColor = isDark ? '#ffffff' : '#000000';
-    const gridColor = isDark ? '#444444' : '#cccccc';
-    
-    container.innerHTML = '';
-
-    if (!exercise) {
-      container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" width="600" height="400" viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">データがありません．</text></svg>`;
-      return;
-    }
-
+    const container = document.getElementById('chart-container'), exercise = document.getElementById('graph-exercise').value, targetUnit = document.getElementById('graph-unit').value, isDark = document.body.classList.contains('mode-dark');
+    container.innerHTML = ''; if (!exercise) { container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><text x="20" y="30" fill="${isDark?'#fff':'#000'}" font-size="14">データがありません．</text></svg>`; return; }
     let exLogs = logs.filter(log => log.exercise === exercise);
-
-    const useDateFilter = document.getElementById('graph-date-filter-check').checked;
-    if (useDateFilter) {
-      const startDate = document.getElementById('graph-start-date').value;
-      const endDate = document.getElementById('graph-end-date').value;
-      exLogs = exLogs.filter(log => {
-        const logDate = log.date.split('T')[0];
-        if (startDate && logDate < startDate) return false;
-        if (endDate && logDate > endDate) return false;
-        return true;
-      });
+    if (document.getElementById('graph-date-filter-check').checked) {
+      const start = document.getElementById('graph-start-date').value, end = document.getElementById('graph-end-date').value;
+      exLogs = exLogs.filter(log => { const d = log.date.split('T')[0]; return (!start || d >= start) && (!end || d <= end); });
     }
-
-    if (exLogs.length === 0) {
-      container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" width="600" height="400" viewBox="0 0 600 400" class="graph-svg"><text x="20" y="30" fill="${axisColor}" font-size="14">指定範囲にデータがありません．</text></svg>`;
-      return;
-    }
-
-    let graphPoints = [];
-    exLogs.forEach((log, originalIndex) => {
-      log.sets.forEach(set => {
-        let r = parseFloat(set.reps) || 0;
-        let w = parseFloat(set.weight) || 0;
-        let originalW = w;
-        
-        if (targetUnit === 'lbs' && set.unit === 'kg') w *= 2.20462;
-        else if (targetUnit === 'kg' && set.unit === 'lbs') w /= 2.20462;
-
-        graphPoints.push({
-          timestamp: new Date(log.date).getTime(),
-          logColorIndex: originalIndex,
-          setIndex: set.setIndex,
-          r: r,
-          w: w,
-          originalW: originalW,
-          unit: set.unit,
-          dateStr: log.date.replace('T', ' ')
-        });
-      });
-    });
-
-    graphPoints.sort((a, b) => {
-      if (a.timestamp !== b.timestamp) return a.timestamp - b.timestamp;
-      return a.setIndex - b.setIndex;
-    });
-
-    let maxX = 5;
-    let maxYReal = 0;
-    graphPoints.forEach(pt => {
-      if (pt.r > maxX) maxX = pt.r;
-      if (pt.w > maxYReal) maxYReal = pt.w;
-    });
-
-    maxX = Math.ceil(maxX * 1.2);
-    let maxY = Math.ceil(maxYReal / 5) * 5;
-    if (maxY === 0) maxY = 5;
-    
-    const padLeft = 50;
-    const padRight = 30;
-    const padTop = 30;
-    const padBottom = 40;
-    
-    const ySteps = Math.ceil(maxY / 5);
-    const Y_PIXELS_PER_STEP = 40;
-    const plotH = Math.max(300, ySteps * Y_PIXELS_PER_STEP); 
-    const baseHeight = plotH + padTop + padBottom;
-
-    const xSteps = Math.min(maxX, 10);
-    const X_PIXELS_PER_STEP = 30;
-    const plotW = Math.max(500, maxX * X_PIXELS_PER_STEP);
-    const baseWidth = Math.max(600, plotW + padLeft + padRight);
-
-    let svgHtml = `<svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" width="${baseWidth}" height="${baseHeight}" viewBox="0 0 ${baseWidth} ${baseHeight}" class="graph-svg" preserveAspectRatio="xMidYMid meet">`;
-
-    const showArrows = document.getElementById('graph-show-arrows').checked;
-    const arrowColor = document.getElementById('arrow-color').value;
-    const arrowThickness = document.getElementById('arrow-thickness').value;
-
-    if (showArrows) {
-      svgHtml += `
-        <defs>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="14" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="${arrowColor}" />
-          </marker>
-        </defs>
-      `;
-    }
-
-    for (let i = 0; i <= ySteps; i++) {
-      const yVal = maxY * (i / ySteps);
-      const py = padTop + plotH - (yVal / maxY) * plotH;
-      svgHtml += `<line x1="${padLeft}" y1="${py}" x2="${baseWidth - padRight}" y2="${py}" stroke="${gridColor}" stroke-width="1" />`;
-      svgHtml += `<text x="${padLeft - 5}" y="${py}" fill="${axisColor}" font-size="12" text-anchor="end" alignment-baseline="middle">${yVal.toFixed(1)}</text>`;
-    }
-
-    for (let i = 0; i <= xSteps; i++) {
-      const xVal = maxX * (i / xSteps);
-      const px = padLeft + (xVal / maxX) * plotW;
-      svgHtml += `<line x1="${px}" y1="${padTop + plotH}" x2="${px}" y2="${padTop + plotH + 5}" stroke="${axisColor}" stroke-width="1" />`;
-      svgHtml += `<text x="${px}" y="${padTop + plotH + 20}" fill="${axisColor}" font-size="12" text-anchor="middle">${Math.round(xVal)}</text>`;
-    }
-
-    svgHtml += `<polyline points="${padLeft},${padTop} ${padLeft},${padTop + plotH} ${baseWidth - padRight},${padTop + plotH}" fill="none" stroke="${axisColor}" stroke-width="2" />`;
-    svgHtml += `<text x="${padLeft}" y="${padTop - 10}" fill="${axisColor}" font-size="12" text-anchor="start">重量(${targetUnit})</text>`;
-    svgHtml += `<text x="${baseWidth - padRight}" y="${padTop + plotH + 35}" fill="${axisColor}" font-size="12" text-anchor="end">回数</text>`;
-
-    if (showArrows && graphPoints.length > 1) {
-      for (let i = 0; i < graphPoints.length - 1; i++) {
-        const pt1 = graphPoints[i];
-        const pt2 = graphPoints[i+1];
-        const px1 = padLeft + (pt1.r / maxX) * plotW;
-        const py1 = padTop + plotH - (pt1.w / maxY) * plotH;
-        const px2 = padLeft + (pt2.r / maxX) * plotW;
-        const py2 = padTop + plotH - (pt2.w / maxY) * plotH;
-        
-        if (Math.abs(px1 - px2) > 0.1 || Math.abs(py1 - py2) > 0.1) {
-          svgHtml += `<line x1="${px1}" y1="${py1}" x2="${px2}" y2="${py2}" stroke="${arrowColor}" stroke-width="${arrowThickness}" marker-end="url(#arrowhead)" opacity="0.6"/>`;
-        }
-      }
-    }
-
-    graphPoints.forEach(pt => {
-      const hue = (pt.logColorIndex * 137) % 360;
-      const fillColor = `hsl(${hue}, 80%, 60%)`;
-      const strokeColor = `hsl(${hue}, 80%, 40%)`;
-
-      const px = padLeft + (pt.r / maxX) * plotW;
-      const py = padTop + plotH - (pt.w / maxY) * plotH;
-      
-      svgHtml += `<circle cx="${px}" cy="${py}" r="6" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" 
-        onmousemove="showTooltip(event, '${pt.dateStr}', ${pt.setIndex}, ${pt.originalW}, '${pt.unit}', ${pt.r})" 
-        onmouseleave="hideTooltip()" 
-        onmouseover="this.setAttribute('r', '9')" 
-        onmouseout="this.setAttribute('r', '6')" 
-        style="cursor: pointer; transition: r 0.1s;" />`;
-    });
-
-    svgHtml += `</svg>`;
-    container.innerHTML = svgHtml;
+    if (exLogs.length === 0) { container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><text x="20" y="30" fill="${isDark?'#fff':'#000'}" font-size="14">データがありません．</text></svg>`; return; }
+    let pts = []; exLogs.forEach((log, idx) => log.sets.forEach(set => { let w = parseFloat(set.weight) || 0; if (targetUnit === 'lbs' && set.unit === 'kg') w *= 2.20462; else if (targetUnit === 'kg' && set.unit === 'lbs') w /= 2.20462; pts.push({ t: new Date(log.date).getTime(), idx: idx, sIdx: set.setIndex, r: parseFloat(set.reps) || 0, w: w, ow: set.weight, u: set.unit, d: log.date.replace('T', ' ') }); }));
+    pts.sort((a, b) => a.t !== b.t ? a.t - b.t : a.sIdx - b.sIdx);
+    let maxX = Math.ceil(Math.max(...pts.map(p => p.r), 5) * 1.2), maxYReal = Math.max(...pts.map(p => p.w), 5), maxY = Math.ceil(maxYReal / 5) * 5;
+    const padL = 50, padR = 30, padT = 30, padB = 40, ySteps = Math.ceil(maxY / 5), yP = 40, plotH = Math.max(300, ySteps * yP), baseH = plotH + padT + padB, xSteps = Math.min(maxX, 10), xP = 30, plotW = Math.max(500, maxX * xP), baseW = Math.max(600, plotW + padL + padR);
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${baseW}" height="${baseH}" viewBox="0 0 ${baseW} ${baseH}"><defs><marker id="arr" markerWidth="10" markerHeight="7" refX="14" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="${document.getElementById('arrow-color').value}" /></marker></defs>`;
+    const gridC = isDark ? '#444' : '#ccc', axisC = isDark ? '#fff' : '#000';
+    for (let i = 0; i <= ySteps; i++) { const yV = maxY * (i / ySteps), py = padT + plotH - (yV / maxY) * plotH; svg += `<line x1="${padL}" y1="${py}" x2="${baseW - padR}" y2="${py}" stroke="${gridC}" /><text x="${padL - 5}" y="${py}" fill="${axisC}" font-size="12" text-anchor="end" alignment-baseline="middle">${yV.toFixed(1)}</text>`; }
+    for (let i = 0; i <= xSteps; i++) { const xV = maxX * (i / xSteps), px = padL + (xV / maxX) * plotW; svg += `<line x1="${px}" y1="${padT + plotH}" x2="${px}" y2="${padT + plotH + 5}" stroke="${axisC}" /><text x="${px}" y="${padT + plotH + 20}" fill="${axisC}" font-size="12" text-anchor="middle">${Math.round(xV)}</text>`; }
+    svg += `<polyline points="${padL},${padT} ${padL},${padT + plotH} ${baseW - padR},${padT + plotH}" fill="none" stroke="${axisC}" stroke-width="2" /><text x="${padL}" y="${padT - 10}" fill="${axisC}" font-size="12">重量(${targetUnit})</text><text x="${baseW - padR}" y="${padT + plotH + 35}" fill="${axisC}" font-size="12" text-anchor="end">回数</text>`;
+    if (document.getElementById('graph-show-arrows').checked && pts.length > 1) { for (let i = 0; i < pts.length - 1; i++) { const p1 = pts[i], p2 = pts[i+1], x1 = padL + (p1.r / maxX) * plotW, y1 = padT + plotH - (p1.w / maxY) * plotH, x2 = padL + (p2.r / maxX) * plotW, y2 = padT + plotH - (p2.w / maxY) * plotH; if (Math.abs(x1 - x2) > 0.1 || Math.abs(y1 - y2) > 0.1) svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${document.getElementById('arrow-color').value}" stroke-width="${document.getElementById('arrow-thickness').value}" marker-end="url(#arr)" opacity="0.6"/>`; } }
+    pts.forEach(p => { const h = (p.idx * 137) % 360, x = padL + (p.r / maxX) * plotW, y = padT + plotH - (p.w / maxY) * plotH; svg += `<circle cx="${x}" cy="${y}" r="6" fill="hsl(${h},80%,60%)" stroke="hsl(${h},80%,40%)" stroke-width="2" onmousemove="showTooltip(event, '${p.d}', ${p.sIdx}, ${p.ow}, '${p.u}', ${p.r})" onmouseleave="hideTooltip()" style="cursor: pointer;" />`; });
+    container.innerHTML = svg + `</svg>`;
   }
 
   function downloadGraph() {
-    const container = document.getElementById('chart-container');
-    const svg = container.querySelector('svg');
-    if (!svg || svg.textContent.includes('データがありません')) {
-      alert('ダウンロードするグラフが存在しない．先にグラフを描画してくれ．');
-      return;
-    }
-
-    const format = document.getElementById('download-format').value;
-    const dateStr = new Date().toISOString().split('T')[0];
-    const exercise = document.getElementById('graph-exercise').value || 'graph';
-    const filename = `workout_${exercise}_${dateStr}.${format}`;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-
-    if (format === 'svg') {
-      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      triggerDownload(url, filename);
-      return;
-    }
-
-    const scale = 3; 
-    const baseWidth = svg.viewBox.baseVal.width || 600;
-    const baseHeight = svg.viewBox.baseVal.height || 400;
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = baseWidth * scale;
-    canvas.height = baseHeight * scale;
-    const ctx = canvas.getContext('2d');
-
-    const isDark = document.body.classList.contains('mode-dark');
-    const computedStyle = getComputedStyle(document.body);
-    const bgColor = computedStyle.getPropertyValue('--bg-color').trim() || (isDark ? '#121212' : '#ffffff');
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = function() {
-      try {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-        canvas.toBlob(function(blob) {
-          if (blob) {
-            const url = URL.createObjectURL(blob);
-            triggerDownload(url, filename);
-          } else {
-            alert("画像の変換に失敗した．Safariのセキュリティ制限の可能性がある．");
-          }
-        }, mimeType, 1.0);
-      } catch (e) {
-        alert("画像の保存中にエラーが発生した: " + e.message);
-      }
-    };
-    
-    img.onerror = function(e) {
-      alert("グラフの画像化に失敗した．Safariのセキュリティ制限の可能性がある．");
-    };
-    
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+    const svg = document.getElementById('chart-container').querySelector('svg'); if (!svg || svg.textContent.includes('データがありません')) { alert('グラフを描画してくれ．'); return; }
+    const format = document.getElementById('download-format').value, date = new Date().toISOString().split('T')[0], ex = document.getElementById('graph-exercise').value, fname = `workout_${ex}_${date}.${format}`, svgD = new XMLSerializer().serializeToString(svg);
+    if (format === 'svg') { triggerDownload(URL.createObjectURL(new Blob([svgD], { type: 'image/svg+xml;charset=utf-8' })), fname); return; }
+    const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d'), scale = 3, w = svg.viewBox.baseVal.width, h = svg.viewBox.baseVal.height;
+    canvas.width = w * scale; canvas.height = h * scale; ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-color'); ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const img = new Image(); img.crossOrigin = "anonymous";
+    img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); canvas.toBlob(blob => { if (blob) triggerDownload(URL.createObjectURL(blob), fname); }, format === 'jpeg' ? 'image/jpeg' : 'image/png', 1.0); };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgD);
   }
 
-  function triggerDownload(url, filename) {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    if (url.startsWith('blob:')) {
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
-  }
+  function triggerDownload(url, fname) { const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); document.body.removeChild(a); if (url.startsWith('blob:')) setTimeout(() => URL.revokeObjectURL(url), 1000); }
+  function showTooltip(e, d, si, w, u, r) { const t = document.getElementById('tooltip'); t.style.display = 'block'; t.style.left = (e.pageX + 15) + 'px'; t.style.top = (e.pageY + 15) + 'px'; t.innerHTML = `${d}<br>第${si}セット: ${w}${u} × ${r}回`; }
+  function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
 
-  function showTooltip(e, date, setIndex, weight, unit, reps) {
-    const tooltip = document.getElementById('tooltip');
-    tooltip.style.display = 'block';
-    tooltip.style.left = (e.pageX + 15) + 'px';
-    tooltip.style.top = (e.pageY + 15) + 'px';
-    tooltip.innerHTML = `${date}<br>第${setIndex}セット: ${weight}${unit} × ${reps}回`;
-  }
-
-  function hideTooltip() {
-    const tooltip = document.getElementById('tooltip');
-    tooltip.style.display = 'none';
-  }
-
-  window.onload = function() {
-    loadLocalCategories();
-    loadLocalData();
-    loadLocalSettings();
-    resetInputForm();
-    
-    const savedMode = document.getElementById('theme-mode').value;
-    const savedColor = document.getElementById('theme-color').value || 'blue';
-    applyThemeLogic(savedMode, savedColor);
-    
-    updateGlobalExerciseOptions();
-    updateLogUI();
-  };
+  window.onload = function() { loadLocalCategories(); loadLocalData(); loadLocalSettings(); resetInputForm(); updateTheme(); updateGlobalExerciseOptions(); updateLogUI(); };
 </script>
 </body>
 </html>
