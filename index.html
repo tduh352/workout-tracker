@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V51</title>
+<title>Workout Tracker V52</title>
 
 <style>
   :root {
@@ -178,7 +178,6 @@
 
   #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 400px; }
 
-  /* 単日切り替え用UI */
   .date-nav-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); font-size: 18px; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
   .date-nav-btn:active { background: var(--border-color); }
 
@@ -1011,27 +1010,42 @@
     document.getElementById('review-end-date').value = datePart;
   }
 
-  // 【バグ修正】引数keepCategoryを追加し、種目と数値だけをリセットする
-  function resetInputForm(keepCategory = false) {
-    if (!keepCategory) {
-      document.getElementById('category').selectedIndex = 0; 
+  // --- 【完全修正版】送信後の専用リセット処理 ---
+  function resetAfterSubmit() {
+    document.getElementById('exercise').selectedIndex = 0;
+    
+    setRating('input', 0);
+    document.getElementById('input-comment').value = '';
+    
+    const isCommon = document.getElementById('common-check').checked;
+    const setCount = parseInt(document.getElementById('set-count').value) || 1;
+    
+    if (isCommon) {
+      document.getElementById('weight-0').value = '';
+      document.getElementById('reps-0').value = '';
+      if (document.getElementById('set-comment-0')) document.getElementById('set-comment-0').value = '';
+      setSetRating(0, 0);
+    } else {
+      for (let i = 1; i <= setCount; i++) {
+        document.getElementById(`weight-${i}`).value = '';
+        document.getElementById(`reps-${i}`).value = '';
+        if (document.getElementById(`set-comment-${i}`)) document.getElementById(`set-comment-${i}`).value = '';
+        setSetRating(i, 0);
+      }
     }
-    updateExerciseList();
-    document.getElementById('exercise').selectedIndex = 0; // 種目を空にリセット
+  }
 
+  // 設定変更や初期読み込み時の完全リセット用
+  function resetInputForm() {
+    document.getElementById('category').selectedIndex = 0; updateExerciseList();
     document.getElementById('set-count').value = currentDefaultSetCount;
     document.getElementById('common-check').checked = document.getElementById('default-common').checked;
-    
     const showRatingDefault = document.getElementById('show-input-rating').checked;
     const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
     if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; setRating('input', 0); }
     else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; setRating('input', 0); }
-    
     document.getElementById('input-comment').value = '';
-    currentInputRating = 0; 
-    currentSetRatings = {}; 
-    initDates(); 
-    renderSetInputs();
+    currentInputRating = 0; currentSetRatings = {}; initDates(); renderSetInputs();
   }
 
   function updateExerciseList() {
@@ -1157,9 +1171,10 @@
     updateLogUI(); 
     updateReviewUI(); 
     drawGraph(); 
-    resetInputForm(true);
-    showToast('記録を追加したぞ！', 'success');
     
+    resetAfterSubmit(); // 修正：スマートリセットを発動
+    
+    showToast('記録を追加したぞ！', 'success');
     if (gAccessToken && isGapiLoaded) saveToDrive(true);
   }
 
@@ -1278,17 +1293,16 @@
   function updateReviewUI() {
     const level = document.getElementById('review-level').value;
     const exGroup = document.getElementById('review-exercise-group');
-    const dayGroup = document.getElementById('review-day-group');
     const useDateFilter = document.getElementById('review-date-filter-check').checked;
 
     if (level === 'exercise' || level === 'set') {
-      exGroup.style.display = 'block'; dayGroup.style.display = 'none';
+      exGroup.style.display = 'block'; 
       document.getElementById('review-single-ui').style.display = 'none';
       document.getElementById('review-list-ui').style.display = 'block';
       document.getElementById('review-list-sort-group').style.display = 'none';
       document.getElementById('review-date-inputs').style.display = useDateFilter ? 'block' : 'none';
     } else {
-      exGroup.style.display = 'none'; dayGroup.style.display = 'none';
+      exGroup.style.display = 'none'; 
       if (dateViewMode === 'single') {
         document.getElementById('review-single-ui').style.display = 'flex';
         document.getElementById('review-list-ui').style.display = 'none';
