@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V48</title>
+<title>Workout Tracker V49</title>
 
 <style>
   :root {
@@ -97,303 +97,96 @@
     --btn-border: #000000;
   }
 
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
-
-  html, body {
-    overflow-x: hidden;
-    width: 100%;
-    max-width: 100vw;
-  }
-
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { overflow-x: hidden; width: 100%; max-width: 100vw; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    padding: 20px 15px;
-    padding-top: env(safe-area-inset-top, 20px);
-    padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 60px);
-    max-width: 800px;
-    margin: auto;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    transition: background-color 0.3s, color 0.3s;
-    -webkit-tap-highlight-color: transparent;
+    padding: 20px 15px; padding-top: env(safe-area-inset-top, 20px); padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 60px);
+    max-width: 800px; margin: auto; background-color: var(--bg-color); color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s; -webkit-tap-highlight-color: transparent;
   }
 
   .glass-panel {
-    background: var(--panel-bg);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 15px var(--shadow);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    margin-bottom: 20px;
-    width: 100%;
+    background: var(--panel-bg); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 12px; padding: 20px;
+    box-shadow: 0 4px 15px var(--shadow); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); margin-bottom: 20px; width: 100%;
   }
 
-  .scroll-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+  .scroll-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-  .tab-buttons { 
-    display: flex; 
-    border-bottom: 2px solid var(--border-color); 
-    margin-bottom: 20px; 
-    width: 100%; 
-    overflow-x: auto; 
-    scrollbar-width: none; 
-  }
-  .tab-buttons::-webkit-scrollbar {
-    display: none;
-  }
-
-  .tab-btn {
-    padding: 12px 10px;
-    cursor: pointer;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--text-color);
-    outline: none;
-    font-size: 14px;
-    flex: 1;
-    text-align: center;
-    white-space: nowrap;
-    min-width: 70px;
-  }
-  .tab-btn.active {
-    border: 2px solid var(--border-color);
-    border-bottom: 2px solid var(--bg-color);
-    margin-bottom: -2px;
-    font-weight: bold;
-    border-radius: 8px 8px 0 0;
-    background: var(--panel-bg);
-  }
-
+  .tab-buttons { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .tab-buttons::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 12px 10px; cursor: pointer; border: 1px solid transparent; background: transparent; color: var(--text-color); outline: none; font-size: 14px; flex: 1; text-align: center; white-space: nowrap; min-width: 60px; }
+  .tab-btn.active { border: 2px solid var(--border-color); border-bottom: 2px solid var(--bg-color); margin-bottom: -2px; font-weight: bold; border-radius: 8px 8px 0 0; background: var(--panel-bg); }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
   .form-group { margin-bottom: 15px; width: 100%; }
   label { display: block; margin-bottom: 5px; font-weight: bold; }
-  
-  input[type="number"], input[type="text"], input[type="date"], input[type="time"], input[type="datetime-local"], select, input[type="color"], textarea {
-    padding: 10px;
-    width: 100%;
-    min-width: 0;
-    background: var(--input-bg);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 16px;
-    box-sizing: border-box;
+  input[type="number"], input[type="text"], input[type="date"], input[type="time"], select, textarea {
+    padding: 10px; width: 100%; min-width: 0; background: var(--input-bg); color: var(--text-color);
+    border: 1px solid var(--border-color); border-radius: 6px; font-size: 16px; box-sizing: border-box;
   }
   textarea { resize: vertical; min-height: 80px; }
-  
   .checkbox-group { display: flex; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
   .checkbox-group input { width: auto; margin-right: 10px; transform: scale(1.2); }
 
-  .star-rating-container {
-    display: inline-flex;
-    gap: 4px;
-    font-size: 28px;
-    color: var(--border-color);
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    margin-bottom: 5px;
-  }
-  .star-rating-container .star.active {
-    color: #ffc700;
-    text-shadow: 0 0 5px rgba(255, 199, 0, 0.4);
-  }
+  .star-rating-container { display: inline-flex; gap: 4px; font-size: 28px; color: var(--border-color); cursor: pointer; user-select: none; margin-bottom: 5px; }
+  .star-rating-container .star.active { color: #ffc700; text-shadow: 0 0 5px rgba(255, 199, 0, 0.4); }
 
-  .review-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 8px var(--shadow);
-  }
-  .review-card-header {
-    font-weight: bold;
-    font-size: 18px;
-    margin-bottom: 5px;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 5px;
-  }
-  .review-card-context {
-    font-size: 14px;
-    color: var(--text-color);
-    opacity: 0.8;
-    margin-bottom: 15px;
-    line-height: 1.4;
-  }
+  .review-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px var(--shadow); }
+  .review-card-header { font-weight: bold; font-size: 18px; margin-bottom: 5px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+  .review-card-context { font-size: 14px; color: var(--text-color); opacity: 0.8; margin-bottom: 15px; line-height: 1.4; }
 
-  .set-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 10px;
-    align-items: center;
-    background: rgba(128, 128, 128, 0.1);
-    padding: 10px;
-    border-radius: 8px;
-    width: 100%;
-  }
+  .set-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; align-items: center; background: rgba(128, 128, 128, 0.1); padding: 10px; border-radius: 8px; width: 100%; }
   .set-row > div { flex: 1 1 100px; display: flex; flex-direction: column; min-width: 0; }
-
   .weight-input-group { display: flex; align-items: center; width: 100%; gap: 5px; }
   .weight-input-group input[type="number"] { flex: 1; width: auto; min-width: 0; }
   .unit-select { width: 70px; flex-shrink: 0; margin-left: 0; }
-
   .add-exercise-flex { display: flex; gap: 10px; width: 100%; }
   .add-exercise-flex input { flex: 1; width: auto; min-width: 0; }
   .add-exercise-flex button { width: auto; padding: 8px 20px; flex-shrink: 0; margin: 0; }
-
   .date-range-flex { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; width: 100%; }
   .date-range-flex input { flex: 1; width: auto; min-width: 100px; }
 
   .glossy-btn {
-    padding: 14px 20px;
-    background: linear-gradient(to bottom, var(--btn-top) 0%, var(--btn-bottom) 100%);
-    color: var(--btn-text);
-    border: 1px solid var(--btn-border);
-    border-radius: 24px;
-    cursor: pointer;
-    width: 100%;
-    font-size: 16px;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    box-shadow: inset 0px 1px 0px rgba(255,255,255,0.4), 0px 4px 6px var(--shadow);
-    transition: all 0.2s;
+    padding: 14px 20px; background: linear-gradient(to bottom, var(--btn-top) 0%, var(--btn-bottom) 100%);
+    color: var(--btn-text); border: 1px solid var(--btn-border); border-radius: 24px; cursor: pointer;
+    width: 100%; font-size: 16px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    box-shadow: inset 0px 1px 0px rgba(255,255,255,0.4), 0px 4px 6px var(--shadow); transition: all 0.2s;
   }
-  .glossy-btn:active {
-    background: linear-gradient(to bottom, var(--btn-bottom) 0%, var(--btn-top) 100%);
-    box-shadow: inset 0px 2px 5px rgba(0,0,0,0.5);
-    transform: translateY(2px);
-  }
-  .glossy-btn:disabled {
-    background: var(--border-color);
-    color: #888888;
-    border-color: var(--border-color);
-    cursor: not-allowed;
-    box-shadow: none;
-    text-shadow: none;
-  }
+  .glossy-btn:active { background: linear-gradient(to bottom, var(--btn-bottom) 0%, var(--btn-top) 100%); box-shadow: inset 0px 2px 5px rgba(0,0,0,0.5); transform: translateY(2px); }
+  .glossy-btn:disabled { background: var(--border-color); color: #888888; border-color: var(--border-color); cursor: not-allowed; box-shadow: none; text-shadow: none; }
+  .danger-btn { background: linear-gradient(to bottom, #ff7e7e 0%, #d63030 100%); border: 1px solid #b52b2b; margin-top: 10px; }
+  .danger-btn:active { background: linear-gradient(to bottom, #d63030 0%, #ff7e7e 100%); }
 
-  .danger-btn {
-    background: linear-gradient(to bottom, #ff7e7e 0%, #d63030 100%);
-    border: 1px solid #b52b2b;
-    margin-top: 10px;
-  }
-  .danger-btn:active {
-    background: linear-gradient(to bottom, #d63030 0%, #ff7e7e 100%);
-  }
-
-  .action-btn {
-    padding: 8px 12px;
-    font-size: 14px;
-    border: 1px solid var(--btn-border);
-    border-radius: 6px;
-    background: var(--btn-top);
-    color: var(--btn-text);
-    cursor: pointer;
-    margin-right: 4px;
-    margin-bottom: 4px;
-  }
-  .action-btn-danger {
-    background: #d63030;
-    border: 1px solid #b52b2b;
-  }
-  .action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  .action-btn { padding: 8px 12px; font-size: 14px; border: 1px solid var(--btn-border); border-radius: 6px; background: var(--btn-top); color: var(--btn-text); cursor: pointer; margin-right: 4px; margin-bottom: 4px; }
+  .action-btn-danger { background: #d63030; border: 1px solid #b52b2b; }
 
   table { width: 100%; border-collapse: collapse; min-width: 500px; }
   th, td { border: 1px solid var(--border-color); padding: 10px 8px; text-align: left; vertical-align: middle; word-break: break-word; }
   th { background: rgba(128, 128, 128, 0.2); font-weight: bold; }
 
-  .canvas-container { 
-    position: relative; 
-    width: 100%; 
-    overflow: auto; 
-    max-height: 70vh;
-    background: var(--input-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    margin-top: 10px;
-  }
-  .graph-svg {
-    display: block;
-  }
-
-  #tooltip {
-    position: absolute;
-    display: none;
-    background: var(--tooltip-bg);
-    color: var(--tooltip-text);
-    padding: 8px;
-    border-radius: 4px;
-    pointer-events: none;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 100;
-    box-shadow: 0 2px 5px var(--shadow);
-  }
+  .canvas-container { position: relative; width: 100%; overflow: auto; max-height: 70vh; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; margin-top: 10px; }
+  .graph-svg { display: block; }
+  #tooltip { position: absolute; display: none; background: var(--tooltip-bg); color: var(--tooltip-text); padding: 8px; border-radius: 4px; pointer-events: none; font-size: 12px; white-space: nowrap; z-index: 100; box-shadow: 0 2px 5px var(--shadow); }
   .controls-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: flex-end; width: 100%; }
   .controls-row > div { flex: 1 1 150px; min-width: 0; }
 
-  #edit-modal-overlay, #login-modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: var(--modal-overlay);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-  #edit-modal, #login-modal {
-    width: 90%;
-    max-width: 400px;
-    margin-bottom: 0;
-  }
-  .modal-buttons {
-    display: flex; gap: 10px; margin-top: 20px;
-  }
+  #edit-modal-overlay, #login-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); display: none; align-items: center; justify-content: center; z-index: 1000; }
+  #edit-modal, #login-modal { width: 90%; max-width: 400px; margin-bottom: 0; }
+  .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
 
-  /* トースト通知用CSS */
-  #toast-container {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    pointer-events: none;
-    width: 90%;
-    max-width: 400px;
-  }
+  #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 400px; }
+
+  /* 単日切り替え用UI */
+  .date-nav-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); font-size: 18px; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+  .date-nav-btn:active { background: var(--border-color); }
 
   @media (max-width: 480px) {
-    .glass-panel {
-      padding: 15px 10px;
-    }
-    input[type="number"], input[type="text"], input[type="date"], input[type="time"], select, input[type="color"], textarea {
-      padding: 8px;
-    }
-    .set-row {
-      padding: 8px;
-    }
-    .tab-btn {
-      padding: 12px 2px;
-      font-size: 13px;
-    }
+    .glass-panel { padding: 15px 10px; }
+    input[type="number"], input[type="text"], input[type="date"], input[type="time"], select, textarea { padding: 8px; }
+    .set-row { padding: 8px; }
+    .tab-btn { padding: 12px 2px; font-size: 13px; }
   }
 </style>
 </head>
@@ -411,9 +204,9 @@
   <button class="tab-btn active" onclick="switchTab('input')">入力</button>
   <button class="tab-btn" onclick="switchTab('review')">振り返り</button>
   <button class="tab-btn" onclick="switchTab('logs')">ログ</button>
+  <button class="tab-btn" onclick="switchTab('graph')">グラフ</button>
   <button class="tab-btn" onclick="switchTab('exercises')">種目</button>
   <button class="tab-btn" onclick="switchTab('settings')">設定</button>
-  <button class="tab-btn" onclick="switchTab('feedback')">ご意見</button>
 </div>
 
 <div id="tab-input" class="tab-content active glass-panel">
@@ -483,36 +276,50 @@
 
 <div id="tab-review" class="tab-content glass-panel">
   <h3>評価と振り返り</h3>
-  
   <div class="controls-row">
     <div class="form-group">
       <label for="review-level">表示モード</label>
       <select id="review-level" onchange="updateReviewUI()">
         <option value="day">日付ごと (その日全体の評価)</option>
         <option value="exercise">種目ごと (その種目の評価)</option>
-        <option value="set">セットごと (個別のセット評価)</option>
+        <option value="set">セットごと (個別の評価)</option>
       </select>
     </div>
-    <div class="form-group" id="review-day-group" style="display: block;">
-      <label for="review-target-date">対象日付</label>
-      <input type="date" id="review-target-date" onchange="renderReviewList()">
-    </div>
-    <div class="form-group" id="review-exercise-group" style="display: none;">
+    <div class="form-group" id="review-exercise-group" style="display: none; flex: 2;">
       <label for="review-target-exercise">対象種目</label>
       <select id="review-target-exercise" onchange="renderReviewList()"></select>
     </div>
   </div>
 
-  <div class="controls-row">
-    <div class="form-group checkbox-group" style="flex: 1;">
-      <input type="checkbox" id="review-date-filter-check" onchange="toggleReviewDateFilter()">
-      <label for="review-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
+  <div id="review-date-control-area">
+    <div id="review-single-ui" class="controls-row" style="display: none; align-items: center; justify-content: center; flex-wrap: nowrap;">
+      <button class="date-nav-btn" onclick="changeDate('review-target-date', -1)">&lt;</button>
+      <input type="date" id="review-target-date" onchange="renderReviewList()" style="width: auto; text-align: center;">
+      <button class="date-nav-btn" onclick="changeDate('review-target-date', 1)">&gt;</button>
     </div>
-    <div class="form-group" id="review-date-inputs" style="display: none; flex: 2;">
-      <div class="date-range-flex">
-        <input type="date" id="review-start-date" onchange="renderReviewList()">
-        <span>〜</span>
-        <input type="date" id="review-end-date" onchange="renderReviewList()">
+
+    <div id="review-list-ui" style="display: block;">
+      <div class="controls-row" id="review-list-sort-group" style="display: none;">
+        <div class="form-group">
+          <label>ソート順</label>
+          <select id="review-date-sort" onchange="renderReviewList()">
+            <option value="date-desc">日時 (新しい順)</option>
+            <option value="date-asc">日時 (古い順)</option>
+          </select>
+        </div>
+      </div>
+      <div class="controls-row">
+        <div class="form-group checkbox-group" style="flex: 1;">
+          <input type="checkbox" id="review-date-filter-check" onchange="updateReviewUI()">
+          <label for="review-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
+        </div>
+        <div class="form-group" id="review-date-inputs" style="display: none; flex: 2;">
+          <div class="date-range-flex">
+            <input type="date" id="review-start-date" onchange="renderReviewList()">
+            <span>〜</span>
+            <input type="date" id="review-end-date" onchange="renderReviewList()">
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -520,111 +327,126 @@
   <div id="review-container"></div>
 </div>
 
-<div id="tab-logs" class="tab-content">
-  <div id="log-section" class="glass-panel">
-    <h3>筋トレログ</h3>
-    <div class="controls-row">
-      <div class="form-group">
-        <label for="log-view-mode">表示モード</label>
-        <select id="log-view-mode" onchange="updateLogUI()">
-          <option value="date">日付ごと</option>
-          <option value="exercise">種目ごと</option>
-        </select>
-      </div>
-
-      <div class="form-group" id="exercise-select-group" style="display: none; flex: 2;">
-        <label for="log-target-exercise">対象種目</label>
-        <select id="log-target-exercise" onchange="renderLogList()"></select>
-      </div>
-
-      <div class="form-group" id="sort-control-group" style="display: none;">
-        <label for="log-sort-mode">ソート順</label>
-        <select id="log-sort-mode" onchange="renderLogList()">
-          <option value="date-desc">日時 (新しい順)</option>
-          <option value="date-asc">日時 (古い順)</option>
-          <option value="weight-desc">最大重量 (重い順)</option>
-          <option value="weight-asc">最大重量 (軽い順)</option>
-          <option value="reps-desc">最大回数 (多い順)</option>
-          <option value="reps-asc">最大回数 (少ない順)</option>
-        </select>
-      </div>
+<div id="tab-logs" class="tab-content glass-panel">
+  <h3>筋トレログ</h3>
+  <div class="controls-row">
+    <div class="form-group">
+      <label for="log-view-mode">表示モード</label>
+      <select id="log-view-mode" onchange="updateLogUI()">
+        <option value="date">日付ごと</option>
+        <option value="exercise">種目ごと</option>
+      </select>
     </div>
-
-    <div class="controls-row">
-      <div class="form-group checkbox-group" style="flex: 1;">
-        <input type="checkbox" id="log-date-filter-check" onchange="updateLogUI()">
-        <label for="log-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
-      </div>
-      <div class="form-group" id="log-date-inputs" style="display: none; flex: 2;">
-        <div class="date-range-flex">
-          <input type="date" id="log-start-date" onchange="renderLogList()">
-          <span>〜</span>
-          <input type="date" id="log-end-date" onchange="renderLogList()">
-        </div>
-      </div>
+    <div class="form-group" id="log-exercise-select-group" style="display: none; flex: 2;">
+      <label for="log-target-exercise">対象種目</label>
+      <select id="log-target-exercise" onchange="renderLogList()"></select>
     </div>
-
-    <div class="scroll-wrapper">
-      <div id="log-list"></div>
+    <div class="form-group" id="log-sort-control-group" style="display: none;">
+      <label for="log-sort-mode">ソート順</label>
+      <select id="log-sort-mode" onchange="renderLogList()">
+        <option value="date-desc">日時 (新しい順)</option>
+        <option value="date-asc">日時 (古い順)</option>
+        <option value="weight-desc">最大重量 (重い順)</option>
+        <option value="weight-asc">最大重量 (軽い順)</option>
+        <option value="reps-desc">最大回数 (多い順)</option>
+        <option value="reps-asc">最大回数 (少ない順)</option>
+      </select>
     </div>
   </div>
 
-  <div id="graph-section" class="glass-panel">
-    <h3>グラフ分析</h3>
-    <div class="controls-row">
-      <div class="form-group">
-        <label for="graph-exercise">分析する種目</label>
-        <select id="graph-exercise" onchange="drawGraph()"></select>
-      </div>
-      <div class="form-group">
-        <label for="graph-unit">表示単位</label>
-        <select id="graph-unit" onchange="drawGraph()">
-          <option value="lbs">lbs</option>
-          <option value="kg">kg</option>
-        </select>
-      </div>
+  <div id="log-date-control-area">
+    <div id="log-single-ui" class="controls-row" style="display: none; align-items: center; justify-content: center; flex-wrap: nowrap;">
+      <button class="date-nav-btn" onclick="changeDate('log-single-date', -1)">&lt;</button>
+      <input type="date" id="log-single-date" onchange="renderLogList()" style="width: auto; text-align: center;">
+      <button class="date-nav-btn" onclick="changeDate('log-single-date', 1)">&gt;</button>
     </div>
 
-    <div class="controls-row">
-      <div class="form-group checkbox-group" style="flex: 1;">
-        <input type="checkbox" id="graph-date-filter-check" onchange="toggleGraphDateFilter()">
-        <label for="graph-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
+    <div id="log-list-ui" style="display: block;">
+      <div class="controls-row" id="log-list-sort-group">
+        <div class="form-group">
+          <label>ソート順</label>
+          <select id="log-date-sort" onchange="renderLogList()">
+            <option value="date-desc">日時 (新しい順)</option>
+            <option value="date-asc">日時 (古い順)</option>
+          </select>
+        </div>
       </div>
-      <div class="form-group" id="graph-date-inputs" style="display: none; flex: 2;">
-        <div class="date-range-flex">
-          <input type="date" id="graph-start-date" onchange="drawGraph()">
-          <span>〜</span>
-          <input type="date" id="graph-end-date" onchange="drawGraph()">
+      <div class="controls-row">
+        <div class="form-group checkbox-group" style="flex: 1;">
+          <input type="checkbox" id="log-date-filter-check" onchange="updateLogUI()">
+          <label for="log-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
+        </div>
+        <div class="form-group" id="log-date-inputs" style="display: none; flex: 2;">
+          <div class="date-range-flex">
+            <input type="date" id="log-start-date" onchange="renderLogList()">
+            <span>〜</span>
+            <input type="date" id="log-end-date" onchange="renderLogList()">
+          </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="controls-row">
-      <div class="form-group checkbox-group">
-        <input type="checkbox" id="graph-show-arrows" checked onchange="updateSettings()">
-        <label for="graph-show-arrows" style="margin:0;">推移の矢印を表示する</label>
+  <div class="scroll-wrapper">
+    <div id="log-list"></div>
+  </div>
+</div>
+
+<div id="tab-graph" class="tab-content glass-panel">
+  <h3>グラフ分析</h3>
+  <div class="controls-row">
+    <div class="form-group">
+      <label for="graph-exercise">分析する種目</label>
+      <select id="graph-exercise" onchange="drawGraph()"></select>
+    </div>
+    <div class="form-group">
+      <label for="graph-unit">表示単位</label>
+      <select id="graph-unit" onchange="drawGraph()">
+        <option value="lbs">lbs</option>
+        <option value="kg">kg</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="controls-row">
+    <div class="form-group checkbox-group" style="flex: 1;">
+      <input type="checkbox" id="graph-date-filter-check" onchange="toggleGraphDateFilter()">
+      <label for="graph-date-filter-check" style="margin:0;">日付範囲で絞り込む</label>
+    </div>
+    <div class="form-group" id="graph-date-inputs" style="display: none; flex: 2;">
+      <div class="date-range-flex">
+        <input type="date" id="graph-start-date" onchange="drawGraph()">
+        <span>〜</span>
+        <input type="date" id="graph-end-date" onchange="drawGraph()">
       </div>
     </div>
+  </div>
 
-    <div class="controls-row" style="margin-bottom: 0; align-items: center;">
-      <div class="form-group" style="margin-bottom: 0; flex: 1;">
-        <button class="glossy-btn" onclick="drawGraph()">グラフを描画</button>
-      </div>
-      <div style="display: flex; gap: 5px; flex: 1;">
-        <select id="download-format" style="width: auto; flex-shrink: 0; padding: 10px;">
-          <option value="png">PNG</option>
-          <option value="jpeg">JPEG</option>
-          <option value="svg">SVG</option>
-        </select>
-        <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563; margin-top: 0; flex: 1;" onclick="downloadGraph()">保存</button>
-      </div>
+  <div class="controls-row">
+    <div class="form-group checkbox-group">
+      <input type="checkbox" id="graph-show-arrows" checked onchange="updateSettings()">
+      <label for="graph-show-arrows" style="margin:0;">推移の矢印を表示する</label>
     </div>
+  </div>
 
-    <div class="canvas-container" id="chart-container">
-      <svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" viewBox="0 0 600 400" class="graph-svg">
-        <text x="20" y="30" fill="currentColor" font-size="14">種目を選択して描画してくれ．</text>
-      </svg>
+  <div class="controls-row" style="margin-bottom: 0; align-items: center;">
+    <div class="form-group" style="margin-bottom: 0; flex: 1;">
+      <button class="glossy-btn" onclick="drawGraph()">グラフを描画</button>
     </div>
+    <div style="display: flex; gap: 5px; flex: 1;">
+      <select id="download-format" style="width: auto; flex-shrink: 0; padding: 10px;">
+        <option value="png">PNG</option>
+        <option value="jpeg">JPEG</option>
+        <option value="svg">SVG</option>
+      </select>
+      <button class="glossy-btn" style="background: linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%); border-color: #2bb563; margin-top: 0; flex: 1;" onclick="downloadGraph()">保存</button>
+    </div>
+  </div>
+
+  <div class="canvas-container" id="chart-container">
+    <svg xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" viewBox="0 0 600 400" class="graph-svg">
+      <text x="20" y="30" fill="currentColor" font-size="14">種目を選択して描画してくれ．</text>
+    </svg>
   </div>
 </div>
 
@@ -640,7 +462,6 @@
       <option value="有酸素">有酸素</option>
     </select>
   </div>
-
   <div class="form-group">
     <label for="new-exercise-name">新しい種目を追加</label>
     <div class="add-exercise-flex">
@@ -648,7 +469,6 @@
       <button class="glossy-btn" onclick="addNewExercise()">追加</button>
     </div>
   </div>
-
   <div class="controls-row" style="margin-bottom: 10px;">
     <div style="display: flex; flex-wrap: wrap; gap: 5px;">
       <button class="action-btn" onclick="sortExercisesEdit('asc')">名前順 (昇順)</button>
@@ -656,15 +476,10 @@
       <button class="action-btn" style="background-color: var(--btn-bottom);" onclick="restoreCustomOrder()">カスタム順に戻す</button>
     </div>
   </div>
-
   <div class="scroll-wrapper">
     <table>
-      <tr>
-        <th>種目名</th>
-        <th style="width: 140px;">操作</th>
-      </tr>
-      <tbody id="exercise-edit-tbody">
-      </tbody>
+      <tr><th>種目名</th><th style="width: 140px;">操作</th></tr>
+      <tbody id="exercise-edit-tbody"></tbody>
     </table>
   </div>
 </div>
@@ -690,6 +505,16 @@
     </div>
   </div>
 
+  <div class="controls-row">
+    <div class="form-group">
+      <label for="date-view-mode">日付の表示モード (ログ・振り返り)</label>
+      <select id="date-view-mode" onchange="updateSettings()">
+        <option value="list">一覧表示 (範囲指定・ソート可)</option>
+        <option value="single">単日表示 (矢印で1日ずつ移動)</option>
+      </select>
+    </div>
+  </div>
+
   <div class="form-group">
     <label for="default-unit">デフォルトの重量単位</label>
     <select id="default-unit" onchange="updateSettings()">
@@ -697,27 +522,22 @@
       <option value="kg">kg</option>
     </select>
   </div>
-
   <div class="form-group">
     <label for="weight-step">重量の入力ステップ</label>
     <input type="number" id="weight-step" value="0.5" step="0.1" min="0.1" onchange="updateSettings()">
   </div>
-
   <div class="form-group">
     <label for="default-set-count">デフォルトのセット数</label>
     <input type="number" id="default-set-count" value="3" min="1" onchange="updateSettings()">
   </div>
-
   <div class="form-group checkbox-group">
     <input type="checkbox" id="default-common" checked onchange="updateSettings()">
     <label for="default-common" style="margin:0;">全セット共通をデフォルトにする</label>
   </div>
-
   <div class="form-group checkbox-group">
     <input type="checkbox" id="show-input-rating" checked onchange="updateSettings()">
     <label for="show-input-rating" style="margin:0;">入力画面で全体評価とコメントを常に開いておく</label>
   </div>
-
   <div class="form-group checkbox-group">
     <input type="checkbox" id="show-set-comments" onchange="updateSettings()">
     <label for="show-set-comments" style="margin:0;">入力画面で各セットごとのコメントと評価を表示する</label>
@@ -745,7 +565,6 @@
     <label for="arrow-color">グラフの矢印の色</label>
     <input type="color" id="arrow-color" value="#888888" onchange="updateSettings()">
   </div>
-
   <div class="form-group">
     <label for="arrow-thickness">グラフの矢印の太さ</label>
     <input type="number" id="arrow-thickness" value="2" min="0.5" step="0.5" onchange="updateSettings()">
@@ -770,7 +589,6 @@
 <div id="edit-modal-overlay">
   <div id="edit-modal" class="glass-panel">
     <h3>記録の編集</h3>
-
     <div class="form-group">
       <label>評価</label>
       <div class="star-rating-container" id="edit-star-rating">
@@ -781,7 +599,6 @@
         <span class="star" onclick="setRating('edit', 5)">★</span>
       </div>
     </div>
-
     <div class="form-group">
       <label>重量</label>
       <div class="weight-input-group">
@@ -809,20 +626,17 @@
     <p style="font-size: 14px; line-height: 1.5; margin-bottom: 15px;">
       <strong>【利用目的】</strong><br>
       記録データをクラウドにバックアップし，機種変更時などに復元できるようにするため．<br><br>
-      ※このアプリは専用のバックアップファイル（workout_tracker_backup.json）にのみアクセスする安全な設計になっている．
+      ※このアプリは専用のバックアップファイルにのみアクセスする安全な設計になっている．
     </p>
-
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);">
       <span style="font-size: 14px;">状態: <strong class="gdrive-status-text">未接続</strong></span>
       <button class="action-btn btn-gdrive-login" style="margin: 0; background: var(--btn-bottom);" onclick="handleAuthClick()">連携する</button>
       <button class="action-btn action-btn-danger btn-gdrive-logout" style="margin: 0; display: none;" onclick="handleSignoutClick()">解除する</button>
     </div>
-
     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
       <button class="glossy-btn btn-gdrive-save" style="flex: 1; padding: 10px; font-size: 14px;" onclick="saveToDrive(false)" disabled>ドライブへ保存</button>
       <button class="glossy-btn btn-gdrive-load" style="flex: 1; padding: 10px; font-size: 14px; background: linear-gradient(to bottom, #ebba87 0%, #b47846 100%); border-color: #d2691e;" onclick="loadFromDrive()" disabled>ドライブから復元</button>
     </div>
-
     <button class="glossy-btn danger-btn" style="margin-top: 0;" onclick="closeLoginModal()">閉じる</button>
   </div>
 </div>
@@ -831,6 +645,7 @@
   let currentUnit = 'lbs';
   let currentStep = '0.5';
   let currentDefaultSetCount = 3;
+  let dateViewMode = 'list'; 
   let logs = [];
   
   let editingLogId = null;
@@ -858,48 +673,39 @@
     "自重": ["懸垂", "腕立て伏せ", "クランチ", "プランク", "ディップス", "ランジ", "カーフレイズ"],
     "有酸素": ["ランニング", "ウォーキング", "水泳", "自転車", "縄跳び", "ステアマスター"]
   };
-  
   let customExerciseCategories = {};
   let savedCustomOrders = {};
 
-  // --- トースト通知機能 ---
+  // トースト通知機能
   function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.innerText = message;
-    toast.style.padding = '12px 20px';
-    toast.style.borderRadius = '8px';
-    toast.style.color = '#ffffff';
-    toast.style.fontSize = '14px';
-    toast.style.fontWeight = 'bold';
-    toast.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
-    toast.style.transition = 'opacity 0.3s, transform 0.3s';
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(-20px)';
+    toast.style.padding = '12px 20px'; toast.style.borderRadius = '8px'; toast.style.color = '#ffffff';
+    toast.style.fontSize = '14px'; toast.style.fontWeight = 'bold'; toast.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
+    toast.style.transition = 'opacity 0.3s, transform 0.3s'; toast.style.opacity = '0'; toast.style.transform = 'translateY(-20px)';
     toast.style.textAlign = 'center';
     
-    if (type === 'error') {
-      toast.style.background = 'linear-gradient(to bottom, #ff7e7e 0%, #d63030 100%)';
-    } else if (type === 'info') {
-      toast.style.background = 'linear-gradient(to bottom, #87ceeb 0%, #4682b4 100%)';
-    } else {
-      toast.style.background = 'linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%)';
-    }
+    if (type === 'error') toast.style.background = 'linear-gradient(to bottom, #ff7e7e 0%, #d63030 100%)';
+    else if (type === 'info') toast.style.background = 'linear-gradient(to bottom, #87ceeb 0%, #4682b4 100%)';
+    else toast.style.background = 'linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%)';
 
     container.appendChild(toast);
-    
-    setTimeout(() => {
-      toast.style.opacity = '1';
-      toast.style.transform = 'translateY(0)';
-    }, 10);
+    setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; }, 10);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-20px)'; setTimeout(() => { container.removeChild(toast); }, 300); }, 5000);
+  }
 
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(-20px)';
-      setTimeout(() => {
-        container.removeChild(toast);
-      }, 300);
-    }, 5000);
+  // 日付変更機能 (矢印ボタン用)
+  function changeDate(inputId, delta) {
+    const input = document.getElementById(inputId);
+    if (!input.value) return;
+    const d = new Date(input.value);
+    d.setDate(d.getDate() + delta);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    input.value = `${yyyy}-${mm}-${dd}`;
+    input.dispatchEvent(new Event('change'));
   }
 
   // --- Google ドライブ連携のロジック ---
@@ -922,289 +728,167 @@
     const logoutBtns = document.querySelectorAll('.btn-gdrive-logout');
     const saveBtns = document.querySelectorAll('.btn-gdrive-save');
     const loadBtns = document.querySelectorAll('.btn-gdrive-load');
-
     if (isConnected) {
       updateSyncStatus('接続済み', 'var(--btn-bottom)');
       loginBtns.forEach(el => el.style.display = 'none');
       logoutBtns.forEach(el => el.style.display = 'inline-block');
-      saveBtns.forEach(el => el.disabled = false);
-      loadBtns.forEach(el => el.disabled = false);
+      saveBtns.forEach(el => el.disabled = false); loadBtns.forEach(el => el.disabled = false);
     } else {
       updateSyncStatus('未接続', 'var(--text-color)');
       loginBtns.forEach(el => el.style.display = 'inline-block');
       logoutBtns.forEach(el => el.style.display = 'none');
-      saveBtns.forEach(el => el.disabled = true);
-      loadBtns.forEach(el => el.disabled = true);
+      saveBtns.forEach(el => el.disabled = true); loadBtns.forEach(el => el.disabled = true);
     }
   }
 
   function gapiLoaded() {
-    gapi.load('client', () => {
-      gapi.client.init({}).then(() => {
-        isGapiLoaded = true;
-        checkAndRestoreToken();
-      });
-    });
+    gapi.load('client', () => { gapi.client.init({}).then(() => { isGapiLoaded = true; checkAndRestoreToken(); }); });
   }
 
   function gisLoaded() {
     tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
+      client_id: CLIENT_ID, scope: SCOPES,
       callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
-          const hasAccess = google.accounts.oauth2.hasGrantedAllScopes(tokenResponse, SCOPES);
-          if (hasAccess) {
-            gAccessToken = tokenResponse.access_token;
-            sessionStorage.setItem('gdrive_access_token', gAccessToken);
-            if (isGapiLoaded) {
-              gapi.client.setToken({access_token: gAccessToken});
-            }
-            updateDriveUI(true);
-            showToast('Googleドライブに接続したぞ！', 'success');
+          if (google.accounts.oauth2.hasGrantedAllScopes(tokenResponse, SCOPES)) {
+            gAccessToken = tokenResponse.access_token; sessionStorage.setItem('gdrive_access_token', gAccessToken);
+            if (isGapiLoaded) gapi.client.setToken({access_token: gAccessToken});
+            updateDriveUI(true); showToast('Googleドライブに接続したぞ！', 'success');
           } else {
-            alert("【重要】Googleドライブへのアクセス権限が許可されなかった．\n連携画面で「Google ドライブのファイルの表示，編集，作成，削除」のチェックボックスに必ずチェックを入れてから続行してくれ．");
+            alert("【重要】Googleドライブへのアクセス権限が許可されなかった．");
             google.accounts.oauth2.revoke(tokenResponse.access_token, () => {});
-            gAccessToken = null;
-            updateDriveUI(false);
+            gAccessToken = null; updateDriveUI(false);
           }
         }
       },
     });
-    isGisLoaded = true;
-    checkAndRestoreToken();
+    isGisLoaded = true; checkAndRestoreToken();
   }
 
   function checkAndRestoreToken() {
     if (isGapiLoaded && isGisLoaded) {
       const savedToken = sessionStorage.getItem('gdrive_access_token');
-      if (savedToken) {
-        gAccessToken = savedToken;
-        gapi.client.setToken({access_token: gAccessToken});
-        updateDriveUI(true);
-      }
+      if (savedToken) { gAccessToken = savedToken; gapi.client.setToken({access_token: gAccessToken}); updateDriveUI(true); }
     }
   }
 
-  function openLoginModal() {
-    document.getElementById('login-modal-overlay').style.display = 'flex';
-  }
-
-  function closeLoginModal() {
-    document.getElementById('login-modal-overlay').style.display = 'none';
-  }
-
+  function openLoginModal() { document.getElementById('login-modal-overlay').style.display = 'flex'; }
+  function closeLoginModal() { document.getElementById('login-modal-overlay').style.display = 'none'; }
   function handleAuthClick() {
-    if (typeof google === 'undefined' || !google.accounts || !tokenClient || !isGapiLoaded) {
-      alert("Googleの認証システムが読み込めなかった．\n広告ブロッカーやトラッキング防止機能がオンになっていると，Googleのログイン機能が強制遮断されてしまう．\nこのサイトのドメインのブロックを解除して，ページを再読み込みしてみてくれ．");
-      return;
-    }
+    if (typeof google === 'undefined' || !google.accounts || !tokenClient || !isGapiLoaded) { alert("認証システムが読み込めない．ブロッカーを解除してくれ．"); return; }
     tokenClient.requestAccessToken({prompt: 'consent'});
   }
-
   function handleSignoutClick() {
     if (gAccessToken) {
       google.accounts.oauth2.revoke(gAccessToken, () => {
-        gAccessToken = null;
-        sessionStorage.removeItem('gdrive_access_token');
-        updateDriveUI(false);
-        showToast('連携を解除した．', 'info');
+        gAccessToken = null; sessionStorage.removeItem('gdrive_access_token'); updateDriveUI(false); showToast('連携を解除した．', 'info');
       });
     }
   }
 
   async function findDriveFile() {
-    const res = await gapi.client.request({
-      path: '/drive/v3/files',
-      method: 'GET',
-      params: { q: "name='workout_tracker_backup.json' and trashed=false", spaces: 'drive' }
-    });
-    const data = res.result;
-    return data.files && data.files.length > 0 ? data.files[0].id : null;
+    const res = await gapi.client.request({ path: '/drive/v3/files', method: 'GET', params: { q: "name='workout_tracker_backup.json' and trashed=false", spaces: 'drive' } });
+    return res.result.files && res.result.files.length > 0 ? res.result.files[0].id : null;
   }
 
   async function saveToDrive(isBackground = false) {
     if(!gAccessToken || !isGapiLoaded) return;
-    
-    if (!isBackground) {
-      const saveBtns = document.querySelectorAll('.btn-gdrive-save');
-      saveBtns.forEach(btn => btn.innerText = '保存中...');
-    } else {
-      updateSyncStatus('同期中...', '#888888');
-    }
+    if (!isBackground) document.querySelectorAll('.btn-gdrive-save').forEach(btn => btn.innerText = '保存中...');
+    else updateSyncStatus('同期中...', '#888888');
     
     try {
       const backupData = JSON.stringify({
-        logs: logs,
-        dailyEvals: dailyEvals,
-        customExerciseCategories: customExerciseCategories,
-        savedCustomOrders: savedCustomOrders,
-        settings: JSON.parse(localStorage.getItem('workout_tracker_settings') || '{}')
+        logs: logs, dailyEvals: dailyEvals, customExerciseCategories: customExerciseCategories,
+        savedCustomOrders: savedCustomOrders, settings: JSON.parse(localStorage.getItem('workout_tracker_settings') || '{}')
       });
-
       let fileId = await findDriveFile();
       if (!fileId) {
-        const createRes = await gapi.client.request({
-          path: '/drive/v3/files',
-          method: 'POST',
-          body: { name: 'workout_tracker_backup.json' }
-        });
+        const createRes = await gapi.client.request({ path: '/drive/v3/files', method: 'POST', body: { name: 'workout_tracker_backup.json' } });
         fileId = createRes.result.id;
       }
-
-      await gapi.client.request({
-        path: '/upload/drive/v3/files/' + fileId,
-        method: 'PATCH',
-        params: { uploadType: 'media' },
-        body: backupData
-      });
+      await gapi.client.request({ path: '/upload/drive/v3/files/' + fileId, method: 'PATCH', params: { uploadType: 'media' }, body: backupData });
       
-      if (!isBackground) {
-        showToast('Googleドライブへのバックアップが完了したぞ！', 'success');
-      } else {
-        updateSyncStatus('同期完了', 'var(--btn-bottom)');
-        setTimeout(() => { if (gAccessToken) updateSyncStatus('接続済み', 'var(--btn-bottom)'); }, 3000);
-      }
+      if (!isBackground) showToast('Googleドライブへのバックアップが完了したぞ！', 'success');
+      else { updateSyncStatus('同期完了', 'var(--btn-bottom)'); setTimeout(() => { if (gAccessToken) updateSyncStatus('接続済み', 'var(--btn-bottom)'); }, 3000); }
     } catch(e) {
-      let errMsg = e.result && e.result.error ? e.result.error.message : e.message;
-      if (!isBackground) {
-        showToast('保存エラー: ' + errMsg, 'error');
-      } else {
-        updateSyncStatus('自動保存失敗', 'red');
-      }
+      if (!isBackground) showToast('保存エラー: ' + (e.result && e.result.error ? e.result.error.message : e.message), 'error');
+      else updateSyncStatus('自動保存失敗', 'red');
     } finally {
-      if (!isBackground) {
-        const saveBtns = document.querySelectorAll('.btn-gdrive-save');
-        saveBtns.forEach(btn => btn.innerText = 'ドライブへ保存');
-      }
+      if (!isBackground) document.querySelectorAll('.btn-gdrive-save').forEach(btn => btn.innerText = 'ドライブへ保存');
     }
   }
 
   async function loadFromDrive() {
     if(!gAccessToken || !isGapiLoaded) return;
-    if(!confirm('現在の端末のデータがドライブのデータで完全に上書きされるが，本当によいだろうか？')) return;
-    
-    const loadBtns = document.querySelectorAll('.btn-gdrive-load');
-    loadBtns.forEach(btn => btn.innerText = '復元中...');
-    
+    if(!confirm('現在の端末のデータが上書きされるが，よいだろうか？')) return;
+    document.querySelectorAll('.btn-gdrive-load').forEach(btn => btn.innerText = '復元中...');
     try {
       let fileId = await findDriveFile();
-      if (!fileId) {
-        showToast('ドライブにバックアップデータが見つからない．', 'error');
-        return;
-      }
-      
-      const res = await gapi.client.request({
-        path: '/drive/v3/files/' + fileId,
-        method: 'GET',
-        params: { alt: 'media' }
-      });
-      
+      if (!fileId) { showToast('バックアップデータが見つからない．', 'error'); return; }
+      const res = await gapi.client.request({ path: '/drive/v3/files/' + fileId, method: 'GET', params: { alt: 'media' } });
       let data = res.result;
-      if (typeof data === 'string') {
-        data = JSON.parse(data);
-      } else if (!data && res.body) {
-        data = JSON.parse(res.body);
-      }
+      if (typeof data === 'string') data = JSON.parse(data); else if (!data && res.body) data = JSON.parse(res.body);
 
-      if(data.logs) logs = data.logs;
-      if(data.dailyEvals) dailyEvals = data.dailyEvals;
+      if(data.logs) logs = data.logs; if(data.dailyEvals) dailyEvals = data.dailyEvals;
       if(data.customExerciseCategories) customExerciseCategories = data.customExerciseCategories;
       if(data.savedCustomOrders) savedCustomOrders = data.savedCustomOrders;
       if(data.settings) localStorage.setItem('workout_tracker_settings', JSON.stringify(data.settings));
 
-      saveLocalData();
-      saveLocalCategories();
-      loadLocalSettings();
-      updateGlobalExerciseOptions();
-      renderLogList();
-      drawGraph();
-      renderReviewList();
-      renderExerciseEditList();
-
+      saveLocalData(); saveLocalCategories(); loadLocalSettings(); updateGlobalExerciseOptions();
+      updateLogUI(); drawGraph(); updateReviewUI(); renderExerciseEditList();
       showToast('クラウドからの復元が完了したぞ！', 'success');
     } catch(e) {
-      let errMsg = e.result && e.result.error ? e.result.error.message : e.message;
-      showToast('復元エラー: ' + errMsg, 'error');
+      showToast('復元エラー: ' + (e.result && e.result.error ? e.result.error.message : e.message), 'error');
     } finally {
-      loadBtns.forEach(btn => btn.innerText = 'ドライブから復元');
+      document.querySelectorAll('.btn-gdrive-load').forEach(btn => btn.innerText = 'ドライブから復元');
     }
   }
 
   // --- UI・汎用ロジック ---
   function toggleInputRating() {
-    const section = document.getElementById('input-rating-section');
-    const btn = document.getElementById('toggle-rating-btn');
-    if (section.style.display === 'none') {
-      section.style.display = 'block';
-      btn.innerText = 'ー 評価とコメントを閉じる';
-    } else {
-      section.style.display = 'none';
-      btn.innerText = '＋ 評価とコメントを追加 (任意)';
-    }
+    const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
+    if (section.style.display === 'none') { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; } 
+    else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; }
   }
 
   function setRating(target, value) {
-    if (target === 'input') {
-      currentInputRating = value;
-      updateStarUI('input-star-rating', currentInputRating);
-    } else if (target === 'edit') {
-      currentEditRating = value;
-      updateStarUI('edit-star-rating', currentEditRating);
-    }
+    if (target === 'input') { currentInputRating = value; updateStarUI('input-star-rating', value); } 
+    else if (target === 'edit') { currentEditRating = value; updateStarUI('edit-star-rating', value); }
   }
 
   function setSetRating(index, value) {
     currentSetRatings[index] = value;
     const container = document.getElementById(`input-star-set-${index}`);
     if (!container) return;
-    const stars = container.querySelectorAll('.star');
-    stars.forEach((star, i) => {
-      if (i < value) star.classList.add('active');
-      else star.classList.remove('active');
-    });
+    container.querySelectorAll('.star').forEach((star, i) => { if (i < value) star.classList.add('active'); else star.classList.remove('active'); });
   }
 
   function updateStarUI(containerId, rating) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    const stars = container.querySelectorAll('.star');
-    stars.forEach((star, index) => {
-      if (index < rating) star.classList.add('active');
-      else star.classList.remove('active');
-    });
+    container.querySelectorAll('.star').forEach((star, index) => { if (index < rating) star.classList.add('active'); else star.classList.remove('active'); });
   }
 
   function getDynamicStarHtml(level, identifier, currentRating) {
     let html = `<div class="star-rating-container" id="star-container-${level}-${identifier}">`;
-    for (let i = 1; i <= 5; i++) {
-      const activeClass = i <= currentRating ? 'active' : '';
-      html += `<span class="star ${activeClass}" onclick="updateReviewRating('${level}', '${identifier}', ${i})">★</span>`;
-    }
-    html += '</div>';
-    return html;
+    for (let i = 1; i <= 5; i++) { html += `<span class="star ${i <= currentRating ? 'active' : ''}" onclick="updateReviewRating('${level}', '${identifier}', ${i})">★</span>`; }
+    return html + '</div>';
   }
 
   function getStaticStarHtml(rating) {
-    rating = rating || 0;
-    if (rating === 0) return '';
-    const activeStars = '★'.repeat(rating);
-    const inactiveStars = '★'.repeat(5 - rating);
-    return `<span style="color: #ffc700;">${activeStars}</span><span style="color: var(--border-color);">${inactiveStars}</span>`;
+    rating = rating || 0; if (rating === 0) return '';
+    return `<span style="color: #ffc700;">${'★'.repeat(rating)}</span><span style="color: var(--border-color);">${'★'.repeat(5 - rating)}</span>`;
   }
 
   function applyThemeLogic(modeValue, colorValue) {
     let isDark = modeValue === 'system' ? window.matchMedia('(prefers-color-scheme: dark)').matches : modeValue === 'dark';
-    document.body.className = '';
-    if (isDark) document.body.classList.add('mode-dark');
-    document.body.classList.add('color-' + colorValue);
+    document.body.className = ''; if (isDark) document.body.classList.add('mode-dark'); document.body.classList.add('color-' + colorValue);
     if (logs.length > 0) drawGraph();
   }
 
   function updateTheme() {
-    const mode = document.getElementById('theme-mode').value;
-    const color = document.getElementById('theme-color').value;
-    applyThemeLogic(mode, color); saveLocalSettings();
+    applyThemeLogic(document.getElementById('theme-mode').value, document.getElementById('theme-color').value);
+    saveLocalSettings();
   }
 
   function switchTab(tabId) {
@@ -1215,38 +899,35 @@
     if (clickedBtn) clickedBtn.classList.add('active');
     
     if (tabId === 'exercises') renderExerciseEditList();
-    if (tabId === 'review') renderReviewList();
-    if (tabId === 'logs') { updateLogUI(); drawGraph(); }
+    if (tabId === 'review') updateReviewUI();
+    if (tabId === 'logs') updateLogUI();
+    if (tabId === 'graph') { updateGlobalExerciseOptions(); drawGraph(); }
   }
 
   function updateSettings() {
     currentUnit = document.getElementById('default-unit').value;
     currentStep = document.getElementById('weight-step').value || '0.5';
     currentDefaultSetCount = parseInt(document.getElementById('default-set-count').value) || 3;
-    const isCommonDefault = document.getElementById('default-common').checked;
-    document.getElementById('common-check').checked = isCommonDefault;
+    dateViewMode = document.getElementById('date-view-mode').value;
+
+    document.getElementById('common-check').checked = document.getElementById('default-common').checked;
     const showRatingDefault = document.getElementById('show-input-rating').checked;
-    const section = document.getElementById('input-rating-section');
-    const btn = document.getElementById('toggle-rating-btn');
+    const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
     if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; }
     else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; }
     
     document.getElementById('edit-weight').step = currentStep;
     document.getElementById('set-count').value = currentDefaultSetCount;
-    renderSetInputs(); drawGraph(); saveLocalSettings();
+    renderSetInputs(); updateLogUI(); updateReviewUI(); drawGraph(); saveLocalSettings();
     showToast('設定を保存したぞ！', 'success');
   }
 
   function loadLocalCategories() {
-    const saved = localStorage.getItem('workout_tracker_categories');
-    const savedOrders = localStorage.getItem('workout_tracker_custom_orders');
-    if (saved) {
-      try { customExerciseCategories = JSON.parse(saved); } catch (e) { customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories)); }
-    } else { customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories)); }
-
-    if (savedOrders) {
-      try { savedCustomOrders = JSON.parse(savedOrders); } catch (e) { savedCustomOrders = JSON.parse(JSON.stringify(customExerciseCategories)); }
-    } else { savedCustomOrders = JSON.parse(JSON.stringify(customExerciseCategories)); }
+    const saved = localStorage.getItem('workout_tracker_categories'), savedOrders = localStorage.getItem('workout_tracker_custom_orders');
+    if (saved) { try { customExerciseCategories = JSON.parse(saved); } catch (e) { customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories)); } }
+    else { customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories)); }
+    if (savedOrders) { try { savedCustomOrders = JSON.parse(savedOrders); } catch (e) { savedCustomOrders = JSON.parse(JSON.stringify(customExerciseCategories)); } }
+    else { savedCustomOrders = JSON.parse(JSON.stringify(customExerciseCategories)); }
   }
 
   function saveLocalCategories() {
@@ -1254,43 +935,25 @@
     localStorage.setItem('workout_tracker_custom_orders', JSON.stringify(savedCustomOrders));
   }
 
-  function saveCustomOrderState(cat) {
-    if (customExerciseCategories[cat]) { savedCustomOrders[cat] = [...customExerciseCategories[cat]]; }
-    saveLocalCategories();
-  }
+  function saveCustomOrderState(cat) { if (customExerciseCategories[cat]) savedCustomOrders[cat] = [...customExerciseCategories[cat]]; saveLocalCategories(); }
 
   function restoreCustomOrder() {
     const cat = document.getElementById('edit-category').value;
-    if (savedCustomOrders[cat]) {
-      customExerciseCategories[cat] = [...savedCustomOrders[cat]];
-      saveLocalCategories();
-      renderExerciseEditList();
-      updateExerciseList();
-      showToast('リストの並び順を初期状態に戻した．', 'info');
-    }
+    if (savedCustomOrders[cat]) { customExerciseCategories[cat] = [...savedCustomOrders[cat]]; saveLocalCategories(); renderExerciseEditList(); updateExerciseList(); showToast('並び順を初期状態に戻した．', 'info'); }
   }
 
   function resetCategoriesData() {
     if (confirm("種目リストを初期状態に戻すだろうか？　追加したカスタム種目は消去される．")) {
-      customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories));
-      savedCustomOrders = JSON.parse(JSON.stringify(defaultExerciseCategories));
-      saveLocalCategories();
-      renderExerciseEditList();
-      updateExerciseList();
+      customExerciseCategories = JSON.parse(JSON.stringify(defaultExerciseCategories)); savedCustomOrders = JSON.parse(JSON.stringify(defaultExerciseCategories));
+      saveLocalCategories(); renderExerciseEditList(); updateExerciseList();
       if (gAccessToken && isGapiLoaded) saveToDrive(true);
       showToast('種目リストをリセットしたぞ．', 'info');
     }
   }
 
   function loadLocalData() {
-    const savedLogs = localStorage.getItem('workout_tracker_logs');
-    if (savedLogs) {
-      try { logs = JSON.parse(savedLogs); } catch (e) { logs = []; }
-    }
-    const savedDaily = localStorage.getItem('workout_tracker_daily_evals');
-    if (savedDaily) {
-      try { dailyEvals = JSON.parse(savedDaily); } catch (e) { dailyEvals = {}; }
-    }
+    const savedLogs = localStorage.getItem('workout_tracker_logs'); if (savedLogs) { try { logs = JSON.parse(savedLogs); } catch (e) { logs = []; } }
+    const savedDaily = localStorage.getItem('workout_tracker_daily_evals'); if (savedDaily) { try { dailyEvals = JSON.parse(savedDaily); } catch (e) { dailyEvals = {}; } }
   }
 
   function saveLocalData() {
@@ -1307,45 +970,47 @@
         if (settings.themeColor) document.getElementById('theme-color').value = settings.themeColor;
         if (settings.defaultUnit) document.getElementById('default-unit').value = settings.defaultUnit;
         if (settings.weightStep) document.getElementById('weight-step').value = settings.weightStep;
-        if (settings.defaultSetCount) {
-          document.getElementById('default-set-count').value = settings.defaultSetCount;
-          currentDefaultSetCount = parseInt(settings.defaultSetCount) || 3;
-        }
+        if (settings.defaultSetCount) { document.getElementById('default-set-count').value = settings.defaultSetCount; currentDefaultSetCount = parseInt(settings.defaultSetCount) || 3; }
+        if (settings.dateViewMode) { document.getElementById('date-view-mode').value = settings.dateViewMode; dateViewMode = settings.dateViewMode; }
         if (settings.defaultCommon !== undefined) document.getElementById('default-common').checked = settings.defaultCommon;
         if (settings.showInputRating !== undefined) document.getElementById('show-input-rating').checked = settings.showInputRating;
         if (settings.showSetComments !== undefined) document.getElementById('show-set-comments').checked = settings.showSetComments;
         if (settings.arrowColor) document.getElementById('arrow-color').value = settings.arrowColor;
         if (settings.arrowThickness) document.getElementById('arrow-thickness').value = settings.arrowThickness;
         if (settings.showArrows !== undefined) document.getElementById('graph-show-arrows').checked = settings.showArrows;
-      } catch (e) {
-        console.error("設定読み込み失敗．");
-      }
+      } catch (e) { console.error("設定読み込み失敗．"); }
     }
+  }
+
+  function saveLocalSettings() {
+    const settings = {
+      themeMode: document.getElementById('theme-mode').value, themeColor: document.getElementById('theme-color').value,
+      defaultUnit: document.getElementById('default-unit').value, weightStep: document.getElementById('weight-step').value,
+      defaultSetCount: document.getElementById('default-set-count').value, dateViewMode: document.getElementById('date-view-mode').value,
+      defaultCommon: document.getElementById('default-common').checked, showInputRating: document.getElementById('show-input-rating').checked,
+      showSetComments: document.getElementById('show-set-comments').checked, arrowColor: document.getElementById('arrow-color').value,
+      arrowThickness: document.getElementById('arrow-thickness').value, showArrows: document.getElementById('graph-show-arrows').checked
+    };
+    localStorage.setItem('workout_tracker_settings', JSON.stringify(settings));
   }
 
   function clearAllData() {
     if (confirm("本当にすべての記録を削除するだろうか？　この操作は取り消せない．")) {
-      logs = [];
-      dailyEvals = {};
-      saveLocalData();
-      updateGlobalExerciseOptions();
-      renderLogList();
-      drawGraph();
-      renderReviewList();
+      logs = []; dailyEvals = {}; saveLocalData(); updateGlobalExerciseOptions(); updateLogUI(); drawGraph(); updateReviewUI();
       if (gAccessToken && isGapiLoaded) saveToDrive(true);
       showToast('すべての記録データを消去した．', 'error');
     }
   }
 
   function initDates() {
-    const now = new Date();
-    const tzOffset = now.getTimezoneOffset() * 60000;
+    const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
     const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
     const [datePart, timePart] = localISOTime.split('T');
     
     document.getElementById('record-date').value = datePart;
     document.getElementById('record-time').value = timePart;
     document.getElementById('review-target-date').value = datePart;
+    document.getElementById('log-single-date').value = datePart;
     
     const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); 
     const pastStr = (new Date(past - tzOffset)).toISOString().split('T')[0];
@@ -1359,37 +1024,25 @@
   }
 
   function resetInputForm() {
-    document.getElementById('category').selectedIndex = 0;
-    updateExerciseList();
+    document.getElementById('category').selectedIndex = 0; updateExerciseList();
     document.getElementById('set-count').value = currentDefaultSetCount;
-    const isCommonDefault = document.getElementById('default-common').checked;
-    document.getElementById('common-check').checked = isCommonDefault;
+    document.getElementById('common-check').checked = document.getElementById('default-common').checked;
     const showRatingDefault = document.getElementById('show-input-rating').checked;
-    const section = document.getElementById('input-rating-section');
-    const btn = document.getElementById('toggle-rating-btn');
+    const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
     if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; setRating('input', 0); }
     else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; setRating('input', 0); }
     document.getElementById('input-comment').value = '';
-    currentInputRating = 0;
-    currentSetRatings = {};
-    initDates();
-    renderSetInputs();
+    currentInputRating = 0; currentSetRatings = {}; initDates(); renderSetInputs();
   }
 
   function updateExerciseList() {
-    const cat = document.getElementById('category').value;
-    const selectEl = document.getElementById('exercise');
+    const cat = document.getElementById('category').value; const selectEl = document.getElementById('exercise');
     selectEl.innerHTML = '<option value="" disabled selected style="display:none;">種目を選択してくれ</option>';
-    if (customExerciseCategories[cat]) {
-      customExerciseCategories[cat].forEach(ex => { selectEl.innerHTML += `<option value="${ex}">${ex}</option>`; });
-    }
+    if (customExerciseCategories[cat]) { customExerciseCategories[cat].forEach(ex => { selectEl.innerHTML += `<option value="${ex}">${ex}</option>`; }); }
   }
 
   function renderExerciseEditList() {
-    const cat = document.getElementById('edit-category').value;
-    const list = customExerciseCategories[cat] || [];
-    const tbody = document.getElementById('exercise-edit-tbody');
-    tbody.innerHTML = '';
+    const cat = document.getElementById('edit-category').value; const list = customExerciseCategories[cat] || []; const tbody = document.getElementById('exercise-edit-tbody'); tbody.innerHTML = '';
     list.forEach((ex, idx) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${ex}</td><td style="white-space: nowrap;"><button class="action-btn" onclick="moveExercise(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>↑</button><button class="action-btn" onclick="moveExercise(${idx}, 1)" ${idx === list.length - 1 ? 'disabled' : ''}>↓</button><button class="action-btn" onclick="renameExercise(${idx})">編集</button><button class="action-btn action-btn-danger" onclick="deleteExerciseFromList(${idx})">削除</button></td>`;
@@ -1398,49 +1051,48 @@
   }
 
   function moveExercise(index, direction) {
-    const cat = document.getElementById('edit-category').value;
-    const list = customExerciseCategories[cat];
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= list.length) return;
+    const cat = document.getElementById('edit-category').value, list = customExerciseCategories[cat];
+    const newIndex = index + direction; if (newIndex < 0 || newIndex >= list.length) return;
     const temp = list[index]; list[index] = list[newIndex]; list[newIndex] = temp;
     saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList();
   }
 
   function renameExercise(index) {
-    const cat = document.getElementById('edit-category').value;
-    const list = customExerciseCategories[cat];
-    const currentName = list[index];
+    const cat = document.getElementById('edit-category').value, list = customExerciseCategories[cat], currentName = list[index];
     const newName = prompt("新しい種目名を入力してくれ．", currentName);
     if (newName && newName.trim() !== "" && newName !== currentName) {
       if (list.includes(newName.trim())) { alert("すでに存在する種目名だ．"); return; }
-      list[index] = newName.trim(); saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList();
+      list[index] = newName.trim(); saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList(); updateGlobalExerciseOptions();
     }
   }
 
   function deleteExerciseFromList(index) {
-    const cat = document.getElementById('edit-category').value;
-    const list = customExerciseCategories[cat];
+    const cat = document.getElementById('edit-category').value, list = customExerciseCategories[cat];
     if (confirm(`「${list[index]}」をリストから削除してもよいだろうか？`)) {
-      list.splice(index, 1); saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList();
+      list.splice(index, 1); saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList(); updateGlobalExerciseOptions();
     }
   }
 
   function addNewExercise() {
-    const cat = document.getElementById('edit-category').value;
-    const inputEl = document.getElementById('new-exercise-name');
-    const newName = inputEl.value.trim();
+    const cat = document.getElementById('edit-category').value, newName = document.getElementById('new-exercise-name').value.trim();
     if (!newName) return;
     if (!customExerciseCategories[cat]) customExerciseCategories[cat] = [];
     if (customExerciseCategories[cat].includes(newName)) { alert("すでに存在する種目だ．"); return; }
-    customExerciseCategories[cat].push(newName); inputEl.value = ''; saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList();
+    customExerciseCategories[cat].push(newName); document.getElementById('new-exercise-name').value = '';
+    saveCustomOrderState(cat); renderExerciseEditList(); updateExerciseList(); updateGlobalExerciseOptions();
     showToast(`「${newName}」を追加したぞ！`, 'success');
   }
 
   function sortExercisesEdit(order) {
-    const cat = document.getElementById('edit-category').value;
-    if (!customExerciseCategories[cat]) return;
+    const cat = document.getElementById('edit-category').value; if (!customExerciseCategories[cat]) return;
     customExerciseCategories[cat].sort((a, b) => order === 'asc' ? a.localeCompare(b, 'ja') : b.localeCompare(a, 'ja'));
-    saveLocalCategories(); renderExerciseEditList(); updateExerciseList();
+    saveLocalCategories(); renderExerciseEditList(); updateExerciseList(); updateGlobalExerciseOptions();
+  }
+
+  function toggleGraphDateFilter() {
+    const isChecked = document.getElementById('graph-date-filter-check').checked;
+    document.getElementById('graph-date-inputs').style.display = isChecked ? 'block' : 'none';
+    drawGraph();
   }
 
   function renderSetInputs() {
@@ -1454,15 +1106,12 @@
   }
 
   function createSetRowHTML(label, index, showComments) {
-    const lbsSelected = currentUnit === 'lbs' ? 'selected' : '';
-    const kgSelected = currentUnit === 'kg' ? 'selected' : '';
+    const lbsSelected = currentUnit === 'lbs' ? 'selected' : ''; const kgSelected = currentUnit === 'kg' ? 'selected' : '';
     let commentHtml = '';
     if (showComments) {
       let activeStars = currentSetRatings[index] || 0;
       let starHtml = `<div class="star-rating-container" id="input-star-set-${index}" style="font-size: 22px; margin-left: 10px;">`;
-      for(let i = 1; i <= 5; i++) {
-        starHtml += `<span class="star ${i <= activeStars ? 'active' : ''}" onclick="setSetRating(${index}, ${i})">★</span>`;
-      }
+      for(let i = 1; i <= 5; i++) { starHtml += `<span class="star ${i <= activeStars ? 'active' : ''}" onclick="setSetRating(${index}, ${i})">★</span>`; }
       starHtml += `</div>`;
       commentHtml = `<div style="flex: 1 1 100%; margin-top: 5px; display:flex; align-items:center;"><input type="text" id="set-comment-${index}" placeholder="セットのメモ（任意）..." style="font-size: 14px; padding: 8px; flex:1;">${starHtml}</div>`;
     }
@@ -1471,12 +1120,11 @@
 
   function updateGlobalExerciseOptions() {
     const exercises = [...new Set(logs.map(log => log.exercise))];
-    const logSelect = document.getElementById('log-target-exercise');
-    if (logSelect) { const prev = logSelect.value; logSelect.innerHTML = ''; exercises.forEach(ex => { logSelect.innerHTML += `<option value="${ex}">${ex}</option>`; }); if (prev && exercises.includes(prev)) logSelect.value = prev; }
-    const graphSelect = document.getElementById('graph-exercise');
-    if (graphSelect) { const prev = graphSelect.value; graphSelect.innerHTML = ''; exercises.forEach(ex => { graphSelect.innerHTML += `<option value="${ex}">${ex}</option>`; }); if (prev && exercises.includes(prev)) graphSelect.value = prev; }
-    const reviewSelect = document.getElementById('review-target-exercise');
-    if (reviewSelect) { const prev = reviewSelect.value; reviewSelect.innerHTML = ''; exercises.forEach(ex => { reviewSelect.innerHTML += `<option value="${ex}">${ex}</option>`; }); if (prev && exercises.includes(prev)) reviewSelect.value = prev; }
+    const updateSelect = (id) => {
+      const el = document.getElementById(id);
+      if (el) { const prev = el.value; el.innerHTML = ''; exercises.forEach(ex => { el.innerHTML += `<option value="${ex}">${ex}</option>`; }); if (prev && exercises.includes(prev)) el.value = prev; }
+    };
+    updateSelect('log-target-exercise'); updateSelect('graph-exercise'); updateSelect('review-target-exercise');
   }
 
   function addLog() {
@@ -1486,11 +1134,7 @@
     const isRatingVisible = document.getElementById('input-rating-section').style.display !== 'none';
     const finalRating = isRatingVisible ? currentInputRating : 0;
     const finalComment = isRatingVisible ? document.getElementById('input-comment').value.trim() : "";
-    
-    if (!exercise) {
-      showToast('種目を選択してくれ！', 'error');
-      return;
-    }
+    if (!exercise) { showToast('種目を選択してくれ！', 'error'); return; }
     
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
@@ -1507,29 +1151,33 @@
       }
     }
     
-    logs.push(logEntry); 
-    saveLocalData(); 
-    updateGlobalExerciseOptions(); 
-    updateLogUI(); 
-    renderReviewList(); 
-    resetInputForm();
+    logs.push(logEntry); saveLocalData(); updateGlobalExerciseOptions(); updateLogUI(); updateReviewUI(); drawGraph(); resetInputForm();
     showToast('記録を追加したぞ！', 'success');
-    
     if (gAccessToken && isGapiLoaded) saveToDrive(true);
   }
 
+  // --- ログUI・レンダリング ---
   function updateLogUI() {
     const mode = document.getElementById('log-view-mode').value;
     const useDateFilter = document.getElementById('log-date-filter-check').checked;
     
-    document.getElementById('log-date-inputs').style.display = useDateFilter ? 'block' : 'none';
-    
+    document.getElementById('exercise-select-group').style.display = mode === 'exercise' ? 'block' : 'none';
+    document.getElementById('sort-control-group').style.display = mode === 'exercise' ? 'block' : 'none';
+
     if (mode === 'date') {
-      document.getElementById('exercise-select-group').style.display = 'none';
-      document.getElementById('sort-control-group').style.display = 'none';
+      if (dateViewMode === 'single') {
+        document.getElementById('log-single-ui').style.display = 'flex';
+        document.getElementById('log-list-ui').style.display = 'none';
+      } else {
+        document.getElementById('log-single-ui').style.display = 'none';
+        document.getElementById('log-list-ui').style.display = 'block';
+        document.getElementById('log-date-inputs').style.display = useDateFilter ? 'block' : 'none';
+      }
     } else {
-      document.getElementById('exercise-select-group').style.display = 'block';
-      document.getElementById('sort-control-group').style.display = 'block';
+      document.getElementById('log-single-ui').style.display = 'none';
+      document.getElementById('log-list-ui').style.display = 'block';
+      document.getElementById('log-list-sort-group').style.display = 'none'; // 種目モード時は種目用ソートを使うので隠す
+      document.getElementById('log-date-inputs').style.display = useDateFilter ? 'block' : 'none';
     }
     renderLogList();
   }
@@ -1537,163 +1185,144 @@
   function renderLogList() {
     const mode = document.getElementById('log-view-mode').value;
     const container = document.getElementById('log-list');
-    container.innerHTML = ''; 
-    
-    if (logs.length === 0) { 
-      container.innerHTML = '<p>データがありません．</p>'; 
-      return; 
-    }
+    container.innerHTML = ''; if (logs.length === 0) { container.innerHTML = '<p>データがありません．</p>'; return; }
     
     let filteredLogs = logs;
-    const useDateFilter = document.getElementById('log-date-filter-check').checked;
-    if (useDateFilter) {
-      const start = document.getElementById('log-start-date').value;
-      const end = document.getElementById('log-end-date').value;
-      filteredLogs = filteredLogs.filter(log => { 
-        const d = log.date.split('T')[0]; 
-        return (!start || d >= start) && (!end || d <= end); 
-      });
+    
+    if (mode === 'date' && dateViewMode === 'single') {
+      const targetDate = document.getElementById('log-single-date').value;
+      if (!targetDate) return;
+      filteredLogs = filteredLogs.filter(log => log.date.startsWith(targetDate));
+    } else {
+      const useDateFilter = document.getElementById('log-date-filter-check').checked;
+      if (useDateFilter) {
+        const start = document.getElementById('log-start-date').value, end = document.getElementById('log-end-date').value;
+        filteredLogs = filteredLogs.filter(log => { const d = log.date.split('T')[0]; return (!start || d >= start) && (!end || d <= end); });
+      }
     }
 
-    if (filteredLogs.length === 0) { 
-      container.innerHTML = '<p>指定された条件のデータがありません．</p>'; 
-      return; 
-    }
+    if (filteredLogs.length === 0) { container.innerHTML = '<p>指定された条件のデータがありません．</p>'; return; }
 
     if (mode === 'date') {
-      const grouped = {}; 
-      filteredLogs.forEach(log => { 
-        const d = log.date.split('T')[0]; 
-        if (!grouped[d]) grouped[d] = []; 
-        grouped[d].push(log); 
-      });
-      Object.keys(grouped).sort((a, b) => b.localeCompare(a)).forEach(date => {
+      const grouped = {}; filteredLogs.forEach(log => { const d = log.date.split('T')[0]; if (!grouped[d]) grouped[d] = []; grouped[d].push(log); });
+      let dates = Object.keys(grouped);
+      
+      if (dateViewMode === 'list') {
+        const dateSort = document.getElementById('log-date-sort').value;
+        dates.sort((a, b) => dateSort === 'date-asc' ? a.localeCompare(b) : b.localeCompare(a));
+      }
+
+      dates.forEach(date => {
         let html = `<h4>${date} <span style="font-size:16px;">${dailyEvals[date] ? getStaticStarHtml(dailyEvals[date].rating) : ''}</span></h4><div class="scroll-wrapper"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
         grouped[date].sort((a, b) => a.date.localeCompare(b.date)).forEach(log => {
-          const rowCount = log.sets.length;
-          const time = log.date.split('T')[1];
+          const rowCount = log.sets.length; const time = log.date.split('T')[1];
           log.sets.forEach((s, idx) => {
             html += `<tr>`;
-            if (idx === 0) {
-              html += `<td rowspan="${rowCount}" style="vertical-align: top; padding: 10px 8px;">${time}</td>
-                       <td rowspan="${rowCount}" style="vertical-align: top; padding: 10px 8px;">${log.category}</td>
-                       <td rowspan="${rowCount}" style="vertical-align: top; padding: 10px 8px;">${log.exercise}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`;
-            }
-            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td>
-                     <td style="vertical-align: top;">${s.weight}${s.unit}</td>
-                     <td style="vertical-align: top;">${s.reps}</td>
-                     <td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
+            if (idx === 0) { html += `<td rowspan="${rowCount}" style="vertical-align: top;">${time}</td><td rowspan="${rowCount}" style="vertical-align: top;">${log.category}</td><td rowspan="${rowCount}" style="vertical-align: top;">${log.exercise}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`; }
+            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${s.reps}</td><td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
           });
         });
         container.innerHTML += html + `</table></div><br>`;
       });
     } else if (mode === 'exercise') {
-      const target = document.getElementById('log-target-exercise').value;
-      const sort = document.getElementById('log-sort-mode').value;
-      if (!target) { 
-        container.innerHTML = '<p>種目を選択してくれ．</p>'; 
-        return; 
-      }
-      
+      const target = document.getElementById('log-target-exercise').value, sort = document.getElementById('log-sort-mode').value;
+      if (!target) { container.innerHTML = '<p>種目を選択してくれ．</p>'; return; }
       let exLogs = filteredLogs.filter(log => log.exercise === target);
-      if (exLogs.length === 0) { 
-         container.innerHTML = '<p>指定された条件のデータがありません．</p>'; 
-         return; 
-      }
+      if (exLogs.length === 0) { container.innerHTML = '<p>指定された条件のデータがありません．</p>'; return; }
 
       exLogs.sort((a, b) => {
-        let maxWA = Math.max(...a.sets.map(s => s.unit === 'kg' ? s.weight * 2.20462 : s.weight), 0);
-        let maxWB = Math.max(...b.sets.map(s => s.unit === 'kg' ? s.weight * 2.20462 : s.weight), 0);
-        let maxRA = Math.max(...a.sets.map(s => s.reps), 0);
-        let maxRB = Math.max(...b.sets.map(s => s.reps), 0);
-
-        switch(sort) { 
-          case 'date-desc': return b.date.localeCompare(a.date); 
-          case 'date-asc': return a.date.localeCompare(b.date); 
-          case 'weight-desc': return maxWB - maxWA; 
-          case 'weight-asc': return maxWA - maxWB; 
-          case 'reps-desc': return maxRB - maxRA; 
-          case 'reps-asc': return maxRA - maxRB; 
-          default: return 0; 
-        }
+        let maxWA = Math.max(...a.sets.map(s => s.unit === 'kg' ? s.weight * 2.20462 : s.weight), 0), maxWB = Math.max(...b.sets.map(s => s.unit === 'kg' ? s.weight * 2.20462 : s.weight), 0);
+        let maxRA = Math.max(...a.sets.map(s => s.reps), 0), maxRB = Math.max(...b.sets.map(s => s.reps), 0);
+        switch(sort) { case 'date-desc': return b.date.localeCompare(a.date); case 'date-asc': return a.date.localeCompare(b.date); case 'weight-desc': return maxWB - maxWA; case 'weight-asc': return maxWA - maxWB; case 'reps-desc': return maxRB - maxRA; case 'reps-asc': return maxRA - maxRB; default: return 0; }
       });
 
       let html = `<h4>${target}</h4><div class="scroll-wrapper"><table><tr><th>日時</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
       exLogs.forEach(log => { 
-        const dtStr = log.date.replace('T', ' '); 
-        const rowCount = log.sets.length;
+        const dtStr = log.date.replace('T', ' '), rowCount = log.sets.length;
         log.sets.forEach((s, idx) => {
           html += `<tr>`;
-          if (idx === 0) {
-            html += `<td rowspan="${rowCount}" style="vertical-align: top; padding: 10px 8px;">${dtStr}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`;
-          }
-          html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td>
-                   <td style="vertical-align: top;">${s.weight}${s.unit}</td>
-                   <td style="vertical-align: top;">${s.reps}</td>
-                   <td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
+          if (idx === 0) { html += `<td rowspan="${rowCount}" style="vertical-align: top;">${dtStr}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`; }
+          html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${s.reps}</td><td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
         });
       });
       container.innerHTML = html + `</table></div>`;
     }
   }
 
+  // --- 振り返りUI・レンダリング ---
   function updateReviewUI() {
     const level = document.getElementById('review-level').value;
     const exGroup = document.getElementById('review-exercise-group');
     const dayGroup = document.getElementById('review-day-group');
-    if (level === 'exercise' || level === 'set') {
-      exGroup.style.display = 'block';
-      dayGroup.style.display = 'none';
-    } else {
-      exGroup.style.display = 'none';
-      dayGroup.style.display = 'block';
-    }
-    renderReviewList();
-  }
+    const useDateFilter = document.getElementById('review-date-filter-check').checked;
 
-  function toggleReviewDateFilter() {
-    const isChecked = document.getElementById('review-date-filter-check').checked;
-    document.getElementById('review-date-inputs').style.display = isChecked ? 'block' : 'none';
+    if (level === 'exercise' || level === 'set') {
+      exGroup.style.display = 'block'; dayGroup.style.display = 'none';
+      document.getElementById('review-single-ui').style.display = 'none';
+      document.getElementById('review-list-ui').style.display = 'block';
+      document.getElementById('review-list-sort-group').style.display = 'none';
+      document.getElementById('review-date-inputs').style.display = useDateFilter ? 'block' : 'none';
+    } else {
+      exGroup.style.display = 'none'; dayGroup.style.display = 'none';
+      if (dateViewMode === 'single') {
+        document.getElementById('review-single-ui').style.display = 'flex';
+        document.getElementById('review-list-ui').style.display = 'none';
+      } else {
+        document.getElementById('review-single-ui').style.display = 'none';
+        document.getElementById('review-list-ui').style.display = 'block';
+        document.getElementById('review-list-sort-group').style.display = 'block';
+        document.getElementById('review-date-inputs').style.display = useDateFilter ? 'block' : 'none';
+      }
+    }
     renderReviewList();
   }
 
   function renderReviewList() {
     const level = document.getElementById('review-level').value;
     const container = document.getElementById('review-container');
-    container.innerHTML = '';
-    if (logs.length === 0) { container.innerHTML = '<p>データがありません．</p>'; return; }
+    container.innerHTML = ''; if (logs.length === 0) { container.innerHTML = '<p>データがありません．</p>'; return; }
     
     let filteredLogs = logs;
-    const useDateFilter = document.getElementById('review-date-filter-check').checked;
-    if (useDateFilter) {
-      const start = document.getElementById('review-start-date').value, end = document.getElementById('review-end-date').value;
-      filteredLogs = filteredLogs.filter(log => { const d = log.date.split('T')[0]; return (!start || d >= start) && (!end || d <= end); });
+    
+    if (level === 'day' && dateViewMode === 'single') {
+      const targetDate = document.getElementById('review-target-date').value;
+      if (!targetDate) return;
+      filteredLogs = filteredLogs.filter(log => log.date.startsWith(targetDate));
+    } else {
+      const useDateFilter = document.getElementById('review-date-filter-check').checked;
+      if (useDateFilter) {
+        const start = document.getElementById('review-start-date').value, end = document.getElementById('review-end-date').value;
+        filteredLogs = filteredLogs.filter(log => { const d = log.date.split('T')[0]; return (!start || d >= start) && (!end || d <= end); });
+      }
     }
     
-    if (level === 'day') {
-      const targetDate = document.getElementById('review-target-date').value;
-      if (!targetDate) { container.innerHTML = '<p>日付を選択してくれ．</p>'; return; }
-      const dayLogs = filteredLogs.filter(l => l.date.startsWith(targetDate));
-      if(dayLogs.length === 0) { container.innerHTML = '<p>指定された日付のデータがありません．</p>'; return; }
-      
-      const exNames = [...new Set(dayLogs.map(l => l.exercise))].join(', ');
-      const evalData = dailyEvals[targetDate] || { rating: 0, comment: '' };
-      container.innerHTML += `<div class="review-card"><div class="review-card-header">${targetDate} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', targetDate, evalData.rating)}<textarea id="comment-day-${targetDate}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${targetDate}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('day', '${targetDate}')">コメントを保存</button></div>`;
-      
-    } else if (level === 'exercise') {
+    if (level === 'exercise' || level === 'set') {
       const target = document.getElementById('review-target-exercise').value;
       if (target) filteredLogs = filteredLogs.filter(log => log.exercise === target);
-      if (filteredLogs.length === 0) { container.innerHTML = '<p>条件に合うデータがありません．</p>'; return; }
-      
+    }
+    
+    if (filteredLogs.length === 0) { container.innerHTML = '<p>条件に合うデータがありません．</p>'; return; }
+    
+    if (level === 'day') {
+      let dates = [...new Set(filteredLogs.map(l => l.date.split('T')[0]))];
+      if (dateViewMode === 'list') {
+        const dateSort = document.getElementById('review-date-sort').value;
+        dates.sort((a, b) => dateSort === 'date-asc' ? a.localeCompare(b) : b.localeCompare(a));
+      }
+
+      dates.forEach(date => {
+        const dayLogs = filteredLogs.filter(l => l.date.startsWith(date));
+        if(dayLogs.length === 0) return;
+        const exNames = [...new Set(dayLogs.map(l => l.exercise))].join(', ');
+        const evalData = dailyEvals[date] || { rating: 0, comment: '' };
+        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button></div>`;
+      });
+    } else if (level === 'exercise') {
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
         const setsSummary = log.sets.map(s => `第${s.setIndex}セット: ${s.weight}${s.unit} × ${s.reps}回`).join('<br>');
         container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise}</div><div class="review-card-context">${setsSummary}</div><label>評価</label>${getDynamicStarHtml('exercise', log.id, log.rating || 0)}<textarea id="comment-exercise-${log.id}" placeholder="フォームの感覚などを記録...">${log.comment || ''}</textarea><button id="save-btn-exercise-${log.id}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('exercise', '${log.id}')">コメントを保存</button></div>`;
       });
     } else if (level === 'set') {
-      const target = document.getElementById('review-target-exercise').value;
-      if (target) filteredLogs = filteredLogs.filter(log => log.exercise === target);
-      if (filteredLogs.length === 0) { container.innerHTML = '<p>条件に合うデータがありません．</p>'; return; }
-
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
         log.sets.forEach(set => {
           const identifier = `${log.id}_${set.setIndex}`;
@@ -1704,67 +1333,26 @@
   }
 
   function updateReviewRating(level, identifier, rating) {
-    if (level === 'day') {
-      if (!dailyEvals[identifier]) dailyEvals[identifier] = { rating: 0, comment: '' };
-      dailyEvals[identifier].rating = rating;
-    } else if (level === 'exercise') {
-      const log = logs.find(l => l.id == identifier);
-      if (log) log.rating = rating;
-    } else if (level === 'set') {
-      const [logId, setIdx] = identifier.split('_');
-      const log = logs.find(l => l.id == logId);
-      if (log) {
-        const set = log.sets.find(s => s.setIndex == setIdx);
-        if (set) set.rating = rating;
-      }
-    }
-    saveLocalData();
-    if (gAccessToken && isGapiLoaded) saveToDrive(true);
-    
+    if (level === 'day') { if (!dailyEvals[identifier]) dailyEvals[identifier] = { rating: 0, comment: '' }; dailyEvals[identifier].rating = rating; } 
+    else if (level === 'exercise') { const log = logs.find(l => l.id == identifier); if (log) log.rating = rating; } 
+    else if (level === 'set') { const [logId, setIdx] = identifier.split('_'); const log = logs.find(l => l.id == logId); if (log) { const set = log.sets.find(s => s.setIndex == setIdx); if (set) set.rating = rating; } }
+    saveLocalData(); if (gAccessToken && isGapiLoaded) saveToDrive(true);
     const container = document.getElementById(`star-container-${level}-${identifier}`);
-    if (container) {
-      const stars = container.querySelectorAll('.star');
-      stars.forEach((star, index) => {
-        if (index < rating) star.classList.add('active');
-        else star.classList.remove('active');
-      });
-    }
+    if (container) container.querySelectorAll('.star').forEach((star, index) => { if (index < rating) star.classList.add('active'); else star.classList.remove('active'); });
     updateLogUI(); 
   }
 
   function saveReviewComment(level, identifier) {
-    const textarea = document.getElementById(`comment-${level}-${identifier}`);
-    if (!textarea) return;
-    const comment = textarea.value;
-    
-    if (level === 'day') {
-      if (!dailyEvals[identifier]) dailyEvals[identifier] = { rating: 0, comment: '' };
-      dailyEvals[identifier].comment = comment;
-    } else if (level === 'exercise') {
-      const log = logs.find(l => l.id == identifier);
-      if (log) log.comment = comment;
-    } else if (level === 'set') {
-      const [logId, setIdx] = identifier.split('_');
-      const log = logs.find(l => l.id == logId);
-      if (log) {
-        const set = log.sets.find(s => s.setIndex == setIdx);
-        if (set) set.comment = comment;
-      }
-    }
-    saveLocalData();
-    if (gAccessToken && isGapiLoaded) saveToDrive(true);
-    
-    const btn = document.getElementById(`save-btn-${level}-${identifier}`);
-    const originalText = btn.innerText;
-    btn.innerText = "保存完了！";
-    btn.style.background = "linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%)";
-    setTimeout(() => {
-      btn.innerText = originalText;
-      btn.style.background = "";
-    }, 1500);
-    showToast('コメントを保存したぞ！', 'success');
+    const textarea = document.getElementById(`comment-${level}-${identifier}`); if (!textarea) return; const comment = textarea.value;
+    if (level === 'day') { if (!dailyEvals[identifier]) dailyEvals[identifier] = { rating: 0, comment: '' }; dailyEvals[identifier].comment = comment; } 
+    else if (level === 'exercise') { const log = logs.find(l => l.id == identifier); if (log) log.comment = comment; } 
+    else if (level === 'set') { const [logId, setIdx] = identifier.split('_'); const log = logs.find(l => l.id == logId); if (log) { const set = log.sets.find(s => s.setIndex == setIdx); if (set) set.comment = comment; } }
+    saveLocalData(); if (gAccessToken && isGapiLoaded) saveToDrive(true);
+    const btn = document.getElementById(`save-btn-${level}-${identifier}`), originalText = btn.innerText; btn.innerText = "保存完了！"; btn.style.background = "linear-gradient(to bottom, #7ceeb0 0%, #30d676 100%)";
+    setTimeout(() => { btn.innerText = originalText; btn.style.background = ""; }, 1500); showToast('コメントを保存したぞ！', 'success');
   }
 
+  // --- グラフ分析ロジック ---
   function drawGraph() {
     const container = document.getElementById('chart-container'), exercise = document.getElementById('graph-exercise').value, targetUnit = document.getElementById('graph-unit').value, isDark = document.body.classList.contains('mode-dark');
     container.innerHTML = ''; if (!exercise) { container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><text x="20" y="30" fill="${isDark?'#ffffff':'#000000'}" font-size="14">データがありません．</text></svg>`; return; }
@@ -1843,7 +1431,7 @@
     if (logIndex > -1) {
       let log = logs[logIndex]; log.sets = log.sets.filter(s => s.setIndex !== setIndex);
       if (log.sets.length === 0) logs.splice(logIndex, 1); else log.sets.forEach((s, idx) => s.setIndex = idx + 1);
-      saveLocalData(); updateLogUI(); drawGraph(); renderReviewList(); updateGlobalExerciseOptions();
+      saveLocalData(); updateLogUI(); drawGraph(); updateReviewUI(); updateGlobalExerciseOptions();
       if (gAccessToken && isGapiLoaded) saveToDrive(true);
       showToast('記録を削除したぞ．', 'error');
     }
@@ -1865,7 +1453,7 @@
     if (log && set) {
       log.rating = currentEditRating; set.weight = parseFloat(document.getElementById('edit-weight').value) || 0;
       set.unit = document.getElementById('edit-unit').value; set.reps = parseInt(document.getElementById('edit-reps').value) || 0;
-      saveLocalData(); updateLogUI(); drawGraph(); renderReviewList(); 
+      saveLocalData(); updateLogUI(); drawGraph(); updateReviewUI(); 
       if (gAccessToken && isGapiLoaded) saveToDrive(true);
       showToast('記録を編集したぞ！', 'success');
     }
