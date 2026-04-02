@@ -11,10 +11,9 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V46</title>
+<title>Workout Tracker V47</title>
 
 <style>
-  /* 基本(ブルー)・ライトモード */
   :root {
     --bg-color: #e8f4f8;
     --panel-bg: rgba(255, 255, 255, 0.6);
@@ -32,7 +31,6 @@
     --card-bg: #ffffff;
   }
 
-  /* 共通・ダークモードベース */
   body.mode-dark {
     --bg-color: #121212;
     --panel-bg: rgba(40, 40, 40, 0.6);
@@ -46,7 +44,6 @@
     --card-bg: #2a2a2a;
   }
 
-  /* テーマカラー: ブルー (ダークモード) */
   body.mode-dark.color-blue {
     --bg-color: #121518;
     --border-color: #334455;
@@ -55,7 +52,6 @@
     --btn-border: #000080;
   }
 
-  /* テーマカラー: グリーン */
   body.color-green {
     --bg-color: #e8f8e8;
     --border-color: #b0deb0;
@@ -71,7 +67,6 @@
     --btn-border: #004d00;
   }
 
-  /* テーマカラー: オレンジ */
   body.color-orange {
     --bg-color: #f8eee8;
     --border-color: #decab0;
@@ -87,7 +82,6 @@
     --btn-border: #a0522d;
   }
 
-  /* テーマカラー: モノクロ */
   body.color-mono {
     --bg-color: #f0f0f0;
     --border-color: #cccccc;
@@ -193,6 +187,7 @@
     border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 16px;
+    box-sizing: border-box;
   }
   textarea { resize: vertical; min-height: 80px; }
   
@@ -481,11 +476,11 @@
         <option value="set">セットごと (個別のセット評価)</option>
       </select>
     </div>
-    <div class="form-group" id="review-day-group" style="display: block; flex: 2;">
+    <div class="form-group" id="review-day-group" style="display: block;">
       <label for="review-target-date">対象日付</label>
       <input type="date" id="review-target-date" onchange="renderReviewList()">
     </div>
-    <div class="form-group" id="review-exercise-group" style="display: none; flex: 2;">
+    <div class="form-group" id="review-exercise-group" style="display: none;">
       <label for="review-target-exercise">対象種目</label>
       <select id="review-target-exercise" onchange="renderReviewList()"></select>
     </div>
@@ -773,7 +768,7 @@
     <div class="form-group">
       <label>重量</label>
       <div class="weight-input-group">
-        <input type="number" id="edit-weight" min="0">
+        <input type="number" id="edit-weight" min="0" step="0.1">
         <select id="edit-unit" class="unit-select">
           <option value="lbs">lbs</option>
           <option value="kg">kg</option>
@@ -850,7 +845,7 @@
   let customExerciseCategories = {};
   let savedCustomOrders = {};
 
-  // --- Google ドライブ連携のロジック ---
+  // --- Google ドライブ連携のロジック (gapi.client使用) ---
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
   const SCOPES = 'https://www.googleapis.com/auth/drive.file';
   let tokenClient;
@@ -1346,6 +1341,7 @@
     const tzOffset = now.getTimezoneOffset() * 60000;
     const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
     const [datePart, timePart] = localISOTime.split('T');
+    
     document.getElementById('record-date').value = datePart;
     document.getElementById('record-time').value = timePart;
     document.getElementById('review-target-date').value = datePart;
@@ -1373,6 +1369,7 @@
     if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; setRating('input', 0); }
     else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; setRating('input', 0); }
     document.getElementById('input-comment').value = '';
+    currentInputRating = 0;
     currentSetRatings = {};
     initDates();
     renderSetInputs();
@@ -1482,7 +1479,6 @@
     if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; }
     else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; }
     
-    // 編集モーダルのステップも即座に更新する
     document.getElementById('edit-weight').step = currentStep;
     
     document.getElementById('set-count').value = currentDefaultSetCount;
@@ -1695,7 +1691,29 @@
     for (let i = 0; i <= ySteps; i++) { const yV = maxY * (i / ySteps), py = padT + plotH - (yV / maxY) * plotH; svg += `<line x1="${padL}" y1="${py}" x2="${baseW - padR}" y2="${py}" stroke="${gridC}" /><text x="${padL - 5}" y="${py}" fill="${axisC}" font-size="12" text-anchor="end" alignment-baseline="middle">${yV.toFixed(1)}</text>`; }
     for (let i = 0; i <= xSteps; i++) { const xV = maxX * (i / xSteps), px = padL + (xV / maxX) * plotW; svg += `<line x1="${px}" y1="${padT + plotH}" x2="${px}" y2="${padT + plotH + 5}" stroke="${axisC}" /><text x="${px}" y="${padT + plotH + 20}" fill="${axisC}" font-size="12" text-anchor="middle">${Math.round(xV)}</text>`; }
     svg += `<polyline points="${padL},${padT} ${padL},${padT + plotH} ${baseW - padR},${padT + plotH}" fill="none" stroke="${axisC}" stroke-width="2" /><text x="${padL}" y="${padT - 10}" fill="${axisC}" font-size="12">重量(${targetUnit})</text><text x="${baseW - padR}" y="${padT + plotH + 35}" fill="${axisC}" font-size="12" text-anchor="end">回数</text>`;
-    if (document.getElementById('graph-show-arrows').checked && pts.length > 1) { for (let i = 0; i < pts.length - 1; i++) { const p1 = pts[i], p2 = pts[i+1], x1 = padL + (p1.r / maxX) * plotW, y1 = padT + plotH - (p1.w / maxY) * plotH, x2 = padL + (p2.r / maxX) * plotW, y2 = padT + plotH - (p2.w / maxY) * plotH; if (Math.abs(x1 - x2) > 0.1 || Math.abs(y1 - y2) > 0.1) svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${document.getElementById('arrow-color').value}" stroke-width="${document.getElementById('arrow-thickness').value}" marker-end="url(#arr)" opacity="0.6"/>`; } }
+    
+    if (document.getElementById('graph-show-arrows').checked && pts.length > 1) { 
+      for (let i = 0; i < pts.length - 1; i++) { 
+        const p1 = pts[i], p2 = pts[i+1];
+        const x1 = padL + (p1.r / maxX) * plotW;
+        const y1 = padT + plotH - (p1.w / maxY) * plotH;
+        const x2 = padL + (p2.r / maxX) * plotW;
+        const y2 = padT + plotH - (p2.w / maxY) * plotH;
+        
+        const dx = x2 - x1, dy = y2 - y1;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist > 0.1) {
+          const offset = 15;
+          const nx = -dy / dist * offset;
+          const ny = dx / dist * offset;
+          const cx = (x1 + x2)/2 + nx;
+          const cy = (y1 + y2)/2 + ny;
+          svg += `<path d="M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}" fill="none" stroke="${document.getElementById('arrow-color').value}" stroke-width="${document.getElementById('arrow-thickness').value}" marker-end="url(#arr)" opacity="0.6"/>`;
+        }
+      } 
+    }
+    
     pts.forEach(p => { const h = (p.idx * 137) % 360, x = padL + (p.r / maxX) * plotW, y = padT + plotH - (p.w / maxY) * plotH; svg += `<circle cx="${x}" cy="${y}" r="6" fill="hsl(${h},80%,60%)" stroke="hsl(${h},80%,40%)" stroke-width="2" onmouseover="showTooltip(event, '${p.d}', ${p.sIdx}, ${p.ow}, '${p.u}', ${p.r})" onmousemove="showTooltip(event, '${p.d}', ${p.sIdx}, ${p.ow}, '${p.u}', ${p.r})" ontouchstart="showTooltip(event, '${p.d}', ${p.sIdx}, ${p.ow}, '${p.u}', ${p.r})" onmouseleave="hideTooltip()" ontouchend="hideTooltip()" style="cursor: pointer;" />`; });
     container.innerHTML = svg + `</svg>`;
   }
@@ -1732,7 +1750,6 @@
     updateTheme(); 
     updateGlobalExerciseOptions(); 
     
-    // アプリ起動時は強制的に「入力」タブを表示させる
     switchTab('input');
   };
 </script>
