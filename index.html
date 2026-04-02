@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V57</title>
+<title>Workout Tracker V58</title>
 
 <style>
   :root {
@@ -125,7 +125,9 @@
   input[type="number"], input[type="text"], input[type="date"], input[type="time"], select, textarea {
     padding: 10px; width: 100%; min-width: 0; background: var(--input-bg); color: var(--text-color);
     border: 1px solid var(--border-color); border-radius: 6px; font-size: 16px; box-sizing: border-box;
+    transition: opacity 0.3s;
   }
+  input:disabled, select:disabled, textarea:disabled { opacity: 0.5; cursor: not-allowed; }
   textarea { resize: vertical; min-height: 80px; }
   .checkbox-group { display: flex; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
   .checkbox-group input { width: auto; margin-right: 10px; transform: scale(1.2); }
@@ -177,6 +179,7 @@
   .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
 
   #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 400px; }
+
   .date-nav-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); font-size: 18px; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
   .date-nav-btn:active { background: var(--border-color); }
 
@@ -214,6 +217,11 @@
     <div class="date-range-flex">
       <input type="date" id="record-date">
       <input type="time" id="record-time">
+    </div>
+    <button class="action-btn" style="margin-top: 8px;" onclick="setNow()">現在時刻に戻す</button>
+    <div class="checkbox-group" style="margin-top: 8px;">
+      <input type="checkbox" id="use-current-time-check" checked onchange="toggleTimeInputs()">
+      <label for="use-current-time-check" style="margin:0;">現在時刻で記録する</label>
     </div>
   </div>
 
@@ -581,6 +589,10 @@
     <label for="default-common" style="margin:0;">全セット共通をデフォルトにする</label>
   </div>
   <div class="form-group checkbox-group">
+    <input type="checkbox" id="default-use-current-time" checked onchange="updateSettings()">
+    <label for="default-use-current-time" style="margin:0;">「現在時刻で記録する」をデフォルトにする</label>
+  </div>
+  <div class="form-group checkbox-group">
     <input type="checkbox" id="show-input-rating" checked onchange="updateSettings()">
     <label for="show-input-rating" style="margin:0;">入力画面で全体評価とコメントを常に開いておく</label>
   </div>
@@ -763,6 +775,21 @@
     setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-20px)'; setTimeout(() => { container.removeChild(toast); }, 300); }, 5000);
   }
 
+  function setNow() {
+    const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
+    const [datePart, timePart] = localISOTime.split('T');
+    document.getElementById('record-date').value = datePart;
+    document.getElementById('record-time').value = timePart;
+    showToast('現在時刻にリセットしたぞ！', 'info');
+  }
+
+  function toggleTimeInputs() {
+    const isChecked = document.getElementById('use-current-time-check').checked;
+    document.getElementById('record-date').disabled = isChecked;
+    document.getElementById('record-time').disabled = isChecked;
+  }
+
   function changeDate(inputId, delta) {
     const input = document.getElementById(inputId);
     if (!input.value) return;
@@ -777,7 +804,6 @@
 
   // --- Google ドライブ連携のロジック ---
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
-  // 【バグ修正】SCOPESを単一の「Drive権限」に絞り、不要なチェックでのクラッシュを回避
   const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
   let tokenClient;
   let gAccessToken = null;
@@ -842,11 +868,13 @@
     const loadBtns = document.querySelectorAll('.btn-gdrive-load');
     if (isConnected) {
       updateSyncStatus('接続済み', 'var(--btn-bottom)');
-      loginBtns.forEach(el => el.style.display = 'none'); logoutBtns.forEach(el => el.style.display = 'inline-block');
+      loginBtns.forEach(el => el.style.display = 'none');
+      logoutBtns.forEach(el => el.style.display = 'inline-block');
       saveBtns.forEach(el => el.disabled = false); loadBtns.forEach(el => el.disabled = false);
     } else {
       updateSyncStatus('未接続', 'var(--text-color)');
-      loginBtns.forEach(el => el.style.display = 'inline-block'); logoutBtns.forEach(el => el.style.display = 'none');
+      loginBtns.forEach(el => el.style.display = 'inline-block');
+      logoutBtns.forEach(el => el.style.display = 'none');
       saveBtns.forEach(el => el.disabled = true); loadBtns.forEach(el => el.disabled = true);
     }
   }
@@ -858,7 +886,6 @@
       client_id: CLIENT_ID, scope: SCOPES,
       callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
-          // 【完全修正】ドライブの権限（アプリの命綱）さえ取れていればOKとする
           if (google.accounts.oauth2.hasGrantedAnyScope(tokenResponse, 'https://www.googleapis.com/auth/drive.file')) {
             gAccessToken = tokenResponse.access_token; sessionStorage.setItem('gdrive_access_token', gAccessToken);
             if (isGapiLoaded) gapi.client.setToken({access_token: gAccessToken});
@@ -960,6 +987,7 @@
     }
   }
 
+  // --- UI・汎用ロジック ---
   function toggleInputRating() {
     const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
     if (section.style.display === 'none') { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; } 
@@ -1039,6 +1067,10 @@
     
     document.getElementById('edit-weight').step = currentStep;
     document.getElementById('set-count').value = currentDefaultSetCount;
+    
+    document.getElementById('use-current-time-check').checked = document.getElementById('default-use-current-time').checked;
+    toggleTimeInputs();
+
     renderSetInputs(); updateLogUI(); updateReviewUI(); drawGraph(); saveLocalSettings();
     showToast('設定を保存したぞ！', 'success');
   }
@@ -1101,6 +1133,7 @@
         if (settings.showLogSetDetails !== undefined) { document.getElementById('show-log-set-details').checked = settings.showLogSetDetails; showLogSetDetails = settings.showLogSetDetails; }
 
         if (settings.defaultCommon !== undefined) document.getElementById('default-common').checked = settings.defaultCommon;
+        if (settings.defaultUseCurrentTime !== undefined) document.getElementById('default-use-current-time').checked = settings.defaultUseCurrentTime;
         if (settings.showInputRating !== undefined) document.getElementById('show-input-rating').checked = settings.showInputRating;
         if (settings.showSetComments !== undefined) document.getElementById('show-set-comments').checked = settings.showSetComments;
         if (settings.arrowColor) document.getElementById('arrow-color').value = settings.arrowColor;
@@ -1166,6 +1199,10 @@
     document.getElementById('category').selectedIndex = 0; updateExerciseList();
     document.getElementById('set-count').value = currentDefaultSetCount;
     document.getElementById('common-check').checked = document.getElementById('default-common').checked;
+    
+    document.getElementById('use-current-time-check').checked = document.getElementById('default-use-current-time').checked;
+    toggleTimeInputs();
+
     const showRatingDefault = document.getElementById('show-input-rating').checked;
     const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
     if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; setRating('input', 0); }
@@ -1269,7 +1306,15 @@
   function addLog() {
     const category = document.getElementById('category').value;
     const exercise = document.getElementById('exercise').value;
-    const datetime = `${document.getElementById('record-date').value}T${document.getElementById('record-time').value}`;
+    
+    let datetime;
+    if (document.getElementById('use-current-time-check').checked) {
+      const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
+      datetime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
+    } else {
+      datetime = `${document.getElementById('record-date').value}T${document.getElementById('record-time').value}`;
+    }
+    
     const isRatingVisible = document.getElementById('input-rating-section').style.display !== 'none';
     const finalRating = isRatingVisible ? currentInputRating : 0;
     const finalComment = isRatingVisible ? document.getElementById('input-comment').value.trim() : "";
