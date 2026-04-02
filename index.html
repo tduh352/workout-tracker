@@ -11,12 +11,10 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V43</title>
-
-<script src="https://apis.google.com/js/api.js" async defer onload="gapiLoaded()"></script>
-<script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
+<title>Workout Tracker V44</title>
 
 <style>
+  /* 基本(ブルー)・ライトモード */
   :root {
     --bg-color: #e8f4f8;
     --panel-bg: rgba(255, 255, 255, 0.6);
@@ -34,6 +32,7 @@
     --card-bg: #ffffff;
   }
 
+  /* 共通・ダークモードベース */
   body.mode-dark {
     --bg-color: #121212;
     --panel-bg: rgba(40, 40, 40, 0.6);
@@ -47,6 +46,7 @@
     --card-bg: #2a2a2a;
   }
 
+  /* テーマカラー: ブルー (ダークモード) */
   body.mode-dark.color-blue {
     --bg-color: #121518;
     --border-color: #334455;
@@ -55,6 +55,7 @@
     --btn-border: #000080;
   }
 
+  /* テーマカラー: グリーン */
   body.color-green {
     --bg-color: #e8f8e8;
     --border-color: #b0deb0;
@@ -70,6 +71,7 @@
     --btn-border: #004d00;
   }
 
+  /* テーマカラー: オレンジ */
   body.color-orange {
     --bg-color: #f8eee8;
     --border-color: #decab0;
@@ -85,6 +87,7 @@
     --btn-border: #a0522d;
   }
 
+  /* テーマカラー: モノクロ */
   body.color-mono {
     --bg-color: #f0f0f0;
     --border-color: #cccccc;
