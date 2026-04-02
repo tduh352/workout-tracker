@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V52</title>
+<title>Workout Tracker V53</title>
 
 <style>
   :root {
@@ -506,8 +506,33 @@
 
   <div class="controls-row">
     <div class="form-group">
-      <label for="date-view-mode">日付の表示モード (ログ・振り返り)</label>
-      <select id="date-view-mode" onchange="updateSettings()">
+      <label for="log-date-view-mode">ログ：日付の表示モード</label>
+      <select id="log-date-view-mode" onchange="updateSettings()">
+        <option value="list">一覧表示 (範囲指定・ソート可)</option>
+        <option value="single">単日表示 (矢印で1日ずつ移動)</option>
+      </select>
+    </div>
+  </div>
+  <div class="controls-row">
+    <div class="form-group">
+      <label for="review-day-date-view-mode">振り返り(日付ごと)：日付表示モード</label>
+      <select id="review-day-date-view-mode" onchange="updateSettings()">
+        <option value="list">一覧表示 (範囲指定・ソート可)</option>
+        <option value="single">単日表示 (矢印で1日ずつ移動)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="review-exercise-date-view-mode">振り返り(種目ごと)：日付表示モード</label>
+      <select id="review-exercise-date-view-mode" onchange="updateSettings()">
+        <option value="list">一覧表示 (範囲指定・ソート可)</option>
+        <option value="single">単日表示 (矢印で1日ずつ移動)</option>
+      </select>
+    </div>
+  </div>
+  <div class="controls-row">
+    <div class="form-group" style="flex: 1;">
+      <label for="review-set-date-view-mode">振り返り(セットごと)：日付表示モード</label>
+      <select id="review-set-date-view-mode" onchange="updateSettings()">
         <option value="list">一覧表示 (範囲指定・ソート可)</option>
         <option value="single">単日表示 (矢印で1日ずつ移動)</option>
       </select>
@@ -644,7 +669,10 @@
   let currentUnit = 'lbs';
   let currentStep = '0.5';
   let currentDefaultSetCount = 3;
-  let dateViewMode = 'list'; 
+  let logDateViewMode = 'list'; 
+  let reviewDayDateViewMode = 'list';
+  let reviewExerciseDateViewMode = 'list';
+  let reviewSetDateViewMode = 'list';
   let logs = [];
   
   let editingLogId = null;
@@ -675,7 +703,6 @@
   let customExerciseCategories = {};
   let savedCustomOrders = {};
 
-  // トースト通知機能
   function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
@@ -694,7 +721,6 @@
     setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-20px)'; setTimeout(() => { container.removeChild(toast); }, 300); }, 5000);
   }
 
-  // 日付変更機能 (矢印ボタン用)
   function changeDate(inputId, delta) {
     const input = document.getElementById(inputId);
     if (!input.value) return;
@@ -907,7 +933,11 @@
     currentUnit = document.getElementById('default-unit').value;
     currentStep = document.getElementById('weight-step').value || '0.5';
     currentDefaultSetCount = parseInt(document.getElementById('default-set-count').value) || 3;
-    dateViewMode = document.getElementById('date-view-mode').value;
+    
+    logDateViewMode = document.getElementById('log-date-view-mode').value;
+    reviewDayDateViewMode = document.getElementById('review-day-date-view-mode').value;
+    reviewExerciseDateViewMode = document.getElementById('review-exercise-date-view-mode').value;
+    reviewSetDateViewMode = document.getElementById('review-set-date-view-mode').value;
 
     document.getElementById('common-check').checked = document.getElementById('default-common').checked;
     const showRatingDefault = document.getElementById('show-input-rating').checked;
@@ -970,7 +1000,12 @@
         if (settings.defaultUnit) document.getElementById('default-unit').value = settings.defaultUnit;
         if (settings.weightStep) document.getElementById('weight-step').value = settings.weightStep;
         if (settings.defaultSetCount) { document.getElementById('default-set-count').value = settings.defaultSetCount; currentDefaultSetCount = parseInt(settings.defaultSetCount) || 3; }
-        if (settings.dateViewMode) { document.getElementById('date-view-mode').value = settings.dateViewMode; dateViewMode = settings.dateViewMode; }
+        
+        if (settings.logDateViewMode) { document.getElementById('log-date-view-mode').value = settings.logDateViewMode; logDateViewMode = settings.logDateViewMode; }
+        if (settings.reviewDayDateViewMode) { document.getElementById('review-day-date-view-mode').value = settings.reviewDayDateViewMode; reviewDayDateViewMode = settings.reviewDayDateViewMode; }
+        if (settings.reviewExerciseDateViewMode) { document.getElementById('review-exercise-date-view-mode').value = settings.reviewExerciseDateViewMode; reviewExerciseDateViewMode = settings.reviewExerciseDateViewMode; }
+        if (settings.reviewSetDateViewMode) { document.getElementById('review-set-date-view-mode').value = settings.reviewSetDateViewMode; reviewSetDateViewMode = settings.reviewSetDateViewMode; }
+
         if (settings.defaultCommon !== undefined) document.getElementById('default-common').checked = settings.defaultCommon;
         if (settings.showInputRating !== undefined) document.getElementById('show-input-rating').checked = settings.showInputRating;
         if (settings.showSetComments !== undefined) document.getElementById('show-set-comments').checked = settings.showSetComments;
@@ -979,6 +1014,22 @@
         if (settings.showArrows !== undefined) document.getElementById('graph-show-arrows').checked = settings.showArrows;
       } catch (e) { console.error("設定読み込み失敗．"); }
     }
+  }
+
+  function saveLocalSettings() {
+    const settings = {
+      themeMode: document.getElementById('theme-mode').value, themeColor: document.getElementById('theme-color').value,
+      defaultUnit: document.getElementById('default-unit').value, weightStep: document.getElementById('weight-step').value,
+      defaultSetCount: document.getElementById('default-set-count').value, 
+      logDateViewMode: document.getElementById('log-date-view-mode').value,
+      reviewDayDateViewMode: document.getElementById('review-day-date-view-mode').value,
+      reviewExerciseDateViewMode: document.getElementById('review-exercise-date-view-mode').value,
+      reviewSetDateViewMode: document.getElementById('review-set-date-view-mode').value,
+      defaultCommon: document.getElementById('default-common').checked, showInputRating: document.getElementById('show-input-rating').checked,
+      showSetComments: document.getElementById('show-set-comments').checked, arrowColor: document.getElementById('arrow-color').value,
+      arrowThickness: document.getElementById('arrow-thickness').value, showArrows: document.getElementById('graph-show-arrows').checked
+    };
+    localStorage.setItem('workout_tracker_settings', JSON.stringify(settings));
   }
 
   function clearAllData() {
@@ -1010,7 +1061,7 @@
     document.getElementById('review-end-date').value = datePart;
   }
 
-  // --- 【完全修正版】送信後の専用リセット処理 ---
+  // 【完全修正】記録ボタンを押した後のスマートなリセット処理
   function resetAfterSubmit() {
     document.getElementById('exercise').selectedIndex = 0;
     
@@ -1035,7 +1086,7 @@
     }
   }
 
-  // 設定変更や初期読み込み時の完全リセット用
+  // 初期読み込み時や設定変更時の完全リセット用
   function resetInputForm() {
     document.getElementById('category').selectedIndex = 0; updateExerciseList();
     document.getElementById('set-count').value = currentDefaultSetCount;
@@ -1172,7 +1223,7 @@
     updateReviewUI(); 
     drawGraph(); 
     
-    resetAfterSubmit(); // 修正：スマートリセットを発動
+    resetAfterSubmit();
     
     showToast('記録を追加したぞ！', 'success');
     if (gAccessToken && isGapiLoaded) saveToDrive(true);
@@ -1187,7 +1238,7 @@
     document.getElementById('log-sort-control-group').style.display = mode === 'exercise' ? 'block' : 'none';
 
     if (mode === 'date') {
-      if (dateViewMode === 'single') {
+      if (logDateViewMode === 'single') {
         document.getElementById('log-single-ui').style.display = 'flex';
         document.getElementById('log-list-ui').style.display = 'none';
       } else {
@@ -1217,7 +1268,7 @@
     
     let filteredLogs = logs;
     
-    if (mode === 'date' && dateViewMode === 'single') {
+    if (mode === 'date' && logDateViewMode === 'single') {
       const targetDate = document.getElementById('log-single-date').value;
       if (!targetDate) return;
       filteredLogs = filteredLogs.filter(log => log.date.startsWith(targetDate));
@@ -1247,7 +1298,7 @@
       });
       let dates = Object.keys(grouped);
       
-      if (dateViewMode === 'list') {
+      if (logDateViewMode === 'list') {
         const dateSort = document.getElementById('log-date-sort').value;
         dates.sort((a, b) => dateSort === 'date-asc' ? a.localeCompare(b) : b.localeCompare(a));
       }
@@ -1295,23 +1346,29 @@
     const exGroup = document.getElementById('review-exercise-group');
     const useDateFilter = document.getElementById('review-date-filter-check').checked;
 
+    let currentViewMode = 'list';
+    if (level === 'day') currentViewMode = reviewDayDateViewMode;
+    else if (level === 'exercise') currentViewMode = reviewExerciseDateViewMode;
+    else if (level === 'set') currentViewMode = reviewSetDateViewMode;
+
     if (level === 'exercise' || level === 'set') {
       exGroup.style.display = 'block'; 
-      document.getElementById('review-single-ui').style.display = 'none';
-      document.getElementById('review-list-ui').style.display = 'block';
-      document.getElementById('review-list-sort-group').style.display = 'none';
-      document.getElementById('review-date-inputs').style.display = useDateFilter ? 'block' : 'none';
     } else {
       exGroup.style.display = 'none'; 
-      if (dateViewMode === 'single') {
-        document.getElementById('review-single-ui').style.display = 'flex';
-        document.getElementById('review-list-ui').style.display = 'none';
-      } else {
-        document.getElementById('review-single-ui').style.display = 'none';
-        document.getElementById('review-list-ui').style.display = 'block';
+    }
+
+    if (currentViewMode === 'single') {
+      document.getElementById('review-single-ui').style.display = 'flex';
+      document.getElementById('review-list-ui').style.display = 'none';
+    } else {
+      document.getElementById('review-single-ui').style.display = 'none';
+      document.getElementById('review-list-ui').style.display = 'block';
+      if (level === 'day') {
         document.getElementById('review-list-sort-group').style.display = 'block';
-        document.getElementById('review-date-inputs').style.display = useDateFilter ? 'block' : 'none';
+      } else {
+        document.getElementById('review-list-sort-group').style.display = 'none';
       }
+      document.getElementById('review-date-inputs').style.display = useDateFilter ? 'block' : 'none';
     }
     renderReviewList();
   }
@@ -1322,8 +1379,12 @@
     container.innerHTML = ''; if (logs.length === 0) { container.innerHTML = '<p>データがありません．</p>'; return; }
     
     let filteredLogs = logs;
+    let currentViewMode = 'list';
+    if (level === 'day') currentViewMode = reviewDayDateViewMode;
+    else if (level === 'exercise') currentViewMode = reviewExerciseDateViewMode;
+    else if (level === 'set') currentViewMode = reviewSetDateViewMode;
     
-    if (level === 'day' && dateViewMode === 'single') {
+    if (currentViewMode === 'single') {
       const targetDate = document.getElementById('review-target-date').value;
       if (!targetDate) return;
       filteredLogs = filteredLogs.filter(log => log.date.startsWith(targetDate));
@@ -1344,7 +1405,7 @@
     
     if (level === 'day') {
       let dates = [...new Set(filteredLogs.map(l => l.date.split('T')[0]))];
-      if (dateViewMode === 'list') {
+      if (currentViewMode === 'list') {
         const dateSort = document.getElementById('review-date-sort').value;
         dates.sort((a, b) => dateSort === 'date-asc' ? a.localeCompare(b) : b.localeCompare(a));
       }
@@ -1354,7 +1415,25 @@
         if(dayLogs.length === 0) return;
         const exNames = [...new Set(dayLogs.map(l => l.exercise))].join(', ');
         const evalData = dailyEvals[date] || { rating: 0, comment: '' };
-        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button></div>`;
+        
+        let logHtml = '';
+        if (currentViewMode === 'single') {
+          logHtml += `<div class="scroll-wrapper" style="margin-bottom: 15px;"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+          let sortedLogs = [...dayLogs].sort((a, b) => a.date.localeCompare(b.date));
+          sortedLogs.forEach(log => {
+            const rowCount = log.sets.length; const time = log.date.split('T')[1];
+            log.sets.forEach((s, idx) => {
+              logHtml += `<tr>`;
+              if (idx === 0) { 
+                logHtml += `<td rowspan="${rowCount}" style="vertical-align: top;">${time}</td><td rowspan="${rowCount}" style="vertical-align: top;">${log.category}</td><td rowspan="${rowCount}" style="vertical-align: top;">${log.exercise}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`; 
+              }
+              logHtml += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${s.reps}</td><td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
+            });
+          });
+          logHtml += `</table></div>`;
+        }
+        
+        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div>${logHtml}<div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button></div>`;
       });
     } else if (level === 'exercise') {
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
