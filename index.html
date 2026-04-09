@@ -1440,7 +1440,15 @@
 
   function clearAllInputs() {
      if(!confirm('入力内容をすべてクリアするだろうか？')) return;
-     localStorage.removeItem('workout_tracker_draft');
+     localStorage.removeItem('workout_tracker_draft'); // 下書きデータを消去
+     
+     // 星の評価やコメントも完全にリセット
+     currentInputRating = 0;
+     currentSetRatings = {};
+     document.getElementById('input-comment').value = '';
+     setRating('input', 0);
+     
+     // フォームの再構築を呼び出す
      resetInputForm();
      showToast('入力をクリアしたぞ．', 'info');
   }
@@ -1463,9 +1471,12 @@
     }
   }
 
+  // --- 修正箇所2: フォームを初期状態に戻す処理 ---
   function resetInputForm() {
     document.getElementById('category').selectedIndex = 0;
     updateExerciseList();
+    
+    // 現在の設定からデフォルトのセット数を確実に取得して反映
     document.getElementById('set-count').value = currentDefaultSetCount;
     document.getElementById('common-check').checked = document.getElementById('default-common').checked;
     
@@ -1473,15 +1484,50 @@
 
     const showRatingDefault = document.getElementById('show-input-rating').checked;
     const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
-    if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; setRating('input', 0); }
-    else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; setRating('input', 0); }
+    if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; }
+    else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; }
+    
+    // 変数を完全に初期化
     document.getElementById('input-comment').value = '';
-    currentInputRating = 0; currentSetRatings = {}; initDates(); 
+    currentInputRating = 0; 
+    currentSetRatings = {}; 
+    initDates(); 
 
+    // Draft（下書き）の復元処理を呼ぶ（ただしクリア直後はDraftがないので何もしない）
     restoreDraft();
 
     toggleTimeInputs();
+    
+    // --- 【重要】ここで入力欄をすべてまっさらにして再描画する ---
+    const isCommon = document.getElementById('common-check').checked;
+    const setCount = parseInt(document.getElementById('set-count').value) || 1;
+    
+    // 現在の入力値を保持している配列などを無視して、完全な空データで描画するよう一時的に強制
+    window.tempDraftSets = null; 
+    const container = document.getElementById('set-inputs-container');
+    container.innerHTML = ''; // 画面上の入力欄を一度完全に消す
+    
+    // 再描画処理の呼び出し
     renderSetInputs();
+    
+    // 再描画後に、念のため全てのinput要素の値を直接空にする
+    setTimeout(() => {
+      if (isCommon) {
+         document.getElementById('weight-0').value = '';
+         if(document.getElementById('unit-0').value !== '分') document.getElementById('reps-0').value = '';
+         if(document.getElementById('set-comment-0')) document.getElementById('set-comment-0').value = '';
+      } else {
+         for (let i = 1; i <= setCount; i++) {
+           const wInput = document.getElementById(`weight-${i}`);
+           if (wInput) wInput.value = '';
+           const rInput = document.getElementById(`reps-${i}`);
+           if (rInput && document.getElementById(`unit-${i}`).value !== '分') rInput.value = '';
+           const cInput = document.getElementById(`set-comment-${i}`);
+           if (cInput) cInput.value = '';
+         }
+      }
+      saveDraft(); // 空になった状態を新しい下書きとして保存
+    }, 10);
   }
 
   function updateGlobalExerciseOptions() {
