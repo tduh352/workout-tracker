@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V66_2</title>
+<title>Workout Tracker V66_3</title>
 
 <style>
   :root {
@@ -829,34 +829,24 @@
 
   const isValidDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 
-  function adjustValue(id, delta, stepValueOrVarName, min = 0) {
-     const input = document.getElementById(id);
-     if (!input || input.disabled) return;
-     
-     let s;
-     // 渡されたものが文字列であり，かつその名前の変数が存在する場合は変数の値を読み取る
-     if (typeof stepValueOrVarName === 'string' && window[stepValueOrVarName] !== undefined) {
-       s = parseFloat(window[stepValueOrVarName]);
-     } else {
-       // そうでない場合（数値が直接渡された場合など）はそのまま数値として扱う
-       s = parseFloat(stepValueOrVarName);
-     }
-     
-     // もし計算結果が数値にならなかった場合は安全のために1にする
-     if (isNaN(s)) s = 1;
-     
-     let val = parseFloat(input.value) || 0;
-     val += delta * s;
-     if (val < min) val = min;
-     
-     // 小数点以下の桁数を取得してフォーマットを合わせる
-     const precision = s.toString().split('.')[1]?.length || 0;
-     input.value = val.toFixed(precision);
-     
-     // 値が変更されたことをシステムに通知する
-     input.dispatchEvent(new Event('input'));
-     input.dispatchEvent(new Event('change'));
-   }
+  // 修正された関数: 変数名(文字列)ではなく，設定値そのもの(数値)を受け取る
+  function adjustValue(id, delta, stepValue, min = 0) {
+    const input = document.getElementById(id);
+    if (!input || input.disabled) return;
+    
+    let s = parseFloat(stepValue);
+    if (isNaN(s)) s = 1;
+    
+    let val = parseFloat(input.value) || 0;
+    val += delta * s;
+    if (val < min) val = min;
+    
+    const precision = s.toString().split('.')[1]?.length || 0;
+    input.value = val.toFixed(precision);
+    
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('change'));
+  }
 
   function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
@@ -1473,7 +1463,6 @@
     }
   }
 
-  // --- 【完全修復】設定を確実にロードしてから下書きを反映する ---
   function resetInputForm() {
     document.getElementById('category').selectedIndex = 0;
     updateExerciseList();
@@ -1495,7 +1484,6 @@
     renderSetInputs();
   }
 
-  // --- 【完全修復】iOS Safariの「No Options」対策ロジック ---
   function updateGlobalExerciseOptions() {
     const exercises = [...new Set(logs.map(log => log.exercise))];
     const updateSelect = (id) => {
@@ -1649,7 +1637,7 @@
     else { for (let i = 1; i <= setCount; i++) { handleUnitChange(document.getElementById(`unit-${i}`), `reps-${i}`); } }
   }
 
-  // --- 【完全修復】上下分割（別行）フレキシブルレイアウトとリセットボタン ---
+  // 修正されたHTML生成: 関数へ文字列ではなく変数を直接渡す
   function createSetRowHTML(label, index, showComments, initData = {}) {
     const wVal = initData.weight !== undefined ? initData.weight : '';
     const uVal = initData.unit || currentUnit;
@@ -1678,11 +1666,11 @@
           <label>重量 / 時間</label>
           <div style="display: flex; gap: 5px;">
             <div class="number-input-wrapper">
-              <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('weight-${index}', -1, 'currentWeightLargeStep', 0)">&laquo;</button>
-              <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('weight-${index}', -1, 'currentWeightStep', 0)">&lt;</button>
+              <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('weight-${index}', -1, currentWeightLargeStep, 0)">&laquo;</button>
+              <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('weight-${index}', -1, currentWeightStep, 0)">&lt;</button>
               <input type="number" id="weight-${index}" min="0" step="${currentWeightStep}" value="${wVal}" oninput="saveDraft()">
-              <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('weight-${index}', 1, 'currentWeightStep', 0)">&gt;</button>
-              <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('weight-${index}', 1, 'currentWeightLargeStep', 0)">&raquo;</button>
+              <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('weight-${index}', 1, currentWeightStep, 0)">&gt;</button>
+              <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('weight-${index}', 1, currentWeightLargeStep, 0)">&raquo;</button>
             </div>
             <select id="unit-${index}" class="unit-select" onchange="handleUnitChange(this, 'reps-${index}'); saveDraft();">
               <option value="lbs" ${lbsSelected}>lbs</option>
@@ -1694,11 +1682,11 @@
         <div class="set-row-item">
           <label>回数</label>
           <div class="number-input-wrapper">
-            <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('reps-${index}', -1, 'currentRepsLargeStep', 0)">&laquo;</button>
-            <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('reps-${index}', -1, 'currentRepsStep', 0)">&lt;</button>
+            <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('reps-${index}', -1, currentRepsLargeStep, 0)">&laquo;</button>
+            <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('reps-${index}', -1, currentRepsStep, 0)">&lt;</button>
             <input type="number" id="reps-${index}" min="0" step="${currentRepsStep}" value="${rVal}" oninput="saveDraft()">
-            <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('reps-${index}', 1, 'currentRepsStep', 0)">&gt;</button>
-            <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('reps-${index}', 1, 'currentRepsLargeStep', 0)">&raquo;</button>
+            <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('reps-${index}', 1, currentRepsStep, 0)">&gt;</button>
+            <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('reps-${index}', 1, currentRepsLargeStep, 0)">&raquo;</button>
           </div>
         </div>
       </div>
@@ -1752,7 +1740,6 @@
     if (gAccessToken && isGapiLoaded) saveToDrive(true);
   }
 
-  // --- ログUI・レンダリング ---
   function updateLogUI() {
     const mode = document.getElementById('log-view-mode').value;
     const useDateFilter = document.getElementById('log-date-filter-check').checked;
@@ -1876,7 +1863,6 @@
     }
   }
 
-  // --- 振り返りUI・レンダリング ---
   function updateReviewUI() {
     const level = document.getElementById('review-level').value;
     const exRow = document.getElementById('review-exercise-row');
@@ -1909,7 +1895,6 @@
     renderReviewList();
   }
 
-  // --- 【完全修復】振り返りから不要なリセットボタンを削除 ---
   function renderReviewList() {
     const level = document.getElementById('review-level').value;
     const container = document.getElementById('review-container');
@@ -2046,7 +2031,6 @@
     setTimeout(() => { btn.innerText = originalText; btn.style.background = ""; }, 1500); showToast('コメントを保存したぞ！', 'success');
   }
 
-  // --- グラフ分析ロジック ---
   function drawGraph() {
     const container = document.getElementById('chart-container'), exercise = document.getElementById('graph-exercise').value, targetUnit = document.getElementById('graph-unit').value, isDark = document.body.classList.contains('mode-dark');
     container.innerHTML = ''; if (!exercise || exercise === 'ALL') { container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><text x="20" y="30" fill="${isDark?'#ffffff':'#000000'}" font-size="14">種目を選択して描画してくれ．</text></svg>`; return; }
