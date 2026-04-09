@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V66</title>
+<title>Workout Tracker V66_2</title>
 
 <style>
   :root {
@@ -829,23 +829,34 @@
 
   const isValidDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 
-  function adjustValue(id, delta, stepVar, min = 0) {
-    const input = document.getElementById(id);
-    if (!input || input.disabled) return;
-    
-    let s = parseFloat(window[stepVar]);
-    if (isNaN(s)) s = 1;
-    
-    let val = parseFloat(input.value) || 0;
-    val += delta * s;
-    if (val < min) val = min;
-    
-    const precision = s.toString().split('.')[1]?.length || 0;
-    input.value = val.toFixed(precision);
-    
-    input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new Event('change'));
-  }
+  function adjustValue(id, delta, stepValueOrVarName, min = 0) {
+     const input = document.getElementById(id);
+     if (!input || input.disabled) return;
+     
+     let s;
+     // 渡されたものが文字列であり，かつその名前の変数が存在する場合は変数の値を読み取る
+     if (typeof stepValueOrVarName === 'string' && window[stepValueOrVarName] !== undefined) {
+       s = parseFloat(window[stepValueOrVarName]);
+     } else {
+       // そうでない場合（数値が直接渡された場合など）はそのまま数値として扱う
+       s = parseFloat(stepValueOrVarName);
+     }
+     
+     // もし計算結果が数値にならなかった場合は安全のために1にする
+     if (isNaN(s)) s = 1;
+     
+     let val = parseFloat(input.value) || 0;
+     val += delta * s;
+     if (val < min) val = min;
+     
+     // 小数点以下の桁数を取得してフォーマットを合わせる
+     const precision = s.toString().split('.')[1]?.length || 0;
+     input.value = val.toFixed(precision);
+     
+     // 値が変更されたことをシステムに通知する
+     input.dispatchEvent(new Event('input'));
+     input.dispatchEvent(new Event('change'));
+   }
 
   function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
