@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V67</title>
+<title>Workout Tracker V69</title>
 
 <style>
   :root {
@@ -123,7 +123,6 @@
   .form-group { margin-bottom: 15px; width: 100%; }
   label { display: block; margin-bottom: 5px; font-weight: bold; }
   
-  /* スピナーUIと完全独立行レイアウト */
   .number-input-wrapper { display: flex; align-items: stretch; width: 100%; height: 44px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
   .number-input-wrapper input { flex: 1; text-align: center; border: none !important; border-radius: 0 !important; margin: 0; padding: 0 4px; height: 100%; font-size: 18px; font-weight: bold; min-width: 0; background: var(--input-bg); color: var(--text-color); }
   .number-input-wrapper input:focus { outline: none; }
@@ -139,7 +138,6 @@
     transition: opacity 0.3s;
   }
   
-  /* 確実にグレーアウトさせる強制設定 */
   input:disabled, select:disabled, textarea:disabled { opacity: 0.4 !important; background-color: rgba(128, 128, 128, 0.2) !important; cursor: not-allowed !important; color: #888888 !important; }
   
   textarea { resize: vertical; min-height: 80px; }
@@ -829,7 +827,6 @@
 
   const isValidDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 
-  // 修正された関数: 変数名(文字列)ではなく，設定値そのもの(数値)を受け取る
   function adjustValue(id, delta, stepValue, min = 0) {
     const input = document.getElementById(id);
     if (!input || input.disabled) return;
@@ -1106,11 +1103,31 @@
     if (isGapiLoaded && isGisLoaded) {
       const savedToken = localStorage.getItem('gdrive_access_token');
       if (savedToken) { 
-        gAccessToken = savedToken; gapi.client.setToken({access_token: gAccessToken}); 
-        updateDriveUI(true); 
-        const savedUser = localStorage.getItem('gdrive_user_info');
-        if (savedUser) { displayUserInfoUI(JSON.parse(savedUser)); updateSyncStatus('接続済み', 'var(--btn-bottom)'); }
-        else { fetchUserInfo(); }
+        gAccessToken = savedToken; 
+        gapi.client.setToken({ access_token: gAccessToken }); 
+        testDriveConnection(); 
+      }
+    }
+  }
+
+  async function testDriveConnection() {
+    try {
+      await gapi.client.request({ path: '/drive/v3/files', method: 'GET', params: { pageSize: 1 } });
+      updateDriveUI(true);
+      const savedUser = localStorage.getItem('gdrive_user_info');
+      if (savedUser) {
+        displayUserInfoUI(JSON.parse(savedUser));
+        updateSyncStatus('接続済み', 'var(--btn-bottom)');
+      } else {
+        fetchUserInfo();
+      }
+    } catch (e) {
+      if (e.status === 401) {
+        console.warn("Token expired. Clearing credentials.");
+        gAccessToken = null;
+        localStorage.removeItem('gdrive_access_token');
+        updateDriveUI(false);
+        showToast('セッションが切れたぞ．再連携してくれ．', 'info');
       }
     }
   }
@@ -1138,7 +1155,10 @@
   }
 
   async function saveToDrive(isBackground = false) {
-    if(!gAccessToken || !isGapiLoaded) return;
+    if(!gAccessToken || !isGapiLoaded) {
+      if (!isBackground) handleAuthClick(); 
+      return;
+    }
     if (!isBackground) document.querySelectorAll('.btn-gdrive-save').forEach(btn => btn.innerText = '保存中...');
     else updateSyncStatus('同期中...', '#888888');
     
@@ -1157,8 +1177,15 @@
       if (!isBackground) showToast('Googleドライブへのバックアップが完了したぞ！', 'success');
       else { updateSyncStatus('同期完了', 'var(--btn-bottom)'); setTimeout(() => { if (gAccessToken) updateSyncStatus('接続済み', 'var(--btn-bottom)'); }, 3000); }
     } catch(e) {
-      if (!isBackground) showToast('保存エラー: ' + (e.result && e.result.error ? e.result.error.message : e.message), 'error');
-      else updateSyncStatus('自動保存失敗', 'red');
+      if (e.status === 401) {
+        gAccessToken = null;
+        localStorage.removeItem('gdrive_access_token');
+        updateDriveUI(false);
+        showToast('認証エラーだ．再ログインが必要である．', 'error');
+      } else {
+        if (!isBackground) showToast('保存エラー: ' + (e.result && e.result.error ? e.result.error.message : e.message), 'error');
+        else updateSyncStatus('自動保存失敗', 'red');
+      }
     } finally {
       if (!isBackground) document.querySelectorAll('.btn-gdrive-save').forEach(btn => btn.innerText = 'ドライブへ保存');
     }
@@ -1440,15 +1467,13 @@
 
   function clearAllInputs() {
      if(!confirm('入力内容をすべてクリアするだろうか？')) return;
-     localStorage.removeItem('workout_tracker_draft'); // 下書きデータを消去
+     localStorage.removeItem('workout_tracker_draft'); 
      
-     // 星の評価やコメントも完全にリセット
      currentInputRating = 0;
      currentSetRatings = {};
      document.getElementById('input-comment').value = '';
      setRating('input', 0);
      
-     // フォームの再構築を呼び出す
      resetInputForm();
      showToast('入力をクリアしたぞ．', 'info');
   }
@@ -1471,12 +1496,10 @@
     }
   }
 
-  // --- 修正箇所2: フォームを初期状態に戻す処理 ---
   function resetInputForm() {
     document.getElementById('category').selectedIndex = 0;
     updateExerciseList();
     
-    // 現在の設定からデフォルトのセット数を確実に取得して反映
     document.getElementById('set-count').value = currentDefaultSetCount;
     document.getElementById('common-check').checked = document.getElementById('default-common').checked;
     
@@ -1487,46 +1510,43 @@
     if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; }
     else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; }
     
-    // 変数を完全に初期化
     document.getElementById('input-comment').value = '';
     currentInputRating = 0; 
     currentSetRatings = {}; 
     initDates(); 
 
-    // Draft（下書き）の復元処理を呼ぶ（ただしクリア直後はDraftがないので何もしない）
     restoreDraft();
 
     toggleTimeInputs();
     
-    // --- 【重要】ここで入力欄をすべてまっさらにして再描画する ---
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
     
-    // 現在の入力値を保持している配列などを無視して、完全な空データで描画するよう一時的に強制
     window.tempDraftSets = null; 
     const container = document.getElementById('set-inputs-container');
-    container.innerHTML = ''; // 画面上の入力欄を一度完全に消す
+    container.innerHTML = ''; 
     
-    // 再描画処理の呼び出し
     renderSetInputs();
     
-    // 再描画後に、念のため全てのinput要素の値を直接空にする
     setTimeout(() => {
       if (isCommon) {
-         document.getElementById('weight-0').value = '';
-         if(document.getElementById('unit-0').value !== '分') document.getElementById('reps-0').value = '';
-         if(document.getElementById('set-comment-0')) document.getElementById('set-comment-0').value = '';
+         const wInput = document.getElementById('weight-0');
+         if (wInput) wInput.value = '';
+         const rInput = document.getElementById('reps-0');
+         if(rInput && document.getElementById('unit-0') && document.getElementById('unit-0').value !== '分') rInput.value = '';
+         const cInput = document.getElementById('set-comment-0');
+         if(cInput) cInput.value = '';
       } else {
          for (let i = 1; i <= setCount; i++) {
            const wInput = document.getElementById(`weight-${i}`);
            if (wInput) wInput.value = '';
            const rInput = document.getElementById(`reps-${i}`);
-           if (rInput && document.getElementById(`unit-${i}`).value !== '分') rInput.value = '';
+           if (rInput && document.getElementById(`unit-${i}`) && document.getElementById(`unit-${i}`).value !== '分') rInput.value = '';
            const cInput = document.getElementById(`set-comment-${i}`);
            if (cInput) cInput.value = '';
          }
       }
-      saveDraft(); // 空になった状態を新しい下書きとして保存
+      saveDraft(); 
     }, 10);
   }
 
@@ -1683,7 +1703,6 @@
     else { for (let i = 1; i <= setCount; i++) { handleUnitChange(document.getElementById(`unit-${i}`), `reps-${i}`); } }
   }
 
-  // 修正されたHTML生成: 関数へ文字列ではなく変数を直接渡す
   function createSetRowHTML(label, index, showComments, initData = {}) {
     const wVal = initData.weight !== undefined ? initData.weight : '';
     const uVal = initData.unit || currentUnit;
