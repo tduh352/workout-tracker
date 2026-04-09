@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V64_2</title>
+<title>Workout Tracker V65</title>
 
 <style>
   :root {
@@ -123,7 +123,6 @@
   .form-group { margin-bottom: 15px; width: 100%; }
   label { display: block; margin-bottom: 5px; font-weight: bold; }
   
-  /* スピナーUIと完全独立行レイアウト */
   .number-input-wrapper { display: flex; align-items: stretch; width: 100%; height: 44px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
   .number-input-wrapper input { flex: 1; text-align: center; border: none !important; border-radius: 0 !important; margin: 0; padding: 0 4px; height: 100%; font-size: 18px; font-weight: bold; min-width: 0; background: var(--input-bg); color: var(--text-color); }
   .number-input-wrapper input:focus { outline: none; }
@@ -150,7 +149,6 @@
   .review-card-header { font-weight: bold; font-size: 18px; margin-bottom: 5px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; padding-right: 60px; }
   .review-card-context { font-size: 14px; color: var(--text-color); opacity: 0.8; margin-bottom: 15px; line-height: 1.4; }
 
-  /* セット入力行の完全独立（別行）レイアウト */
   .set-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; background: rgba(128, 128, 128, 0.05); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
   .set-row-header { font-weight: bold; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; color: var(--btn-bottom); font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
   .set-row-inputs { display: flex; flex-direction: column; gap: 15px; width: 100%; }
@@ -196,7 +194,6 @@
   .date-nav-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); font-size: 18px; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
   .date-nav-btn:active { background: var(--border-color); }
   
-  /* iOS Safari用：日付入力欄の幅を強制的に確保 */
   .fixed-date-input { width: 150px !important; min-width: 150px !important; max-width: 150px !important; text-align: center; }
 
   @media (max-width: 480px) {
@@ -798,6 +795,8 @@
   let customExerciseCategories = {};
   let savedCustomOrders = {};
 
+  const isValidDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+
   function adjustValue(id, delta, stepVal, min = 0) {
     const input = document.getElementById(id);
     if (!input || input.disabled) return;
@@ -862,13 +861,9 @@
     }
   }
 
-  const isValidDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
-
-  // --- 【完全修復】日付ジャンプのAIロジック ---
   function changeDate(inputId, delta) {
     const input = document.getElementById(inputId);
     
-    // 空欄の場合は今日の日付をセットして終了
     if (!input.value) {
       const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
       input.value = (new Date(now - tzOffset)).toISOString().split('T')[0];
@@ -886,7 +881,6 @@
     
     let currentIndex = dates.indexOf(currentDateStr);
     if (currentIndex === -1) {
-      // ログがない日からのジャンプは方向に応じて一番近いログのある日にワープ
       const futureDates = dates.filter(d => d > currentDateStr);
       const pastDates = dates.filter(d => d < currentDateStr);
       if (delta > 0 && futureDates.length > 0) input.value = futureDates[0];
@@ -895,7 +889,6 @@
       else if (delta > 0 && pastDates.length > 0) input.value = pastDates[pastDates.length - 1];
       else { showToast('これ以上データが存在しないぞ．', 'info'); return; }
     } else {
-      // ログがある日からの通常のジャンプ
       const newIndex = currentIndex + delta;
       if (newIndex >= 0 && newIndex < dates.length) input.value = dates[newIndex];
       else { showToast('これ以上データが存在しないぞ．', 'info'); return; }
@@ -1324,6 +1317,7 @@
     }
   }
 
+  // --- 【完全修復】アプリ起動時に必ず最新のログ日付をセットする ---
   function initDates() {
     const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
     const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
@@ -1357,7 +1351,6 @@
     document.getElementById('review-end-date').value = datePart;
   }
 
-  // --- 【追加】ワンタッチの入力をクリアする機能 ---
   function clearSetInput(index) {
      document.getElementById(`weight-${index}`).value = '';
      if(document.getElementById(`unit-${index}`).value !== '分') document.getElementById(`reps-${index}`).value = '';
@@ -1406,26 +1399,35 @@
     if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; setRating('input', 0); }
     else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; setRating('input', 0); }
     document.getElementById('input-comment').value = '';
-    currentInputRating = 0; currentSetRatings = {}; initDates(); renderSetInputs();
+    currentInputRating = 0; currentSetRatings = {}; renderSetInputs();
   }
 
-  // --- 【完全修復】種目リストの自動選択と空白回避 ---
-  function updateExerciseList() {
-    const cat = document.getElementById('category').value; 
-    const selectEl = document.getElementById('exercise');
-    const prev = selectEl.value;
-    selectEl.innerHTML = '';
-    
-    if (customExerciseCategories[cat] && customExerciseCategories[cat].length > 0) { 
-      customExerciseCategories[cat].forEach(ex => { selectEl.innerHTML += `<option value="${ex}">${ex}</option>`; }); 
-      if (prev && customExerciseCategories[cat].includes(prev)) {
-        selectEl.value = prev;
-      } else {
-        selectEl.value = customExerciseCategories[cat][0];
+  // --- 【完全修復】iOS Safariの「No Options」対策ロジック ---
+  function updateGlobalExerciseOptions() {
+    const exercises = [...new Set(logs.map(log => log.exercise))];
+    const updateSelect = (id) => {
+      const el = document.getElementById(id);
+      if (el) { 
+        const prev = el.value; 
+        const isGraph = id === 'graph-exercise';
+        let optionsHtml = isGraph ? '' : '<option value="ALL">すべての種目</option>'; 
+        
+        if (exercises.length > 0) {
+          exercises.forEach(ex => { optionsHtml += `<option value="${ex}">${ex}</option>`; }); 
+          el.innerHTML = optionsHtml;
+          if (prev && exercises.includes(prev)) {
+            el.value = prev; 
+          } else if (!isGraph && prev === 'ALL') {
+            el.value = 'ALL';
+          } else {
+            el.value = isGraph ? exercises[0] : 'ALL';
+          }
+        } else {
+          el.innerHTML = isGraph ? '<option value="" disabled selected style="display:none;">データなし</option>' : optionsHtml;
+        }
       }
-    } else {
-      selectEl.innerHTML = '<option value="" disabled selected style="display:none;">種目がありません</option>';
-    }
+    };
+    updateSelect('log-target-exercise'); updateSelect('graph-exercise'); updateSelect('review-target-exercise');
   }
 
   function renderExerciseEditList() {
@@ -1536,7 +1538,6 @@
     else { for (let i = 1; i <= setCount; i++) { handleUnitChange(document.getElementById(`unit-${i}`), `reps-${i}`); } }
   }
 
-  // --- 【完全修復】上下分割（別行）フレキシブルレイアウトとリセットボタン ---
   function createSetRowHTML(label, index, showComments, initData = {}) {
     const wVal = initData.weight !== undefined ? initData.weight : '';
     const uVal = initData.unit || currentUnit;
@@ -1587,32 +1588,6 @@
       </div>
       ${commentHtml}
     </div>`;
-  }
-
-  function updateGlobalExerciseOptions() {
-    const exercises = [...new Set(logs.map(log => log.exercise))];
-    const updateSelect = (id) => {
-      const el = document.getElementById(id);
-      if (el) { 
-        const prev = el.value; 
-        const isGraph = id === 'graph-exercise';
-        el.innerHTML = isGraph ? '' : '<option value="ALL">すべての種目</option>'; 
-        
-        if (exercises.length > 0) {
-          exercises.forEach(ex => { el.innerHTML += `<option value="${ex}">${ex}</option>`; }); 
-          if (prev && exercises.includes(prev)) {
-            el.value = prev; 
-          } else if (!isGraph && prev === 'ALL') {
-            el.value = 'ALL';
-          } else {
-            el.value = isGraph ? exercises[0] : 'ALL';
-          }
-        } else {
-          if (isGraph) el.innerHTML = '<option value="" disabled selected style="display:none;">データなし</option>';
-        }
-      }
-    };
-    updateSelect('log-target-exercise'); updateSelect('graph-exercise'); updateSelect('review-target-exercise');
   }
 
   function addLog() {
@@ -1683,6 +1658,7 @@
     renderLogList();
   }
 
+  // --- 【スリム化】ログ表の重量と回数の統合 ---
   function renderLogList() {
     const mode = document.getElementById('log-view-mode').value;
     const currentViewMode = mode === 'date' ? logDateViewMode : logExerciseViewMode;
@@ -1712,9 +1688,11 @@
       }
     }
 
-    const targetEx = document.getElementById('log-target-exercise').value;
-    if (mode === 'exercise' && targetEx && targetEx !== 'ALL') {
-      filteredLogs = filteredLogs.filter(log => log.exercise === targetEx);
+    if (mode === 'exercise') {
+      const target = document.getElementById('log-target-exercise').value;
+      if (target && target !== 'ALL') {
+        filteredLogs = filteredLogs.filter(log => log.exercise === target);
+      }
     }
 
     if (filteredLogs.length === 0) { 
@@ -1737,20 +1715,21 @@
       }
 
       dates.forEach(date => {
-        let html = `<h4>${date} <span style="font-size:16px;">${dailyEvals[date] ? getStaticStarHtml(dailyEvals[date].rating) : ''}</span></h4><div class="scroll-wrapper"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量/時間</th><th>回数</th><th>操作</th></tr>`;
+        let html = `<h4>${date} <span style="font-size:16px;">${dailyEvals[date] ? getStaticStarHtml(dailyEvals[date].rating) : ''}</span></h4><div class="scroll-wrapper"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>記録</th><th>操作</th></tr>`;
         grouped[date].sort((a, b) => a.date.localeCompare(b.date)).forEach(log => {
           const rowCount = log.sets.length; const time = log.date.split('T')[1];
           log.sets.forEach((s, idx) => {
             html += `<tr>`;
             if (idx === 0) { html += `<td rowspan="${rowCount}" style="vertical-align: top;">${time}</td><td rowspan="${rowCount}" style="vertical-align: top;">${log.category}</td><td rowspan="${rowCount}" style="vertical-align: top;">${log.exercise}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`; }
-            let repsStr = s.unit === '分' ? '-' : s.reps;
-            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${repsStr}</td><td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
+            let repsStr = s.unit === '分' ? `${s.weight}分` : `${s.weight}${s.unit} × ${s.reps}回`;
+            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top; white-space: nowrap;">${repsStr}</td><td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
           });
         });
         container.innerHTML += html + `</table></div><br>`;
       });
     } else if (mode === 'exercise') {
       const sort = document.getElementById('log-sort-mode').value;
+      const targetEx = document.getElementById('log-target-exercise').value;
 
       filteredLogs.sort((a, b) => {
         let maxWA = Math.max(...a.sets.map(s => s.unit === 'kg' ? s.weight * 2.20462 : s.weight), 0), maxWB = Math.max(...b.sets.map(s => s.unit === 'kg' ? s.weight * 2.20462 : s.weight), 0);
@@ -1758,7 +1737,7 @@
         switch(sort) { case 'date-desc': return b.date.localeCompare(a.date); case 'date-asc': return a.date.localeCompare(b.date); case 'weight-desc': return maxWB - maxWA; case 'weight-asc': return maxWA - maxWB; case 'reps-desc': return maxRB - maxRA; case 'reps-asc': return maxRA - maxRB; default: return 0; }
       });
 
-      let html = `<h4>${targetEx === 'ALL' ? 'すべての種目' : targetEx}</h4><div class="scroll-wrapper"><table><tr><th>日時</th><th>セット</th><th>重量/時間</th><th>回数</th>${showLogSetDetails ? '<th>詳細(評価/コメント)</th>' : ''}<th>操作</th></tr>`;
+      let html = `<h4>${targetEx === 'ALL' ? 'すべての種目' : targetEx}</h4><div class="scroll-wrapper"><table><tr><th>日時</th><th>セット</th><th>記録</th>${showLogSetDetails ? '<th>詳細(評価/コメント)</th>' : ''}<th>操作</th></tr>`;
       filteredLogs.forEach(log => { 
         const dtStr = log.date.replace('T', ' '), rowCount = log.sets.length;
         log.sets.forEach((s, idx) => {
@@ -1767,12 +1746,12 @@
              let exNameHtml = targetEx === 'ALL' ? `<strong>${log.exercise}</strong><br>` : '';
              html += `<td rowspan="${rowCount}" style="vertical-align: top;">${exNameHtml}${dtStr}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`; 
           }
-          let repsStr = s.unit === '分' ? '-' : s.reps;
+          let repsStr = s.unit === '分' ? `${s.weight}分` : `${s.weight}${s.unit} × ${s.reps}回`;
           
           if (showLogSetDetails) {
-            html += `<td style="vertical-align: top;">${s.setIndex}</td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${repsStr}</td><td style="vertical-align: top;"><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span><div style="font-size:12px; margin-top:4px; color:var(--text-color); opacity:0.8;">${s.comment || ''}</div></td>`;
+            html += `<td style="vertical-align: top;">${s.setIndex}</td><td style="vertical-align: top; white-space: nowrap;">${repsStr}</td><td style="vertical-align: top;"><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span><div style="font-size:12px; margin-top:4px; color:var(--text-color); opacity:0.8;">${s.comment || ''}</div></td>`;
           } else {
-            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${repsStr}</td>`;
+            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top; white-space: nowrap;">${repsStr}</td>`;
           }
           
           html += `<td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
@@ -1811,7 +1790,6 @@
     renderReviewList();
   }
 
-  // --- 【追加】振り返りのクリア機能 ---
   function resetReview(level, identifier) {
      if(!confirm('評価とコメントをクリアするだろうか？')) return;
      updateReviewRating(level, identifier, 0);
@@ -2083,6 +2061,7 @@
     loadLocalCategories(); 
     loadLocalData(); 
     loadLocalSettings(); 
+    initDates();
     resetInputForm(); 
     updateTheme(); 
     updateGlobalExerciseOptions(); 
