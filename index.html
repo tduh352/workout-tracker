@@ -5,13 +5,13 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V60</title>
+<title>Workout Tracker V61</title>
 
 <style>
   :root {
@@ -143,7 +143,7 @@
   .set-row > div { flex: 1 1 100px; display: flex; flex-direction: column; min-width: 0; }
   .weight-input-group { display: flex; align-items: center; width: 100%; gap: 5px; }
   .weight-input-group input[type="number"] { flex: 1; width: auto; min-width: 0; }
-  .unit-select { width: 70px; flex-shrink: 0; margin-left: 0; }
+  .unit-select { width: 75px; flex-shrink: 0; margin-left: 0; }
   .add-exercise-flex { display: flex; gap: 10px; width: 100%; }
   .add-exercise-flex input { flex: 1; width: auto; min-width: 0; }
   .add-exercise-flex button { width: auto; padding: 8px 20px; flex-shrink: 0; margin: 0; }
@@ -214,12 +214,12 @@
   <div class="form-group">
     <label>記録日時</label>
     <div class="date-range-flex">
-      <input type="date" id="record-date">
-      <input type="time" id="record-time">
+      <input type="date" id="record-date" onchange="saveDraft()">
+      <input type="time" id="record-time" onchange="saveDraft()">
     </div>
     <button class="action-btn" style="margin-top: 8px;" onclick="setNow()">現在時刻に戻す</button>
     <div class="checkbox-group" style="margin-top: 8px;">
-      <input type="checkbox" id="use-current-time-check" checked onchange="toggleTimeInputs()">
+      <input type="checkbox" id="use-current-time-check" checked onchange="toggleTimeInputs(); saveDraft();">
       <label for="use-current-time-check" style="margin:0;">現在時刻で記録する</label>
     </div>
   </div>
@@ -227,7 +227,7 @@
   <div class="controls-row">
     <div class="form-group">
       <label for="category">カテゴリ</label>
-      <select id="category" onchange="updateExerciseList()">
+      <select id="category" onchange="updateExerciseList(); saveDraft();">
         <option value="マシン">マシン</option>
         <option value="フリーウエイト">フリーウエイト</option>
         <option value="ケーブル">ケーブル</option>
@@ -237,41 +237,41 @@
     </div>
     <div class="form-group" style="flex: 2;">
       <label for="exercise">種目</label>
-      <select id="exercise"></select>
+      <select id="exercise" onchange="saveDraft()"></select>
     </div>
   </div>
 
-  <button id="toggle-rating-btn" onclick="toggleInputRating()" style="background:none; border:none; color:var(--btn-bottom); font-weight:bold; font-size: 15px; cursor:pointer; padding:0; margin-bottom:15px; text-align: left; width: 100%;">
+  <button id="toggle-rating-btn" onclick="toggleInputRating(); saveDraft();" style="background:none; border:none; color:var(--btn-bottom); font-weight:bold; font-size: 15px; cursor:pointer; padding:0; margin-bottom:15px; text-align: left; width: 100%;">
     ＋ 評価とコメントを追加 (任意)
   </button>
 
   <div class="form-group" id="input-rating-section" style="display:none; padding-top:10px; border-top:1px dashed var(--border-color);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
       <label style="margin: 0;">種目全体の評価</label>
-      <button class="action-btn" style="margin: 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--btn-bottom); border: 1px solid var(--btn-bottom);" onclick="setRating('input', 0)">星をリセット</button>
+      <button class="action-btn" style="margin: 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--btn-bottom); border: 1px solid var(--btn-bottom);" onclick="setRating('input', 0); saveDraft();">星をリセット</button>
     </div>
     <div class="star-rating-container" id="input-star-rating">
-      <span class="star" onclick="setRating('input', 1)">★</span>
-      <span class="star" onclick="setRating('input', 2)">★</span>
-      <span class="star" onclick="setRating('input', 3)">★</span>
-      <span class="star" onclick="setRating('input', 4)">★</span>
-      <span class="star" onclick="setRating('input', 5)">★</span>
+      <span class="star" onclick="setRating('input', 1); saveDraft();">★</span>
+      <span class="star" onclick="setRating('input', 2); saveDraft();">★</span>
+      <span class="star" onclick="setRating('input', 3); saveDraft();">★</span>
+      <span class="star" onclick="setRating('input', 4); saveDraft();">★</span>
+      <span class="star" onclick="setRating('input', 5); saveDraft();">★</span>
     </div>
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 10px;">
       <label style="margin: 0;">種目全体のコメント</label>
-      <button class="action-btn" style="margin: 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--btn-bottom); border: 1px solid var(--btn-bottom);" onclick="document.getElementById('input-comment').value = ''">コメントを消去</button>
+      <button class="action-btn" style="margin: 0; padding: 2px 8px; font-size: 12px; background: transparent; color: var(--btn-bottom); border: 1px solid var(--btn-bottom);" onclick="document.getElementById('input-comment').value = ''; saveDraft();">コメントを消去</button>
     </div>
-    <textarea id="input-comment" placeholder="フォームの感覚や調子などのコメントを記録..."></textarea>
+    <textarea id="input-comment" placeholder="フォームの感覚や調子などのコメントを記録..." oninput="saveDraft()"></textarea>
   </div>
 
   <div class="form-group">
     <label for="set-count">セット数</label>
-    <input type="number" id="set-count" min="1" onchange="renderSetInputs()">
+    <input type="number" id="set-count" min="1" onchange="renderSetInputs(); saveDraft();">
   </div>
 
   <div class="form-group checkbox-group">
-    <input type="checkbox" id="common-check" checked onchange="renderSetInputs()">
+    <input type="checkbox" id="common-check" checked onchange="renderSetInputs(); saveDraft();">
     <label for="common-check" style="margin:0;">全セット共通</label>
   </div>
 
@@ -286,7 +286,7 @@
     <div class="form-group">
       <label for="review-level">表示モード</label>
       <select id="review-level" onchange="updateReviewUI()">
-        <option value="day">日付ごと (その日全体の評価)</option>
+        <option value="day">日付ごと (全体の総括・種目・セット階層表示)</option>
         <option value="exercise">種目ごと (その種目の評価)</option>
         <option value="set">セットごと (個別の評価)</option>
       </select>
@@ -524,14 +524,14 @@
       <label for="log-date-view-mode">ログ(日付ごと)：表示モード</label>
       <select id="log-date-view-mode" onchange="updateSettings()">
         <option value="list">一覧表示 (範囲指定・ソート可)</option>
-        <option value="single">単日表示 (矢印で1日ずつ移動)</option>
+        <option value="single">単日表示 (矢印でジャンプ移動)</option>
       </select>
     </div>
     <div class="form-group" style="flex: 1;">
       <label for="log-exercise-view-mode">ログ(種目ごと)：表示モード</label>
       <select id="log-exercise-view-mode" onchange="updateSettings()">
         <option value="list">一覧表示 (範囲指定・ソート可)</option>
-        <option value="single">単一表示 (矢印で1日ずつ移動)</option>
+        <option value="single">単一表示 (矢印でジャンプ移動)</option>
       </select>
     </div>
   </div>
@@ -540,14 +540,14 @@
       <label for="review-day-date-view-mode">振り返り(日付ごと)：表示モード</label>
       <select id="review-day-date-view-mode" onchange="updateSettings()">
         <option value="list">一覧表示 (範囲指定・ソート可)</option>
-        <option value="single">単日表示 (矢印で1日ずつ移動)</option>
+        <option value="single">単日表示 (矢印でジャンプ移動)</option>
       </select>
     </div>
     <div class="form-group">
       <label for="review-exercise-date-view-mode">振り返り(種目ごと)：表示モード</label>
       <select id="review-exercise-date-view-mode" onchange="updateSettings()">
         <option value="list">一覧表示 (範囲指定・ソート可)</option>
-        <option value="single">単一表示 (矢印で1日ずつ移動)</option>
+        <option value="single">単一表示 (矢印でジャンプ移動)</option>
       </select>
     </div>
   </div>
@@ -556,7 +556,7 @@
       <label for="review-set-date-view-mode">振り返り(セットごと)：表示モード</label>
       <select id="review-set-date-view-mode" onchange="updateSettings()">
         <option value="list">一覧表示 (範囲指定・ソート可)</option>
-        <option value="single">単一表示 (矢印で1日ずつ移動)</option>
+        <option value="single">単一表示 (矢印でジャンプ移動)</option>
       </select>
     </div>
   </div>
@@ -569,14 +569,15 @@
   <hr style="border-color: var(--border-color); margin: 20px 0;">
 
   <div class="form-group">
-    <label for="default-unit">デフォルトの重量単位</label>
+    <label for="default-unit">デフォルトの単位</label>
     <select id="default-unit" onchange="updateSettings()">
       <option value="lbs">lbs</option>
       <option value="kg">kg</option>
+      <option value="分">分</option>
     </select>
   </div>
   <div class="form-group">
-    <label for="weight-step">重量の入力ステップ</label>
+    <label for="weight-step">重量/時間の入力ステップ</label>
     <input type="number" id="weight-step" value="0.5" step="0.1" min="0.1" onchange="updateSettings()">
   </div>
   <div class="form-group">
@@ -646,12 +647,6 @@
   </div>
 </div>
 
-<div id="tab-feedback" class="tab-content glass-panel">
-  <h3>バグ報告・フィードバック</h3>
-  <p style="font-size: 14px; margin-top: 0;">アプリのバグや改善案があれば，ここから開発者に直接メールを送信できる．</p>
-  <button class="glossy-btn" onclick="sendFeedback()">ここからメールを作成</button>
-</div>
-
 <div id="edit-modal-overlay">
   <div id="edit-modal" class="glass-panel">
     <h3>記録の編集</h3>
@@ -666,12 +661,13 @@
       </div>
     </div>
     <div class="form-group">
-      <label>重量</label>
+      <label>重量 / 時間</label>
       <div class="weight-input-group">
         <input type="number" id="edit-weight" min="0" step="0.1">
-        <select id="edit-unit" class="unit-select">
+        <select id="edit-unit" class="unit-select" onchange="handleUnitChange(this, 'edit-reps')">
           <option value="lbs">lbs</option>
           <option value="kg">kg</option>
+          <option value="分">分</option>
         </select>
       </div>
     </div>
@@ -780,6 +776,7 @@
     const [datePart, timePart] = localISOTime.split('T');
     document.getElementById('record-date').value = datePart;
     document.getElementById('record-time').value = timePart;
+    saveDraft();
     showToast('現在時刻にリセットしたぞ！', 'info');
   }
 
@@ -789,20 +786,129 @@
     document.getElementById('record-time').disabled = isChecked;
   }
 
+  function handleUnitChange(selectEl, repsId) {
+    if(!selectEl) return;
+    const repsEl = document.getElementById(repsId);
+    if(!repsEl) return;
+    if(selectEl.value === '分') {
+      repsEl.value = '';
+      repsEl.disabled = true;
+    } else {
+      repsEl.disabled = false;
+    }
+  }
+
   function changeDate(inputId, delta) {
     const input = document.getElementById(inputId);
     if (!input.value) return;
-    const d = new Date(input.value);
-    d.setDate(d.getDate() + delta);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    input.value = `${yyyy}-${mm}-${dd}`;
+    const currentDateStr = input.value;
+    
+    let dates = [...new Set(logs.map(l => l.date.split('T')[0]))].sort();
+    if (dates.length === 0) {
+      showToast('データが存在しないぞ。', 'info');
+      return;
+    }
+    
+    let currentIndex = dates.indexOf(currentDateStr);
+    if (currentIndex === -1) {
+      const futureDates = dates.filter(d => d > currentDateStr);
+      const pastDates = dates.filter(d => d < currentDateStr);
+      if (delta > 0 && futureDates.length > 0) {
+        input.value = futureDates[0];
+      } else if (delta < 0 && pastDates.length > 0) {
+        input.value = pastDates[pastDates.length - 1];
+      } else {
+        showToast('これ以上データが存在しないぞ。', 'info');
+        return;
+      }
+    } else {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < dates.length) {
+        input.value = dates[newIndex];
+      } else {
+        showToast('これ以上データが存在しないぞ。', 'info');
+        return;
+      }
+    }
     input.dispatchEvent(new Event('change'));
   }
 
+  // --- ドラフト機能（自動保存と復元） ---
+  function saveDraft() {
+    const draft = {
+      date: document.getElementById('record-date').value,
+      time: document.getElementById('record-time').value,
+      category: document.getElementById('category').value,
+      exercise: document.getElementById('exercise').value,
+      inputRatingVisible: document.getElementById('input-rating-section').style.display !== 'none',
+      inputRating: currentInputRating,
+      inputComment: document.getElementById('input-comment').value,
+      setCount: document.getElementById('set-count').value,
+      isCommon: document.getElementById('common-check').checked,
+      useCurrentTime: document.getElementById('use-current-time-check').checked,
+      sets: {}
+    };
+    
+    const container = document.getElementById('set-inputs-container');
+    const rows = container.querySelectorAll('.set-row');
+    rows.forEach((row) => {
+       const weightInput = row.querySelector('input[id^="weight-"]');
+       if(!weightInput) return;
+       const idx = weightInput.id.split('-')[1];
+       draft.sets[idx] = {
+         weight: weightInput.value,
+         unit: document.getElementById(`unit-${idx}`).value,
+         reps: document.getElementById(`reps-${idx}`).value,
+         comment: document.getElementById(`set-comment-${idx}`) ? document.getElementById(`set-comment-${idx}`).value : '',
+         star: currentSetRatings[idx] || 0
+       };
+    });
+    localStorage.setItem('workout_tracker_draft', JSON.stringify(draft));
+  }
+
+  function restoreDraft() {
+    const draftStr = localStorage.getItem('workout_tracker_draft');
+    if (!draftStr) return false;
+    try {
+      const draft = JSON.parse(draftStr);
+      document.getElementById('record-date').value = draft.date || '';
+      document.getElementById('record-time').value = draft.time || '';
+      document.getElementById('category').value = draft.category || 'マシン';
+      updateExerciseList();
+      if (draft.exercise) document.getElementById('exercise').value = draft.exercise;
+      
+      document.getElementById('use-current-time-check').checked = draft.useCurrentTime !== undefined ? draft.useCurrentTime : true;
+      toggleTimeInputs();
+
+      if (draft.inputRatingVisible) {
+        document.getElementById('input-rating-section').style.display = 'block';
+        document.getElementById('toggle-rating-btn').innerText = 'ー 評価とコメントを閉じる';
+      } else {
+        document.getElementById('input-rating-section').style.display = 'none';
+        document.getElementById('toggle-rating-btn').innerText = '＋ 評価とコメントを追加 (任意)';
+      }
+      setRating('input', draft.inputRating || 0);
+      document.getElementById('input-comment').value = draft.inputComment || '';
+      
+      document.getElementById('set-count').value = draft.setCount || currentDefaultSetCount;
+      document.getElementById('common-check').checked = draft.isCommon !== undefined ? draft.isCommon : true;
+      
+      window.tempDraftSets = draft.sets;
+      renderSetInputs();
+      window.tempDraftSets = null; 
+      return true;
+    } catch (e) {
+      console.error("Draft restore failed", e);
+      return false;
+    }
+  }
+
+  document.getElementById('tab-input').addEventListener('input', saveDraft);
+  document.getElementById('tab-input').addEventListener('change', saveDraft);
+
+
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
-  const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+  const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
   let tokenClient;
   let gAccessToken = null;
   let isGapiLoaded = false;
@@ -1171,6 +1277,7 @@
   }
 
   function resetAfterSubmit() {
+    localStorage.removeItem('workout_tracker_draft');
     document.getElementById('exercise').selectedIndex = 0;
     setRating('input', 0);
     document.getElementById('input-comment').value = '';
@@ -1180,13 +1287,13 @@
     
     if (isCommon) {
       document.getElementById('weight-0').value = '';
-      document.getElementById('reps-0').value = '';
+      if(document.getElementById('unit-0').value !== '分') document.getElementById('reps-0').value = '';
       if (document.getElementById('set-comment-0')) document.getElementById('set-comment-0').value = '';
       setSetRating(0, 0);
     } else {
       for (let i = 1; i <= setCount; i++) {
         document.getElementById(`weight-${i}`).value = '';
-        document.getElementById(`reps-${i}`).value = '';
+        if(document.getElementById(`unit-${i}`).value !== '分') document.getElementById(`reps-${i}`).value = '';
         if (document.getElementById(`set-comment-${i}`)) document.getElementById(`set-comment-${i}`).value = '';
         setSetRating(i, 0);
       }
@@ -1194,6 +1301,8 @@
   }
 
   function resetInputForm() {
+    if(restoreDraft()) return; 
+
     document.getElementById('category').selectedIndex = 0; updateExerciseList();
     document.getElementById('set-count').value = currentDefaultSetCount;
     document.getElementById('common-check').checked = document.getElementById('default-common').checked;
@@ -1271,25 +1380,60 @@
 
   function renderSetInputs() {
     const container = document.getElementById('set-inputs-container');
+    const oldValues = {};
+    const rows = container.querySelectorAll('.set-row');
+    rows.forEach((row) => {
+       const w = row.querySelector('input[id^="weight-"]');
+       if(!w) return;
+       const idx = w.id.split('-')[1];
+       oldValues[idx] = {
+         weight: document.getElementById(`weight-${idx}`).value,
+         unit: document.getElementById(`unit-${idx}`).value,
+         reps: document.getElementById(`reps-${idx}`).value,
+         comment: document.getElementById(`set-comment-${idx}`) ? document.getElementById(`set-comment-${idx}`).value : '',
+         star: currentSetRatings[idx] || 0
+       };
+    });
+
     const isCommon = document.getElementById('common-check').checked;
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
     const showComments = document.getElementById('show-set-comments').checked;
     container.innerHTML = '';
-    if (isCommon) { container.innerHTML = createSetRowHTML('全セット', 0, showComments); }
-    else { for (let i = 1; i <= setCount; i++) { container.innerHTML += createSetRowHTML(`セット ${i}`, i, showComments); } }
+    
+    if (isCommon) { 
+      const data = (window.tempDraftSets && window.tempDraftSets[0]) ? window.tempDraftSets[0] : (oldValues[0] || {});
+      container.innerHTML = createSetRowHTML('全セット', 0, showComments, data); 
+      if(data.star) setSetRating(0, data.star);
+    } else { 
+      for (let i = 1; i <= setCount; i++) { 
+        const data = (window.tempDraftSets && window.tempDraftSets[i]) ? window.tempDraftSets[i] : (oldValues[i] || {});
+        container.innerHTML += createSetRowHTML(`セット ${i}`, i, showComments, data); 
+        if(data.star) setSetRating(i, data.star);
+      } 
+    }
+
+    if (isCommon) { handleUnitChange(document.getElementById('unit-0'), 'reps-0'); } 
+    else { for (let i = 1; i <= setCount; i++) { handleUnitChange(document.getElementById(`unit-${i}`), `reps-${i}`); } }
   }
 
-  function createSetRowHTML(label, index, showComments) {
-    const lbsSelected = currentUnit === 'lbs' ? 'selected' : ''; const kgSelected = currentUnit === 'kg' ? 'selected' : '';
+  function createSetRowHTML(label, index, showComments, initData = {}) {
+    const wVal = initData.weight !== undefined ? initData.weight : '';
+    const uVal = initData.unit || currentUnit;
+    const rVal = initData.reps !== undefined ? initData.reps : '';
+    const cVal = initData.comment || '';
+    const lbsSelected = uVal === 'lbs' ? 'selected' : ''; 
+    const kgSelected = uVal === 'kg' ? 'selected' : '';
+    const minSelected = uVal === '分' ? 'selected' : '';
+
     let commentHtml = '';
     if (showComments) {
-      let activeStars = currentSetRatings[index] || 0;
+      let activeStars = initData.star || 0;
       let starHtml = `<div class="star-rating-container" id="input-star-set-${index}" style="font-size: 22px; margin-left: 10px;">`;
-      for(let i = 1; i <= 5; i++) { starHtml += `<span class="star ${i <= activeStars ? 'active' : ''}" onclick="setSetRating(${index}, ${i})">★</span>`; }
+      for(let i = 1; i <= 5; i++) { starHtml += `<span class="star ${i <= activeStars ? 'active' : ''}" onclick="setSetRating(${index}, ${i}); saveDraft();">★</span>`; }
       starHtml += `</div>`;
-      commentHtml = `<div style="flex: 1 1 100%; margin-top: 5px; display:flex; align-items:center;"><input type="text" id="set-comment-${index}" placeholder="セットのメモ（任意）..." style="font-size: 14px; padding: 8px; flex:1;">${starHtml}</div>`;
+      commentHtml = `<div style="flex: 1 1 100%; margin-top: 5px; display:flex; align-items:center;"><input type="text" id="set-comment-${index}" value="${cVal}" placeholder="セットのメモ（任意）..." style="font-size: 14px; padding: 8px; flex:1;" oninput="saveDraft()">${starHtml}</div>`;
     }
-    return `<div class="set-row"><div style="flex: 0.5;"><strong>${label}</strong></div><div><label>重量</label><div class="weight-input-group"><input type="number" id="weight-${index}" min="0" step="${currentStep}"><select id="unit-${index}" class="unit-select"><option value="lbs" ${lbsSelected}>lbs</option><option value="kg" ${kgSelected}>kg</option></select></div></div><div><label>回数</label><input type="number" id="reps-${index}" min="0"></div>${commentHtml}</div>`;
+    return `<div class="set-row"><div style="flex: 0.5;"><strong>${label}</strong></div><div><label>重量 / 時間</label><div class="weight-input-group"><input type="number" id="weight-${index}" min="0" step="${currentStep}" value="${wVal}" oninput="saveDraft()"><select id="unit-${index}" class="unit-select" onchange="handleUnitChange(this, 'reps-${index}'); saveDraft();"><option value="lbs" ${lbsSelected}>lbs</option><option value="kg" ${kgSelected}>kg</option><option value="分" ${minSelected}>分</option></select></div></div><div><label>回数</label><input type="number" id="reps-${index}" min="0" value="${rVal}" oninput="saveDraft()"></div>${commentHtml}</div>`;
   }
 
   function updateGlobalExerciseOptions() {
@@ -1428,13 +1572,14 @@
       }
 
       dates.forEach(date => {
-        let html = `<h4>${date} <span style="font-size:16px;">${dailyEvals[date] ? getStaticStarHtml(dailyEvals[date].rating) : ''}</span></h4><div class="scroll-wrapper"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
+        let html = `<h4>${date} <span style="font-size:16px;">${dailyEvals[date] ? getStaticStarHtml(dailyEvals[date].rating) : ''}</span></h4><div class="scroll-wrapper"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量/時間</th><th>回数</th><th>操作</th></tr>`;
         grouped[date].sort((a, b) => a.date.localeCompare(b.date)).forEach(log => {
           const rowCount = log.sets.length; const time = log.date.split('T')[1];
           log.sets.forEach((s, idx) => {
             html += `<tr>`;
             if (idx === 0) { html += `<td rowspan="${rowCount}" style="vertical-align: top;">${time}</td><td rowspan="${rowCount}" style="vertical-align: top;">${log.category}</td><td rowspan="${rowCount}" style="vertical-align: top;">${log.exercise}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`; }
-            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${s.reps}</td><td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
+            let repsStr = s.unit === '分' ? '-' : s.reps;
+            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${repsStr}</td><td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
           });
         });
         container.innerHTML += html + `</table></div><br>`;
@@ -1449,17 +1594,18 @@
         switch(sort) { case 'date-desc': return b.date.localeCompare(a.date); case 'date-asc': return a.date.localeCompare(b.date); case 'weight-desc': return maxWB - maxWA; case 'weight-asc': return maxWA - maxWB; case 'reps-desc': return maxRB - maxRA; case 'reps-asc': return maxRA - maxRB; default: return 0; }
       });
 
-      let html = `<h4>${target}</h4><div class="scroll-wrapper"><table><tr><th>日時</th><th>セット</th><th>重量</th><th>回数</th>${showLogSetDetails ? '<th>詳細(評価/コメント)</th>' : ''}<th>操作</th></tr>`;
+      let html = `<h4>${target}</h4><div class="scroll-wrapper"><table><tr><th>日時</th><th>セット</th><th>重量/時間</th><th>回数</th>${showLogSetDetails ? '<th>詳細(評価/コメント)</th>' : ''}<th>操作</th></tr>`;
       filteredLogs.forEach(log => { 
         const dtStr = log.date.replace('T', ' '), rowCount = log.sets.length;
         log.sets.forEach((s, idx) => {
           html += `<tr>`;
           if (idx === 0) { html += `<td rowspan="${rowCount}" style="vertical-align: top;">${dtStr}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`; }
+          let repsStr = s.unit === '分' ? '-' : s.reps;
           
           if (showLogSetDetails) {
-            html += `<td style="vertical-align: top;">${s.setIndex}</td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${s.reps}</td><td style="vertical-align: top;"><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span><div style="font-size:12px; margin-top:4px; color:var(--text-color); opacity:0.8;">${s.comment || ''}</div></td>`;
+            html += `<td style="vertical-align: top;">${s.setIndex}</td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${repsStr}</td><td style="vertical-align: top;"><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span><div style="font-size:12px; margin-top:4px; color:var(--text-color); opacity:0.8;">${s.comment || ''}</div></td>`;
           } else {
-            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${s.reps}</td>`;
+            html += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${repsStr}</td>`;
           }
           
           html += `<td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
@@ -1545,32 +1691,45 @@
         const exNames = [...new Set(dayLogs.map(l => l.exercise))].join(', ');
         const evalData = dailyEvals[date] || { rating: 0, comment: '' };
         
-        let logHtml = '';
+        let detailsHtml = '';
         if (currentViewMode === 'single') {
-          logHtml += `<hr style="border-color: var(--border-color); margin: 20px 0;"><div style="font-weight: bold; margin-bottom: 10px;">${date} の記録一覧</div><div class="scroll-wrapper" style="margin-bottom: 5px;"><table><tr><th>時刻</th><th>カテゴリ</th><th>種目</th><th>セット</th><th>重量</th><th>回数</th><th>操作</th></tr>`;
           let sortedLogs = [...dayLogs].sort((a, b) => a.date.localeCompare(b.date));
           sortedLogs.forEach(log => {
-            const rowCount = log.sets.length; const time = log.date.split('T')[1];
-            log.sets.forEach((s, idx) => {
-              logHtml += `<tr>`;
-              if (idx === 0) { 
-                logHtml += `<td rowspan="${rowCount}" style="vertical-align: top;">${time}</td><td rowspan="${rowCount}" style="vertical-align: top;">${log.category}</td><td rowspan="${rowCount}" style="vertical-align: top;">${log.exercise}<br><span style="font-size:14px; margin-top:4px; display:inline-block;">${getStaticStarHtml(log.rating)}</span></td>`; 
-              }
-              logHtml += `<td style="vertical-align: top;">${s.setIndex}<br><span style="font-size:12px;">${getStaticStarHtml(s.rating)}</span></td><td style="vertical-align: top;">${s.weight}${s.unit}</td><td style="vertical-align: top;">${s.reps}</td><td style="white-space: nowrap; vertical-align: top;"><button class="action-btn" onclick="openEditModal(${log.id}, ${s.setIndex})">編集</button><button class="action-btn action-btn-danger" onclick="deleteSet(${log.id}, ${s.setIndex})">削除</button></td></tr>`;
-            });
+             detailsHtml += `<div style="margin-top:15px; padding:10px; background:rgba(128,128,128,0.05); border-radius:8px; border:1px solid var(--border-color);">`;
+             detailsHtml += `<div style="font-weight:bold; font-size:16px; margin-bottom:5px;">${log.exercise}</div>`;
+             detailsHtml += `<div style="margin-bottom:5px;">種目評価: ${getDynamicStarHtml('exercise', log.id, log.rating || 0)}</div>`;
+             detailsHtml += `<textarea id="comment-exercise-${log.id}" placeholder="${log.exercise} の振り返り...">${log.comment || ''}</textarea>`;
+             detailsHtml += `<button class="action-btn" style="margin-bottom:10px;" onclick="saveReviewComment('exercise', '${log.id}')">種目のコメントを保存</button>`;
+             
+             log.sets.forEach(set => {
+               const identifier = `${log.id}_${set.setIndex}`;
+               const repsText = set.unit === '分' ? `${set.weight}分` : `${set.weight}${set.unit} × ${set.reps}回`;
+               detailsHtml += `<div style="margin-top:10px; padding-left:10px; border-left:3px solid var(--btn-top);">`;
+               detailsHtml += `<div style="font-size:13px; font-weight:bold;">第${set.setIndex}セット (${repsText})</div>`;
+               detailsHtml += `<div style="margin-bottom:5px;">セット評価: ${getDynamicStarHtml('set', identifier, set.rating || 0)}</div>`;
+               detailsHtml += `<textarea id="comment-set-${identifier}" placeholder="セットの振り返り..." style="min-height:50px;">${set.comment || ''}</textarea>`;
+               detailsHtml += `<button class="action-btn" onclick="saveReviewComment('set', '${identifier}')">セットのコメントを保存</button>`;
+               detailsHtml += `</div>`;
+             });
+             detailsHtml += `</div>`;
           });
-          logHtml += `</table></div>`;
         }
         
-        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; margin-bottom:15px; padding:8px;" onclick="saveReviewComment('day', '${date}')">コメントを保存</button>${logHtml}</div>`;
+        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>1日の全体評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; margin-bottom:15px; padding:8px;" onclick="saveReviewComment('day', '${date}')">1日のコメントを保存</button>${detailsHtml}</div>`;
       });
     } else if (level === 'exercise') {
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
         let setsSummary = '';
         if (showLogSetDetails) {
-          setsSummary = log.sets.map(s => `第${s.setIndex}セット: ${s.weight}${s.unit} × ${s.reps}回 <span style="font-size:12px; margin-left:8px;">${getStaticStarHtml(s.rating)}</span><br><span style="font-size:12px; opacity:0.8;">${s.comment || ''}</span>`).join('<hr style="margin:6px 0; border:none; border-top:1px dashed var(--border-color);">');
+          setsSummary = log.sets.map(s => {
+            let repsStr = s.unit === '分' ? `${s.weight}分` : `${s.weight}${s.unit} × ${s.reps}回`;
+            return `第${s.setIndex}セット: ${repsStr} <span style="font-size:12px; margin-left:8px;">${getStaticStarHtml(s.rating)}</span><br><span style="font-size:12px; opacity:0.8;">${s.comment || ''}</span>`;
+          }).join('<hr style="margin:6px 0; border:none; border-top:1px dashed var(--border-color);">');
         } else {
-          setsSummary = log.sets.map(s => `第${s.setIndex}セット: ${s.weight}${s.unit} × ${s.reps}回`).join('<br>');
+          setsSummary = log.sets.map(s => {
+            let repsStr = s.unit === '分' ? `${s.weight}分` : `${s.weight}${s.unit} × ${s.reps}回`;
+            return `第${s.setIndex}セット: ${repsStr}`;
+          }).join('<br>');
         }
         container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise}</div><div class="review-card-context">${setsSummary}</div><label>評価</label>${getDynamicStarHtml('exercise', log.id, log.rating || 0)}<textarea id="comment-exercise-${log.id}" placeholder="フォームの感覚などを記録...">${log.comment || ''}</textarea><button id="save-btn-exercise-${log.id}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('exercise', '${log.id}')">コメントを保存</button></div>`;
       });
@@ -1578,7 +1737,8 @@
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
         log.sets.forEach(set => {
           const identifier = `${log.id}_${set.setIndex}`;
-          container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise} (第${set.setIndex}セット)</div><div class="review-card-context">重量: ${set.weight}${set.unit} / 回数: ${set.reps}回</div><label>評価</label>${getDynamicStarHtml('set', identifier, set.rating || 0)}<textarea id="comment-set-${identifier}" placeholder="セットの限界度などを記録...">${set.comment || ''}</textarea><button id="save-btn-set-${identifier}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('set', '${identifier}')">コメントを保存</button></div>`;
+          const repsText = set.unit === '分' ? `${set.weight}分` : `${set.weight}${set.unit} / 回数: ${set.reps}回`;
+          container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise} (第${set.setIndex}セット)</div><div class="review-card-context">${repsText}</div><label>評価</label>${getDynamicStarHtml('set', identifier, set.rating || 0)}<textarea id="comment-set-${identifier}" placeholder="セットの限界度などを記録...">${set.comment || ''}</textarea><button id="save-btn-set-${identifier}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('set', '${identifier}')">コメントを保存</button></div>`;
         });
       });
     }
