@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V68</title>
+<title>Workout Tracker V67</title>
 
 <style>
   :root {
@@ -1102,41 +1102,19 @@
     isGisLoaded = true; checkAndRestoreToken();
   }
 
-// 修正版：トークンの有効性をチェックし，エラー時は再認証を促す
   function checkAndRestoreToken() {
     if (isGapiLoaded && isGisLoaded) {
       const savedToken = localStorage.getItem('gdrive_access_token');
-      if (savedToken) {
-        // 保存されたトークンを設定
-        gAccessToken = savedToken;
-        gapi.client.setToken({ access_token: gAccessToken });
-        
-        // 接続済みとしてUIを更新するが，バックグラウンドでテスト通信を行うのが安全である
-        testDriveConnection(); 
+      if (savedToken) { 
+        gAccessToken = savedToken; gapi.client.setToken({access_token: gAccessToken}); 
+        updateDriveUI(true); 
+        const savedUser = localStorage.getItem('gdrive_user_info');
+        if (savedUser) { displayUserInfoUI(JSON.parse(savedUser)); updateSyncStatus('接続済み', 'var(--btn-bottom)'); }
+        else { fetchUserInfo(); }
       }
     }
   }
 
-
-  // 通信テスト：トークンが有効か確認し，ダメなら未接続に戻す
-  async function testDriveConnection() {
-    try {
-      // 最小限の通信（ファイル1件取得）を試みる
-      await gapi.client.request({ path: '/drive/v3/files', method: 'GET', params: { pageSize: 1 } });
-      updateDriveUI(true);
-      fetchUserInfo();
-    } catch (e) {
-      // 401（認証エラー）が発生した場合，古いトークンを破棄する
-      if (e.status === 401) {
-        console.warn("Token expired. Clearing credentials.");
-        gAccessToken = null;
-        localStorage.removeItem('gdrive_access_token');
-        updateDriveUI(false);
-        showToast('セッションが切れたぞ！　再連携してくれ．', 'info');
-      }
-    }
-  }
-  
   function openLoginModal() { document.getElementById('login-modal-overlay').style.display = 'flex'; }
   function closeLoginModal() { document.getElementById('login-modal-overlay').style.display = 'none'; }
   function handleAuthClick() {
@@ -1179,17 +1157,12 @@
       if (!isBackground) showToast('Googleドライブへのバックアップが完了したぞ！', 'success');
       else { updateSyncStatus('同期完了', 'var(--btn-bottom)'); setTimeout(() => { if (gAccessToken) updateSyncStatus('接続済み', 'var(--btn-bottom)'); }, 3000); }
     } catch(e) {
-      // 保存中に401エラーが出たら，即座に未接続状態にする
-      if (e.status === 401) {
-        gAccessToken = null;
-        localStorage.removeItem('gdrive_access_token');
-        updateDriveUI(false);
-        showToast('認証エラーだ．再ログインが必要である．', 'error');
-      } else {
-        if (!isBackground) showToast('保存エラー: ' + (e.result && e.result.error ? e.result.error.message : e.message), 'error');
-        else updateSyncStatus('自動保存失敗', 'red');
-      }
+      if (!isBackground) showToast('保存エラー: ' + (e.result && e.result.error ? e.result.error.message : e.message), 'error');
+      else updateSyncStatus('自動保存失敗', 'red');
+    } finally {
+      if (!isBackground) document.querySelectorAll('.btn-gdrive-save').forEach(btn => btn.innerText = 'ドライブへ保存');
     }
+  }
 
   async function loadFromDrive() {
     if(!gAccessToken || !isGapiLoaded) return;
