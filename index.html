@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V65</title>
+<title>Workout Tracker V66</title>
 
 <style>
   :root {
@@ -123,10 +123,11 @@
   .form-group { margin-bottom: 15px; width: 100%; }
   label { display: block; margin-bottom: 5px; font-weight: bold; }
   
+  /* スピナーUIと完全独立行レイアウト */
   .number-input-wrapper { display: flex; align-items: stretch; width: 100%; height: 44px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
   .number-input-wrapper input { flex: 1; text-align: center; border: none !important; border-radius: 0 !important; margin: 0; padding: 0 4px; height: 100%; font-size: 18px; font-weight: bold; min-width: 0; background: var(--input-bg); color: var(--text-color); }
   .number-input-wrapper input:focus { outline: none; }
-  .spinner-btn { background: var(--panel-bg); color: var(--btn-bottom); width: 44px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; cursor: pointer; flex-shrink: 0; touch-action: manipulation; border: none; }
+  .spinner-btn { background: var(--panel-bg); color: var(--btn-bottom); width: 38px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; cursor: pointer; flex-shrink: 0; touch-action: manipulation; border: none; }
   .spinner-btn:active { background: var(--border-color); }
   .spinner-btn-left { border-right: 1px solid var(--border-color); }
   .spinner-btn-right { border-left: 1px solid var(--border-color); }
@@ -137,7 +138,10 @@
     border: 1px solid var(--border-color); border-radius: 6px; font-size: 16px; box-sizing: border-box;
     transition: opacity 0.3s;
   }
-  input:disabled, select:disabled, textarea:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  /* 確実にグレーアウトさせる強制設定 */
+  input:disabled, select:disabled, textarea:disabled { opacity: 0.4 !important; background-color: rgba(128, 128, 128, 0.2) !important; cursor: not-allowed !important; color: #888888 !important; }
+  
   textarea { resize: vertical; min-height: 80px; }
   .checkbox-group { display: flex; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
   .checkbox-group input { width: auto; margin-right: 10px; transform: scale(1.2); }
@@ -146,7 +150,7 @@
   .star-rating-container .star.active { color: #ffc700; text-shadow: 0 0 5px rgba(255, 199, 0, 0.4); }
 
   .review-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px var(--shadow); position: relative; }
-  .review-card-header { font-weight: bold; font-size: 18px; margin-bottom: 5px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; padding-right: 60px; }
+  .review-card-header { font-weight: bold; font-size: 18px; margin-bottom: 5px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
   .review-card-context { font-size: 14px; color: var(--text-color); opacity: 0.8; margin-bottom: 15px; line-height: 1.4; }
 
   .set-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; background: rgba(128, 128, 128, 0.05); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
@@ -168,7 +172,7 @@
   }
   .glossy-btn:active { background: linear-gradient(to bottom, var(--btn-bottom) 0%, var(--btn-top) 100%); box-shadow: inset 0px 2px 5px rgba(0,0,0,0.5); transform: translateY(2px); }
   .glossy-btn:disabled { background: var(--border-color); color: #888888; border-color: var(--border-color); cursor: not-allowed; box-shadow: none; text-shadow: none; }
-  .danger-btn { background: linear-gradient(to bottom, #ff7e7e 0%, #d63030 100%); border: 1px solid #b52b2b; }
+  .danger-btn { background: linear-gradient(to bottom, #ff7e7e 0%, #d63030 100%); border: 1px solid #b52b2b; margin-top: 10px; }
   .danger-btn:active { background: linear-gradient(to bottom, #d63030 0%, #ff7e7e 100%); }
 
   .action-btn { padding: 8px 12px; font-size: 14px; border: 1px solid var(--btn-border); border-radius: 6px; background: var(--btn-top); color: var(--btn-text); cursor: pointer; margin-right: 4px; margin-bottom: 4px; }
@@ -190,11 +194,8 @@
   .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
 
   #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 400px; }
-  
   .date-nav-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); font-size: 18px; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
   .date-nav-btn:active { background: var(--border-color); }
-  
-  .fixed-date-input { width: 150px !important; min-width: 150px !important; max-width: 150px !important; text-align: center; }
 
   @media (max-width: 480px) {
     .glass-panel { padding: 15px 10px; }
@@ -280,10 +281,12 @@
 
   <div class="form-group">
     <label for="set-count">セット数</label>
-    <div class="number-input-wrapper" style="width: 160px;">
-      <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('set-count', -1, 1, 1)">-</button>
+    <div class="number-input-wrapper" style="width: 200px;">
+      <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('set-count', -1, 5, 1)">&laquo;</button>
+      <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('set-count', -1, 1, 1)">&lt;</button>
       <input type="number" id="set-count" min="1" onchange="renderSetInputs(); saveDraft();">
-      <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('set-count', 1, 1, 1)">+</button>
+      <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('set-count', 1, 1, 1)">&gt;</button>
+      <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('set-count', 1, 5, 1)">&raquo;</button>
     </div>
   </div>
 
@@ -313,7 +316,7 @@
     </div>
   </div>
 
-  <div class="controls-row" id="review-exercise-row">
+  <div class="controls-row" id="review-exercise-row" style="display: none;">
     <div class="form-group">
       <label for="review-target-exercise">対象種目</label>
       <select id="review-target-exercise" onchange="renderReviewList()"></select>
@@ -323,7 +326,7 @@
   <div id="review-date-control-area">
     <div id="review-single-ui" class="controls-row" style="display: none; align-items: center; justify-content: center; flex-wrap: nowrap;">
       <button class="date-nav-btn" onclick="changeDate('review-target-date', -1)">&lt;</button>
-      <input type="date" id="review-target-date" class="fixed-date-input" onchange="renderReviewList()">
+      <input type="date" id="review-target-date" style="width: 160px; text-align: center;" onchange="renderReviewList()">
       <button class="date-nav-btn" onclick="changeDate('review-target-date', 1)">&gt;</button>
     </div>
 
@@ -368,7 +371,7 @@
     </div>
   </div>
 
-  <div class="controls-row" id="log-exercise-select-row">
+  <div class="controls-row" id="log-exercise-select-row" style="display: none;">
     <div class="form-group">
       <label for="log-target-exercise">対象種目</label>
       <select id="log-target-exercise" onchange="renderLogList()"></select>
@@ -378,7 +381,7 @@
   <div id="log-date-control-area">
     <div id="log-single-ui" class="controls-row" style="display: none; align-items: center; justify-content: center; flex-wrap: nowrap;">
       <button class="date-nav-btn" onclick="changeDate('log-single-date', -1)">&lt;</button>
-      <input type="date" id="log-single-date" class="fixed-date-input" onchange="renderLogList()">
+      <input type="date" id="log-single-date" style="width: 160px; text-align: center;" onchange="renderLogList()">
       <button class="date-nav-btn" onclick="changeDate('log-single-date', 1)">&gt;</button>
     </div>
 
@@ -597,18 +600,40 @@
       <option value="分">分</option>
     </select>
   </div>
-  <div class="form-group">
-    <label for="weight-step">重量/時間の入力ステップ</label>
-    <input type="number" id="weight-step" value="0.5" step="0.1" min="0.1" onchange="updateSettings()">
-  </div>
-  <div class="form-group">
-    <label for="default-set-count">デフォルトのセット数</label>
-    <div class="number-input-wrapper" style="width: 150px;">
-      <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('default-set-count', -1, 1, 1)">-</button>
-      <input type="number" id="default-set-count" value="3" min="1" onchange="updateSettings()">
-      <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('default-set-count', 1, 1, 1)">+</button>
+  
+  <div class="controls-row">
+    <div class="form-group">
+      <label for="weight-step">重量/時間の小ステップ (単押し)</label>
+      <input type="number" id="weight-step" value="0.5" step="0.1" min="0.1" onchange="updateSettings()">
+    </div>
+    <div class="form-group">
+      <label for="weight-large-step">重量/時間の大ステップ (<< >>)</label>
+      <input type="number" id="weight-large-step" value="5.0" step="0.5" min="0.5" onchange="updateSettings()">
     </div>
   </div>
+  
+  <div class="controls-row">
+    <div class="form-group">
+      <label for="reps-step">回数の小ステップ (単押し)</label>
+      <input type="number" id="reps-step" value="1" step="1" min="1" onchange="updateSettings()">
+    </div>
+    <div class="form-group">
+      <label for="reps-large-step">回数の大ステップ (<< >>)</label>
+      <input type="number" id="reps-large-step" value="5" step="1" min="1" onchange="updateSettings()">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="default-set-count">デフォルトのセット数</label>
+    <div class="number-input-wrapper" style="width: 200px;">
+      <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('default-set-count', -1, 5, 1)">&laquo;</button>
+      <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('default-set-count', -1, 1, 1)">&lt;</button>
+      <input type="number" id="default-set-count" value="3" min="1" onchange="updateSettings()">
+      <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('default-set-count', 1, 1, 1)">&gt;</button>
+      <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('default-set-count', 1, 5, 1)">&raquo;</button>
+    </div>
+  </div>
+
   <div class="form-group checkbox-group">
     <input type="checkbox" id="default-common" checked onchange="updateSettings()">
     <label for="default-common" style="margin:0;">全セット共通をデフォルトにする</label>
@@ -697,9 +722,11 @@
         <label>重量 / 時間</label>
         <div style="display: flex; gap: 10px;">
           <div class="number-input-wrapper">
-            <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('edit-weight', -1, 'currentStep', 0)">-</button>
+            <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('edit-weight', -1, currentWeightLargeStep, 0)">&laquo;</button>
+            <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('edit-weight', -1, currentWeightStep, 0)">&lt;</button>
             <input type="number" id="edit-weight" min="0" step="0.1">
-            <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('edit-weight', 1, 'currentStep', 0)">+</button>
+            <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('edit-weight', 1, currentWeightStep, 0)">&gt;</button>
+            <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('edit-weight', 1, currentWeightLargeStep, 0)">&raquo;</button>
           </div>
           <select id="edit-unit" class="unit-select" onchange="handleUnitChange(this, 'edit-reps')">
             <option value="lbs">lbs</option>
@@ -711,9 +738,11 @@
       <div>
         <label>回数</label>
         <div class="number-input-wrapper">
-          <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('edit-reps', -1, 1, 0)">-</button>
+          <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('edit-reps', -1, currentRepsLargeStep, 0)">&laquo;</button>
+          <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('edit-reps', -1, currentRepsStep, 0)">&lt;</button>
           <input type="number" id="edit-reps" min="0">
-          <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('edit-reps', 1, 1, 0)">+</button>
+          <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('edit-reps', 1, currentRepsStep, 0)">&gt;</button>
+          <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('edit-reps', 1, currentRepsLargeStep, 0)">&raquo;</button>
         </div>
       </div>
     </div>
@@ -757,7 +786,10 @@
 
 <script>
   let currentUnit = 'lbs';
-  let currentStep = '0.5';
+  let currentWeightStep = 0.5;
+  let currentWeightLargeStep = 5.0;
+  let currentRepsStep = 1;
+  let currentRepsLargeStep = 5;
   let currentDefaultSetCount = 3;
   let logDateViewMode = 'list'; 
   let logExerciseViewMode = 'list';
@@ -797,11 +829,11 @@
 
   const isValidDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 
-  function adjustValue(id, delta, stepVal, min = 0) {
+  function adjustValue(id, delta, stepVar, min = 0) {
     const input = document.getElementById(id);
     if (!input || input.disabled) return;
     
-    let s = typeof stepVal === 'string' ? parseFloat(window[stepVal] || stepVal) : stepVal;
+    let s = parseFloat(window[stepVar]);
     if (isNaN(s)) s = 1;
     
     let val = parseFloat(input.value) || 0;
@@ -930,44 +962,47 @@
 
   function restoreDraft() {
     const draftStr = localStorage.getItem('workout_tracker_draft');
-    if (!draftStr) return false;
+    if (!draftStr) return;
     try {
       const draft = JSON.parse(draftStr);
-      document.getElementById('record-date').value = draft.date || '';
-      document.getElementById('record-time').value = draft.time || '';
-      document.getElementById('category').value = draft.category || 'マシン';
-      updateExerciseList();
+      if (draft.date) document.getElementById('record-date').value = draft.date;
+      if (draft.time) document.getElementById('record-time').value = draft.time;
+      if (draft.category) {
+        document.getElementById('category').value = draft.category;
+        updateExerciseList();
+      }
       if (draft.exercise) document.getElementById('exercise').value = draft.exercise;
       
-      document.getElementById('use-current-time-check').checked = draft.useCurrentTime !== undefined ? draft.useCurrentTime : true;
-      toggleTimeInputs();
-
-      if (draft.inputRatingVisible) {
-        document.getElementById('input-rating-section').style.display = 'block';
-        document.getElementById('toggle-rating-btn').innerText = 'ー 評価とコメントを閉じる';
-      } else {
-        document.getElementById('input-rating-section').style.display = 'none';
-        document.getElementById('toggle-rating-btn').innerText = '＋ 評価とコメントを追加 (任意)';
+      if (draft.useCurrentTime !== undefined) {
+        document.getElementById('use-current-time-check').checked = draft.useCurrentTime;
       }
-      setRating('input', draft.inputRating || 0);
-      document.getElementById('input-comment').value = draft.inputComment || '';
+
+      if (draft.inputRatingVisible !== undefined) {
+        const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
+        if (draft.inputRatingVisible) {
+          section.style.display = 'block';
+          btn.innerText = 'ー 評価とコメントを閉じる';
+        } else {
+          section.style.display = 'none';
+          btn.innerText = '＋ 評価とコメントを追加 (任意)';
+        }
+      }
       
-      document.getElementById('set-count').value = draft.setCount || currentDefaultSetCount;
-      document.getElementById('common-check').checked = draft.isCommon !== undefined ? draft.isCommon : true;
+      if (draft.inputRating) setRating('input', draft.inputRating);
+      if (draft.inputComment) document.getElementById('input-comment').value = draft.inputComment;
       
-      window.tempDraftSets = draft.sets;
-      renderSetInputs();
-      window.tempDraftSets = null; 
-      return true;
+      if (draft.setCount) document.getElementById('set-count').value = draft.setCount;
+      if (draft.isCommon !== undefined) document.getElementById('common-check').checked = draft.isCommon;
+      
+      if (draft.sets) window.tempDraftSets = draft.sets;
     } catch (e) {
       console.error("Draft restore failed", e);
-      return false;
+      localStorage.removeItem('workout_tracker_draft');
     }
   }
 
   document.getElementById('tab-input').addEventListener('input', saveDraft);
   document.getElementById('tab-input').addEventListener('change', saveDraft);
-
 
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
   const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
@@ -1215,7 +1250,10 @@
 
   function updateSettings() {
     currentUnit = document.getElementById('default-unit').value;
-    currentStep = document.getElementById('weight-step').value || '0.5';
+    currentWeightStep = parseFloat(document.getElementById('weight-step').value) || 0.5;
+    currentWeightLargeStep = parseFloat(document.getElementById('weight-large-step').value) || 5.0;
+    currentRepsStep = parseInt(document.getElementById('reps-step').value) || 1;
+    currentRepsLargeStep = parseInt(document.getElementById('reps-large-step').value) || 5;
     currentDefaultSetCount = parseInt(document.getElementById('default-set-count').value) || 3;
     
     logDateViewMode = document.getElementById('log-date-view-mode').value;
@@ -1226,12 +1264,12 @@
     showLogSetDetails = document.getElementById('show-log-set-details').checked;
 
     document.getElementById('common-check').checked = document.getElementById('default-common').checked;
+    
     const showRatingDefault = document.getElementById('show-input-rating').checked;
     const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
     if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; }
     else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; }
     
-    document.getElementById('edit-weight').step = currentStep;
     document.getElementById('set-count').value = currentDefaultSetCount;
     
     document.getElementById('use-current-time-check').checked = document.getElementById('default-use-current-time').checked;
@@ -1288,8 +1326,26 @@
         if (settings.themeMode) document.getElementById('theme-mode').value = settings.themeMode;
         if (settings.themeColor) document.getElementById('theme-color').value = settings.themeColor;
         if (settings.defaultUnit) document.getElementById('default-unit').value = settings.defaultUnit;
-        if (settings.weightStep) document.getElementById('weight-step').value = settings.weightStep;
-        if (settings.defaultSetCount) { document.getElementById('default-set-count').value = settings.defaultSetCount; currentDefaultSetCount = parseInt(settings.defaultSetCount) || 3; }
+        if (settings.weightStep) {
+           document.getElementById('weight-step').value = settings.weightStep;
+           currentWeightStep = parseFloat(settings.weightStep) || 0.5;
+        }
+        if (settings.weightLargeStep) {
+           document.getElementById('weight-large-step').value = settings.weightLargeStep;
+           currentWeightLargeStep = parseFloat(settings.weightLargeStep) || 5.0;
+        }
+        if (settings.repsStep) {
+           document.getElementById('reps-step').value = settings.repsStep;
+           currentRepsStep = parseInt(settings.repsStep) || 1;
+        }
+        if (settings.repsLargeStep) {
+           document.getElementById('reps-large-step').value = settings.repsLargeStep;
+           currentRepsLargeStep = parseInt(settings.repsLargeStep) || 5;
+        }
+        if (settings.defaultSetCount) { 
+           document.getElementById('default-set-count').value = settings.defaultSetCount; 
+           currentDefaultSetCount = parseInt(settings.defaultSetCount) || 3; 
+        }
         
         if (settings.logDateViewMode) { document.getElementById('log-date-view-mode').value = settings.logDateViewMode; logDateViewMode = settings.logDateViewMode; }
         if (settings.logExerciseViewMode) { document.getElementById('log-exercise-view-mode').value = settings.logExerciseViewMode; logExerciseViewMode = settings.logExerciseViewMode; }
@@ -1309,6 +1365,29 @@
     }
   }
 
+  function saveLocalSettings() {
+    const settings = {
+      themeMode: document.getElementById('theme-mode').value, themeColor: document.getElementById('theme-color').value,
+      defaultUnit: document.getElementById('default-unit').value, 
+      weightStep: document.getElementById('weight-step').value,
+      weightLargeStep: document.getElementById('weight-large-step').value,
+      repsStep: document.getElementById('reps-step').value,
+      repsLargeStep: document.getElementById('reps-large-step').value,
+      defaultSetCount: document.getElementById('default-set-count').value, 
+      logDateViewMode: document.getElementById('log-date-view-mode').value,
+      logExerciseViewMode: document.getElementById('log-exercise-view-mode').value,
+      reviewDayDateViewMode: document.getElementById('review-day-date-view-mode').value,
+      reviewExerciseDateViewMode: document.getElementById('review-exercise-date-view-mode').value,
+      reviewSetDateViewMode: document.getElementById('review-set-date-view-mode').value,
+      showLogSetDetails: document.getElementById('show-log-set-details').checked,
+      defaultCommon: document.getElementById('default-common').checked, showInputRating: document.getElementById('show-input-rating').checked,
+      defaultUseCurrentTime: document.getElementById('default-use-current-time').checked,
+      showSetComments: document.getElementById('show-set-comments').checked, arrowColor: document.getElementById('arrow-color').value,
+      arrowThickness: document.getElementById('arrow-thickness').value, showArrows: document.getElementById('graph-show-arrows').checked
+    };
+    localStorage.setItem('workout_tracker_settings', JSON.stringify(settings));
+  }
+
   function clearAllData() {
     if (confirm("本当にすべての記録を削除するだろうか？　この操作は取り消せない．")) {
       logs = []; dailyEvals = {}; saveLocalData(); updateGlobalExerciseOptions(); updateLogUI(); drawGraph(); updateReviewUI();
@@ -1317,7 +1396,6 @@
     }
   }
 
-  // --- 【完全修復】アプリ起動時に必ず最新のログ日付をセットする ---
   function initDates() {
     const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
     const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
@@ -1361,8 +1439,8 @@
 
   function clearAllInputs() {
      if(!confirm('入力内容をすべてクリアするだろうか？')) return;
-     resetAfterSubmit();
-     saveDraft();
+     localStorage.removeItem('workout_tracker_draft');
+     resetInputForm();
      showToast('入力をクリアしたぞ．', 'info');
   }
 
@@ -1384,22 +1462,26 @@
     }
   }
 
+  // --- 【完全修復】設定を確実にロードしてから下書きを反映する ---
   function resetInputForm() {
-    if(restoreDraft()) return; 
-
-    document.getElementById('category').selectedIndex = 0; updateExerciseList();
+    document.getElementById('category').selectedIndex = 0;
+    updateExerciseList();
     document.getElementById('set-count').value = currentDefaultSetCount;
     document.getElementById('common-check').checked = document.getElementById('default-common').checked;
     
     document.getElementById('use-current-time-check').checked = document.getElementById('default-use-current-time').checked;
-    toggleTimeInputs();
 
     const showRatingDefault = document.getElementById('show-input-rating').checked;
     const section = document.getElementById('input-rating-section'), btn = document.getElementById('toggle-rating-btn');
     if (showRatingDefault) { section.style.display = 'block'; btn.innerText = 'ー 評価とコメントを閉じる'; setRating('input', 0); }
     else { section.style.display = 'none'; btn.innerText = '＋ 評価とコメントを追加 (任意)'; setRating('input', 0); }
     document.getElementById('input-comment').value = '';
-    currentInputRating = 0; currentSetRatings = {}; renderSetInputs();
+    currentInputRating = 0; currentSetRatings = {}; initDates(); 
+
+    restoreDraft();
+
+    toggleTimeInputs();
+    renderSetInputs();
   }
 
   // --- 【完全修復】iOS Safariの「No Options」対策ロジック ---
@@ -1428,6 +1510,24 @@
       }
     };
     updateSelect('log-target-exercise'); updateSelect('graph-exercise'); updateSelect('review-target-exercise');
+  }
+
+  function updateExerciseList() {
+    const cat = document.getElementById('category').value; 
+    const selectEl = document.getElementById('exercise');
+    const prev = selectEl.value;
+    selectEl.innerHTML = '';
+    
+    if (customExerciseCategories[cat] && customExerciseCategories[cat].length > 0) { 
+      customExerciseCategories[cat].forEach(ex => { selectEl.innerHTML += `<option value="${ex}">${ex}</option>`; }); 
+      if (prev && customExerciseCategories[cat].includes(prev)) {
+        selectEl.value = prev;
+      } else {
+        selectEl.value = customExerciseCategories[cat][0];
+      }
+    } else {
+      selectEl.innerHTML = '<option value="" disabled selected style="display:none;">種目がありません</option>';
+    }
   }
 
   function renderExerciseEditList() {
@@ -1538,6 +1638,7 @@
     else { for (let i = 1; i <= setCount; i++) { handleUnitChange(document.getElementById(`unit-${i}`), `reps-${i}`); } }
   }
 
+  // --- 【完全修復】上下分割（別行）フレキシブルレイアウトとリセットボタン ---
   function createSetRowHTML(label, index, showComments, initData = {}) {
     const wVal = initData.weight !== undefined ? initData.weight : '';
     const uVal = initData.unit || currentUnit;
@@ -1566,9 +1667,11 @@
           <label>重量 / 時間</label>
           <div style="display: flex; gap: 5px;">
             <div class="number-input-wrapper">
-              <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('weight-${index}', -1, 'currentStep', 0)">-</button>
-              <input type="number" id="weight-${index}" min="0" step="${currentStep}" value="${wVal}" oninput="saveDraft()">
-              <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('weight-${index}', 1, 'currentStep', 0)">+</button>
+              <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('weight-${index}', -1, 'currentWeightLargeStep', 0)">&laquo;</button>
+              <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('weight-${index}', -1, 'currentWeightStep', 0)">&lt;</button>
+              <input type="number" id="weight-${index}" min="0" step="${currentWeightStep}" value="${wVal}" oninput="saveDraft()">
+              <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('weight-${index}', 1, 'currentWeightStep', 0)">&gt;</button>
+              <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('weight-${index}', 1, 'currentWeightLargeStep', 0)">&raquo;</button>
             </div>
             <select id="unit-${index}" class="unit-select" onchange="handleUnitChange(this, 'reps-${index}'); saveDraft();">
               <option value="lbs" ${lbsSelected}>lbs</option>
@@ -1580,9 +1683,11 @@
         <div class="set-row-item">
           <label>回数</label>
           <div class="number-input-wrapper">
-            <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('reps-${index}', -1, 1, 0)">-</button>
-            <input type="number" id="reps-${index}" min="0" value="${rVal}" oninput="saveDraft()">
-            <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('reps-${index}', 1, 1, 0)">+</button>
+            <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('reps-${index}', -1, 'currentRepsLargeStep', 0)">&laquo;</button>
+            <button type="button" class="spinner-btn spinner-btn-left" onclick="adjustValue('reps-${index}', -1, 'currentRepsStep', 0)">&lt;</button>
+            <input type="number" id="reps-${index}" min="0" step="${currentRepsStep}" value="${rVal}" oninput="saveDraft()">
+            <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('reps-${index}', 1, 'currentRepsStep', 0)">&gt;</button>
+            <button type="button" class="spinner-btn spinner-btn-right" onclick="adjustValue('reps-${index}', 1, 'currentRepsLargeStep', 0)">&raquo;</button>
           </div>
         </div>
       </div>
@@ -1658,7 +1763,6 @@
     renderLogList();
   }
 
-  // --- 【スリム化】ログ表の重量と回数の統合 ---
   function renderLogList() {
     const mode = document.getElementById('log-view-mode').value;
     const currentViewMode = mode === 'date' ? logDateViewMode : logExerciseViewMode;
@@ -1772,7 +1876,11 @@
     else if (level === 'exercise') currentViewMode = reviewExerciseDateViewMode;
     else if (level === 'set') currentViewMode = reviewSetDateViewMode;
 
-    exRow.style.display = 'flex'; 
+    if (level === 'exercise' || level === 'set') {
+      exRow.style.display = 'flex'; 
+    } else {
+      exRow.style.display = 'none'; 
+    }
 
     if (currentViewMode === 'single') {
       document.getElementById('review-single-ui').style.display = 'flex';
@@ -1790,14 +1898,7 @@
     renderReviewList();
   }
 
-  function resetReview(level, identifier) {
-     if(!confirm('評価とコメントをクリアするだろうか？')) return;
-     updateReviewRating(level, identifier, 0);
-     const ta = document.getElementById(`comment-${level}-${identifier}`);
-     if(ta) ta.value = '';
-     saveReviewComment(level, identifier);
-  }
-
+  // --- 【完全修復】振り返りから不要なリセットボタンを削除 ---
   function renderReviewList() {
     const level = document.getElementById('review-level').value;
     const container = document.getElementById('review-container');
@@ -1846,10 +1947,7 @@
           let sortedLogs = [...dayLogs].sort((a, b) => a.date.localeCompare(b.date));
           sortedLogs.forEach(log => {
              detailsHtml += `<div style="margin-top:15px; padding:10px; background:rgba(128,128,128,0.05); border-radius:8px; border:1px solid var(--border-color);">`;
-             detailsHtml += `<div style="font-weight:bold; font-size:16px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
-                <span>${log.exercise}</span>
-                <button class="action-btn" style="margin:0; padding:2px 8px; font-size:12px; background:transparent; color:var(--btn-bottom); border:1px solid var(--btn-bottom);" onclick="resetReview('exercise', '${log.id}')">リセット</button>
-             </div>`;
+             detailsHtml += `<div style="font-weight:bold; font-size:16px; margin-bottom:5px;">${log.exercise}</div>`;
              detailsHtml += `<div style="margin-bottom:5px;">種目評価: ${getDynamicStarHtml('exercise', log.id, log.rating || 0)}</div>`;
              detailsHtml += `<textarea id="comment-exercise-${log.id}" placeholder="${log.exercise} の振り返り...">${log.comment || ''}</textarea>`;
              detailsHtml += `<button class="action-btn" style="margin-bottom:10px;" onclick="saveReviewComment('exercise', '${log.id}')">種目のコメントを保存</button>`;
@@ -1858,10 +1956,7 @@
                const identifier = `${log.id}_${set.setIndex}`;
                const repsText = set.unit === '分' ? `${set.weight}分` : `${set.weight}${set.unit} × ${set.reps}回`;
                detailsHtml += `<div style="margin-top:10px; padding-left:10px; border-left:3px solid var(--btn-top);">`;
-               detailsHtml += `<div style="font-size:13px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-                  <span>第${set.setIndex}セット (${repsText})</span>
-                  <button class="action-btn action-btn-danger" style="margin:0; padding:2px 8px; font-size:12px;" onclick="resetReview('set', '${identifier}')">リセット</button>
-               </div>`;
+               detailsHtml += `<div style="font-size:13px; font-weight:bold;">第${set.setIndex}セット (${repsText})</div>`;
                detailsHtml += `<div style="margin-bottom:5px;">セット評価: ${getDynamicStarHtml('set', identifier, set.rating || 0)}</div>`;
                detailsHtml += `<textarea id="comment-set-${identifier}" placeholder="セットの振り返り..." style="min-height:50px;">${set.comment || ''}</textarea>`;
                detailsHtml += `<button class="action-btn" onclick="saveReviewComment('set', '${identifier}')">セットのコメントを保存</button>`;
@@ -1872,10 +1967,7 @@
         }
         
         container.innerHTML += `<div class="review-card">
-          <div class="review-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>${date} の総括</span>
-            <button class="action-btn action-btn-danger" style="margin:0; padding:2px 8px; font-size:12px;" onclick="resetReview('day', '${date}')">リセット</button>
-          </div>
+          <div class="review-card-header">${date} の総括</div>
           <div class="review-card-context">実行した種目: ${exNames}</div>
           <label>1日の全体評価</label>
           ${getDynamicStarHtml('day', date, evalData.rating)}
@@ -1899,10 +1991,7 @@
           }).join('<br>');
         }
         container.innerHTML += `<div class="review-card">
-          <div class="review-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>${log.date.replace('T', ' ')} - ${log.exercise}</span>
-            <button class="action-btn action-btn-danger" style="margin:0; padding:2px 8px; font-size:12px;" onclick="resetReview('exercise', '${log.id}')">リセット</button>
-          </div>
+          <div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise}</div>
           <div class="review-card-context">${setsSummary}</div>
           <label>評価</label>${getDynamicStarHtml('exercise', log.id, log.rating || 0)}
           <textarea id="comment-exercise-${log.id}" placeholder="フォームの感覚などを記録...">${log.comment || ''}</textarea>
@@ -1915,10 +2004,7 @@
           const identifier = `${log.id}_${set.setIndex}`;
           const repsText = set.unit === '分' ? `${set.weight}分` : `${set.weight}${set.unit} / 回数: ${set.reps}回`;
           container.innerHTML += `<div class="review-card">
-            <div class="review-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-              <span>${log.date.replace('T', ' ')} - ${log.exercise} (第${set.setIndex}セット)</span>
-              <button class="action-btn action-btn-danger" style="margin:0; padding:2px 8px; font-size:12px;" onclick="resetReview('set', '${identifier}')">リセット</button>
-            </div>
+            <div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise} (第${set.setIndex}セット)</div>
             <div class="review-card-context">${repsText}</div>
             <label>評価</label>${getDynamicStarHtml('set', identifier, set.rating || 0)}
             <textarea id="comment-set-${identifier}" placeholder="セットの限界度などを記録...">${set.comment || ''}</textarea>
@@ -2039,7 +2125,7 @@
     editingLogId = logId; editingSetIndex = setIndex; currentEditRating = log.rating || 0;
     updateStarUI('edit-star-rating', currentEditRating);
     document.getElementById('edit-weight').value = set.weight; document.getElementById('edit-unit').value = set.unit;
-    document.getElementById('edit-reps').value = set.reps; document.getElementById('edit-weight').step = currentStep;
+    document.getElementById('edit-reps').value = set.reps; document.getElementById('edit-weight').step = currentWeightStep;
     document.getElementById('edit-modal-overlay').style.display = 'flex';
   }
 
@@ -2058,13 +2144,13 @@
   }
 
   window.onload = function() { 
-    loadLocalCategories(); 
-    loadLocalData(); 
-    loadLocalSettings(); 
-    initDates();
-    resetInputForm(); 
-    updateTheme(); 
-    updateGlobalExerciseOptions(); 
+    try { loadLocalCategories(); } catch(e) { console.error(e); }
+    try { loadLocalData(); } catch(e) { console.error(e); }
+    try { loadLocalSettings(); } catch(e) { console.error(e); }
+    try { initDates(); } catch(e) { console.error(e); }
+    try { updateGlobalExerciseOptions(); } catch(e) { console.error(e); }
+    try { resetInputForm(); } catch(e) { console.error(e); }
+    try { updateTheme(); } catch(e) { console.error(e); }
     switchTab('input');
   };
 </script>
