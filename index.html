@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V61</title>
+<title>Workout Tracker V62</title>
 
 <style>
   :root {
@@ -122,6 +122,15 @@
 
   .form-group { margin-bottom: 15px; width: 100%; }
   label { display: block; margin-bottom: 5px; font-weight: bold; }
+  
+  /* スピナー付き入力欄のスタイル */
+  .number-input-wrapper { display: flex; align-items: center; width: 100%; }
+  .number-input-wrapper input { flex: 1; text-align: center; border-radius: 0; border-left: none; border-right: none; margin: 0; padding: 10px 4px; }
+  .spinner-btn { background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-color); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; cursor: pointer; flex-shrink: 0; touch-action: manipulation; }
+  .spinner-btn:first-child { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+  .spinner-btn:last-child { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+  .spinner-btn:active { background: var(--border-color); }
+
   input[type="number"], input[type="text"], input[type="date"], input[type="time"], select, textarea {
     padding: 10px; width: 100%; min-width: 0; background: var(--input-bg); color: var(--text-color);
     border: 1px solid var(--border-color); border-radius: 6px; font-size: 16px; box-sizing: border-box;
@@ -142,7 +151,6 @@
   .set-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; align-items: center; background: rgba(128, 128, 128, 0.1); padding: 10px; border-radius: 8px; width: 100%; }
   .set-row > div { flex: 1 1 100px; display: flex; flex-direction: column; min-width: 0; }
   .weight-input-group { display: flex; align-items: center; width: 100%; gap: 5px; }
-  .weight-input-group input[type="number"] { flex: 1; width: auto; min-width: 0; }
   .unit-select { width: 75px; flex-shrink: 0; margin-left: 0; }
   .add-exercise-flex { display: flex; gap: 10px; width: 100%; }
   .add-exercise-flex input { flex: 1; width: auto; min-width: 0; }
@@ -267,7 +275,11 @@
 
   <div class="form-group">
     <label for="set-count">セット数</label>
-    <input type="number" id="set-count" min="1" onchange="renderSetInputs(); saveDraft();">
+    <div class="number-input-wrapper" style="width: 140px;">
+      <button type="button" class="spinner-btn" onclick="adjustValue('set-count', -1, 1, 1)">-</button>
+      <input type="number" id="set-count" min="1" onchange="renderSetInputs(); saveDraft();">
+      <button type="button" class="spinner-btn" onclick="adjustValue('set-count', 1, 1, 1)">+</button>
+    </div>
   </div>
 
   <div class="form-group checkbox-group">
@@ -418,6 +430,7 @@
       <select id="graph-unit" onchange="drawGraph()">
         <option value="lbs">lbs</option>
         <option value="kg">kg</option>
+        <option value="分">分</option>
       </select>
     </div>
   </div>
@@ -582,7 +595,11 @@
   </div>
   <div class="form-group">
     <label for="default-set-count">デフォルトのセット数</label>
-    <input type="number" id="default-set-count" value="3" min="1" onchange="updateSettings()">
+    <div class="number-input-wrapper" style="width: 140px;">
+      <button type="button" class="spinner-btn" onclick="adjustValue('default-set-count', -1, 1, 1)">-</button>
+      <input type="number" id="default-set-count" value="3" min="1" onchange="updateSettings()">
+      <button type="button" class="spinner-btn" onclick="adjustValue('default-set-count', 1, 1, 1)">+</button>
+    </div>
   </div>
   <div class="form-group checkbox-group">
     <input type="checkbox" id="default-common" checked onchange="updateSettings()">
@@ -647,6 +664,12 @@
   </div>
 </div>
 
+<div id="tab-feedback" class="tab-content glass-panel">
+  <h3>バグ報告・フィードバック</h3>
+  <p style="font-size: 14px; margin-top: 0;">アプリのバグや改善案があれば，ここから開発者に直接メールを送信できる．</p>
+  <button class="glossy-btn" onclick="sendFeedback()">ここからメールを作成</button>
+</div>
+
 <div id="edit-modal-overlay">
   <div id="edit-modal" class="glass-panel">
     <h3>記録の編集</h3>
@@ -663,7 +686,11 @@
     <div class="form-group">
       <label>重量 / 時間</label>
       <div class="weight-input-group">
-        <input type="number" id="edit-weight" min="0" step="0.1">
+        <div class="number-input-wrapper">
+          <button type="button" class="spinner-btn" onclick="adjustValue('edit-weight', -1, currentStep, 0)">-</button>
+          <input type="number" id="edit-weight" min="0" step="0.1">
+          <button type="button" class="spinner-btn" onclick="adjustValue('edit-weight', 1, currentStep, 0)">+</button>
+        </div>
         <select id="edit-unit" class="unit-select" onchange="handleUnitChange(this, 'edit-reps')">
           <option value="lbs">lbs</option>
           <option value="kg">kg</option>
@@ -673,7 +700,11 @@
     </div>
     <div class="form-group">
       <label>回数</label>
-      <input type="number" id="edit-reps" min="0">
+      <div class="number-input-wrapper">
+        <button type="button" class="spinner-btn" onclick="adjustValue('edit-reps', -1, 1, 0)">-</button>
+        <input type="number" id="edit-reps" min="0">
+        <button type="button" class="spinner-btn" onclick="adjustValue('edit-reps', 1, 1, 0)">+</button>
+      </div>
     </div>
     <div class="modal-buttons">
       <button class="glossy-btn" onclick="saveEdit()">保存</button>
@@ -752,6 +783,27 @@
   let customExerciseCategories = {};
   let savedCustomOrders = {};
 
+  // --- スピナーUI用の値調整関数 ---
+  function adjustValue(id, delta, stepVal, min = 0) {
+    const input = document.getElementById(id);
+    if (!input || input.disabled) return;
+    
+    // stepValが変数名（文字列）で渡された場合は評価する
+    let s = typeof stepVal === 'string' ? parseFloat(window[stepVal] || stepVal) : stepVal;
+    if (isNaN(s)) s = 1;
+    
+    let val = parseFloat(input.value) || 0;
+    val += delta * s;
+    if (val < min) val = min;
+    
+    // 浮動小数点の計算誤差を修正
+    const precision = s.toString().split('.')[1]?.length || 0;
+    input.value = val.toFixed(precision);
+    
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('change'));
+  }
+
   function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
@@ -798,6 +850,7 @@
     }
   }
 
+  // --- 【AI連携】ログのある日付だけをジャンプする賢い移動ロジック ---
   function changeDate(inputId, delta) {
     const input = document.getElementById(inputId);
     if (!input.value) return;
@@ -805,35 +858,30 @@
     
     let dates = [...new Set(logs.map(l => l.date.split('T')[0]))].sort();
     if (dates.length === 0) {
-      showToast('データが存在しないぞ。', 'info');
+      showToast('データが存在しないぞ．', 'info');
       return;
     }
     
     let currentIndex = dates.indexOf(currentDateStr);
     if (currentIndex === -1) {
+      // ログがない日からのジャンプは、方向に応じて一番近いログのある日にワープする
       const futureDates = dates.filter(d => d > currentDateStr);
       const pastDates = dates.filter(d => d < currentDateStr);
-      if (delta > 0 && futureDates.length > 0) {
-        input.value = futureDates[0];
-      } else if (delta < 0 && pastDates.length > 0) {
-        input.value = pastDates[pastDates.length - 1];
-      } else {
-        showToast('これ以上データが存在しないぞ。', 'info');
-        return;
-      }
+      if (delta > 0 && futureDates.length > 0) input.value = futureDates[0];
+      else if (delta < 0 && pastDates.length > 0) input.value = pastDates[pastDates.length - 1];
+      else if (delta < 0 && futureDates.length > 0) input.value = futureDates[0];
+      else if (delta > 0 && pastDates.length > 0) input.value = pastDates[pastDates.length - 1];
+      else { showToast('これ以上データが存在しないぞ．', 'info'); return; }
     } else {
+      // ログがある日からの通常のジャンプ
       const newIndex = currentIndex + delta;
-      if (newIndex >= 0 && newIndex < dates.length) {
-        input.value = dates[newIndex];
-      } else {
-        showToast('これ以上データが存在しないぞ。', 'info');
-        return;
-      }
+      if (newIndex >= 0 && newIndex < dates.length) input.value = dates[newIndex];
+      else { showToast('これ以上データが存在しないぞ．', 'info'); return; }
     }
     input.dispatchEvent(new Event('change'));
   }
 
-  // --- ドラフト機能（自動保存と復元） ---
+  // --- 【無敵化】ドラフト機能（自動保存と復元） ---
   function saveDraft() {
     const draft = {
       date: document.getElementById('record-date').value,
@@ -903,9 +951,9 @@
     }
   }
 
+  // 入力タブのどこかが変更されるたびに自動保存を発動
   document.getElementById('tab-input').addEventListener('input', saveDraft);
   document.getElementById('tab-input').addEventListener('change', saveDraft);
-
 
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
   const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
@@ -1118,7 +1166,7 @@
 
   function getDynamicStarHtml(level, identifier, currentRating) {
     let html = `<div class="star-rating-container" id="star-container-${level}-${identifier}">`;
-    for (let i = 1; i <= 5; i++) { html += `<span class="star ${i <= currentRating ? 'active' : ''}" onclick="updateReviewRating('${level}', '${identifier}', ${i})">★</span>`; }
+    for (let i = 1; i <= 5; i++) { html += `<span class="star ${i <= currentRating ? 'active' : ''}" onclick="updateReviewRating('${level}', '${identifier}', ${i}); saveDraft();">★</span>`; }
     return html + '</div>';
   }
 
@@ -1262,8 +1310,18 @@
     
     document.getElementById('record-date').value = datePart;
     document.getElementById('record-time').value = timePart;
-    document.getElementById('review-target-date').value = datePart;
-    document.getElementById('log-single-date').value = datePart;
+
+    // 【AI連携】ログがある場合は、最新の日付を単一表示のデフォルトにする
+    let defaultSingleDate = datePart;
+    let dates = [...new Set(logs.map(l => l.date.split('T')[0]))].sort();
+    if (dates.length > 0) {
+        const pastDates = dates.filter(d => d <= datePart);
+        if (pastDates.length > 0) defaultSingleDate = pastDates[pastDates.length - 1];
+        else defaultSingleDate = dates[dates.length - 1];
+    }
+    
+    document.getElementById('review-target-date').value = defaultSingleDate;
+    document.getElementById('log-single-date').value = defaultSingleDate;
     
     const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); 
     const pastStr = (new Date(past - tzOffset)).toISOString().split('T')[0];
@@ -1416,6 +1474,7 @@
     else { for (let i = 1; i <= setCount; i++) { handleUnitChange(document.getElementById(`unit-${i}`), `reps-${i}`); } }
   }
 
+  // --- 【無敵UI】スピナーボタンを組み込んだ行生成 ---
   function createSetRowHTML(label, index, showComments, initData = {}) {
     const wVal = initData.weight !== undefined ? initData.weight : '';
     const uVal = initData.unit || currentUnit;
@@ -1433,16 +1492,54 @@
       starHtml += `</div>`;
       commentHtml = `<div style="flex: 1 1 100%; margin-top: 5px; display:flex; align-items:center;"><input type="text" id="set-comment-${index}" value="${cVal}" placeholder="セットのメモ（任意）..." style="font-size: 14px; padding: 8px; flex:1;" oninput="saveDraft()">${starHtml}</div>`;
     }
-    return `<div class="set-row"><div style="flex: 0.5;"><strong>${label}</strong></div><div><label>重量 / 時間</label><div class="weight-input-group"><input type="number" id="weight-${index}" min="0" step="${currentStep}" value="${wVal}" oninput="saveDraft()"><select id="unit-${index}" class="unit-select" onchange="handleUnitChange(this, 'reps-${index}'); saveDraft();"><option value="lbs" ${lbsSelected}>lbs</option><option value="kg" ${kgSelected}>kg</option><option value="分" ${minSelected}>分</option></select></div></div><div><label>回数</label><input type="number" id="reps-${index}" min="0" value="${rVal}" oninput="saveDraft()"></div>${commentHtml}</div>`;
+    return `<div class="set-row">
+      <div style="flex: 0.5;"><strong>${label}</strong></div>
+      <div>
+        <label>重量 / 時間</label>
+        <div class="weight-input-group">
+          <div class="number-input-wrapper">
+            <button type="button" class="spinner-btn" onclick="adjustValue('weight-${index}', -1, 'currentStep', 0)">-</button>
+            <input type="number" id="weight-${index}" min="0" step="${currentStep}" value="${wVal}" oninput="saveDraft()">
+            <button type="button" class="spinner-btn" onclick="adjustValue('weight-${index}', 1, 'currentStep', 0)">+</button>
+          </div>
+          <select id="unit-${index}" class="unit-select" onchange="handleUnitChange(this, 'reps-${index}'); saveDraft();">
+            <option value="lbs" ${lbsSelected}>lbs</option>
+            <option value="kg" ${kgSelected}>kg</option>
+            <option value="分" ${minSelected}>分</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label>回数</label>
+        <div class="number-input-wrapper">
+          <button type="button" class="spinner-btn" onclick="adjustValue('reps-${index}', -1, 1, 0)">-</button>
+          <input type="number" id="reps-${index}" min="0" value="${rVal}" oninput="saveDraft()">
+          <button type="button" class="spinner-btn" onclick="adjustValue('reps-${index}', 1, 1, 0)">+</button>
+        </div>
+      </div>
+      ${commentHtml}
+    </div>`;
   }
 
+  // --- 【バグ修正】先頭要素の自動選択 ---
   function updateGlobalExerciseOptions() {
     const exercises = [...new Set(logs.map(log => log.exercise))];
     const updateSelect = (id) => {
       const el = document.getElementById(id);
-      if (el) { const prev = el.value; el.innerHTML = ''; exercises.forEach(ex => { el.innerHTML += `<option value="${ex}">${ex}</option>`; }); if (prev && exercises.includes(prev)) el.value = prev; }
+      if (el) { 
+        const prev = el.value; 
+        el.innerHTML = ''; 
+        exercises.forEach(ex => { el.innerHTML += `<option value="${ex}">${ex}</option>`; }); 
+        if (prev && exercises.includes(prev)) {
+          el.value = prev; 
+        } else if (exercises.length > 0) {
+          el.value = exercises[0]; // 以前の選択肢がなければ先頭を自動選択
+        }
+      }
     };
-    updateSelect('log-target-exercise'); updateSelect('graph-exercise'); updateSelect('review-target-exercise');
+    updateSelect('log-target-exercise'); 
+    updateSelect('graph-exercise'); 
+    updateSelect('review-target-exercise');
   }
 
   function addLog() {
