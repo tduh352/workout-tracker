@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Workout">
 <link rel="apple-touch-icon" href="icon.png">
 
-<title>Workout Tracker V64</title>
+<title>Workout Tracker V64_2</title>
 
 <style>
   :root {
@@ -123,6 +123,7 @@
   .form-group { margin-bottom: 15px; width: 100%; }
   label { display: block; margin-bottom: 5px; font-weight: bold; }
   
+  /* スピナーUIと完全独立行レイアウト */
   .number-input-wrapper { display: flex; align-items: stretch; width: 100%; height: 44px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
   .number-input-wrapper input { flex: 1; text-align: center; border: none !important; border-radius: 0 !important; margin: 0; padding: 0 4px; height: 100%; font-size: 18px; font-weight: bold; min-width: 0; background: var(--input-bg); color: var(--text-color); }
   .number-input-wrapper input:focus { outline: none; }
@@ -145,13 +146,16 @@
   .star-rating-container { display: inline-flex; gap: 4px; font-size: 28px; color: var(--border-color); cursor: pointer; user-select: none; margin-bottom: 5px; }
   .star-rating-container .star.active { color: #ffc700; text-shadow: 0 0 5px rgba(255, 199, 0, 0.4); }
 
-  .review-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px var(--shadow); }
-  .review-card-header { font-weight: bold; font-size: 18px; margin-bottom: 5px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+  .review-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px var(--shadow); position: relative; }
+  .review-card-header { font-weight: bold; font-size: 18px; margin-bottom: 5px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; padding-right: 60px; }
   .review-card-context { font-size: 14px; color: var(--text-color); opacity: 0.8; margin-bottom: 15px; line-height: 1.4; }
 
+  /* セット入力行の完全独立（別行）レイアウト */
   .set-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; background: rgba(128, 128, 128, 0.05); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
-  .set-row-header { font-weight: bold; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; color: var(--btn-bottom); font-size: 18px; }
-  
+  .set-row-header { font-weight: bold; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; color: var(--btn-bottom); font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
+  .set-row-inputs { display: flex; flex-direction: column; gap: 15px; width: 100%; }
+  .set-row-item { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+
   .add-exercise-flex { display: flex; gap: 10px; width: 100%; }
   .add-exercise-flex input { flex: 1; width: auto; min-width: 0; }
   .add-exercise-flex button { width: auto; padding: 8px 20px; flex-shrink: 0; margin: 0; }
@@ -166,11 +170,12 @@
   }
   .glossy-btn:active { background: linear-gradient(to bottom, var(--btn-bottom) 0%, var(--btn-top) 100%); box-shadow: inset 0px 2px 5px rgba(0,0,0,0.5); transform: translateY(2px); }
   .glossy-btn:disabled { background: var(--border-color); color: #888888; border-color: var(--border-color); cursor: not-allowed; box-shadow: none; text-shadow: none; }
-  .danger-btn { background: linear-gradient(to bottom, #ff7e7e 0%, #d63030 100%); border: 1px solid #b52b2b; margin-top: 10px; }
+  .danger-btn { background: linear-gradient(to bottom, #ff7e7e 0%, #d63030 100%); border: 1px solid #b52b2b; }
   .danger-btn:active { background: linear-gradient(to bottom, #d63030 0%, #ff7e7e 100%); }
 
   .action-btn { padding: 8px 12px; font-size: 14px; border: 1px solid var(--btn-border); border-radius: 6px; background: var(--btn-top); color: var(--btn-text); cursor: pointer; margin-right: 4px; margin-bottom: 4px; }
-  .action-btn-danger { background: #d63030; border: 1px solid #b52b2b; }
+  .action-btn-danger { background: transparent; color: #d63030; border: 1px solid #d63030; }
+  .action-btn-danger:active { background: rgba(214, 48, 48, 0.1); }
 
   table { width: 100%; border-collapse: collapse; min-width: 500px; }
   th, td { border: 1px solid var(--border-color); padding: 10px 8px; text-align: left; vertical-align: middle; word-break: break-word; }
@@ -187,11 +192,12 @@
   .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
 
   #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 400px; }
+  
   .date-nav-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); font-size: 18px; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
   .date-nav-btn:active { background: var(--border-color); }
   
-  /* iOS Safari用：日付入力欄の幅固定 */
-  .fixed-date-input { width: 150px !important; min-width: 150px; text-align: center; }
+  /* iOS Safari用：日付入力欄の幅を強制的に確保 */
+  .fixed-date-input { width: 150px !important; min-width: 150px !important; max-width: 150px !important; text-align: center; }
 
   @media (max-width: 480px) {
     .glass-panel { padding: 15px 10px; }
@@ -227,7 +233,7 @@
       <input type="date" id="record-date" onchange="saveDraft()">
       <input type="time" id="record-time" onchange="saveDraft()">
     </div>
-    <button class="action-btn" style="margin-top: 8px;" onclick="setNow()">現在時刻に戻す</button>
+    <button class="action-btn" style="margin-top: 8px; background: transparent; color: var(--text-color); border: 1px solid var(--border-color);" onclick="setNow()">現在時刻に戻す</button>
     <div class="checkbox-group" style="margin-top: 8px;">
       <input type="checkbox" id="use-current-time-check" checked onchange="toggleTimeInputs(); saveDraft();">
       <label for="use-current-time-check" style="margin:0;">現在時刻で記録する</label>
@@ -291,7 +297,10 @@
 
   <div id="set-inputs-container"></div>
 
-  <button class="glossy-btn" onclick="addLog()">記録を追加</button>
+  <div style="display: flex; gap: 10px; margin-top: 15px;">
+    <button class="glossy-btn danger-btn" style="margin-top:0; flex: 1; padding: 14px 10px; font-size: 14px;" onclick="clearAllInputs()">すべてクリア</button>
+    <button class="glossy-btn" style="margin-top:0; flex: 2;" onclick="addLog()">記録を追加</button>
+  </div>
 </div>
 
 <div id="tab-review" class="tab-content glass-panel">
@@ -500,8 +509,8 @@
   </div>
   <div class="controls-row" style="margin-bottom: 10px;">
     <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-      <button class="action-btn" onclick="sortExercisesEdit('asc')">名前順 (昇順)</button>
-      <button class="action-btn" onclick="sortExercisesEdit('desc')">名前順 (降順)</button>
+      <button class="action-btn" style="background-color: transparent; border: 1px solid var(--text-color); color: var(--text-color);" onclick="sortExercisesEdit('asc')">名前順 (昇順)</button>
+      <button class="action-btn" style="background-color: transparent; border: 1px solid var(--text-color); color: var(--text-color);" onclick="sortExercisesEdit('desc')">名前順 (降順)</button>
       <button class="action-btn" style="background-color: var(--btn-bottom);" onclick="restoreCustomOrder()">カスタム順に戻す</button>
     </div>
   </div>
@@ -664,6 +673,12 @@
     <button class="glossy-btn danger-btn" onclick="clearAllData()">全記録を削除する</button>
     <button class="glossy-btn danger-btn" style="margin-top: 10px;" onclick="resetCategoriesData()">種目リストを初期状態に戻す</button>
   </div>
+</div>
+
+<div id="tab-feedback" class="tab-content glass-panel">
+  <h3>バグ報告・フィードバック</h3>
+  <p style="font-size: 14px; margin-top: 0;">アプリのバグや改善案があれば，ここから開発者に直接メールを送信できる．</p>
+  <button class="glossy-btn" onclick="sendFeedback()">ここからメールを作成</button>
 </div>
 
 <div id="edit-modal-overlay">
@@ -847,38 +862,43 @@
     }
   }
 
-  // --- 【完全修復】日付ジャンプのAIロジックと空欄バグの制圧 ---
+  const isValidDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+
+  // --- 【完全修復】日付ジャンプのAIロジック ---
   function changeDate(inputId, delta) {
     const input = document.getElementById(inputId);
-    let currentDateStr = input.value;
     
-    let dates = [...new Set(logs.map(l => l.date.split('T')[0]))].sort();
+    // 空欄の場合は今日の日付をセットして終了
+    if (!input.value) {
+      const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
+      input.value = (new Date(now - tzOffset)).toISOString().split('T')[0];
+      input.dispatchEvent(new Event('change'));
+      return;
+    }
+    
+    const currentDateStr = input.value;
+    let dates = [...new Set(logs.map(l => l.date.split('T')[0]))].filter(isValidDate).sort();
+    
     if (dates.length === 0) {
       showToast('データが存在しないぞ．', 'info');
       return;
     }
     
-    if (!currentDateStr) {
-      const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
-      currentDateStr = (new Date(now - tzOffset)).toISOString().split('T')[0];
-    }
-    
-    if (delta < 0) {
-       const pastDates = dates.filter(d => d < currentDateStr);
-       if (pastDates.length > 0) {
-         input.value = pastDates[pastDates.length - 1];
-       } else {
-         showToast('これ以上古いデータはないぞ．', 'info');
-         return;
-       }
-    } else if (delta > 0) {
-       const futureDates = dates.filter(d => d > currentDateStr);
-       if (futureDates.length > 0) {
-         input.value = futureDates[0];
-       } else {
-         showToast('これ以上新しいデータはないぞ．', 'info');
-         return;
-       }
+    let currentIndex = dates.indexOf(currentDateStr);
+    if (currentIndex === -1) {
+      // ログがない日からのジャンプは方向に応じて一番近いログのある日にワープ
+      const futureDates = dates.filter(d => d > currentDateStr);
+      const pastDates = dates.filter(d => d < currentDateStr);
+      if (delta > 0 && futureDates.length > 0) input.value = futureDates[0];
+      else if (delta < 0 && pastDates.length > 0) input.value = pastDates[pastDates.length - 1];
+      else if (delta < 0 && futureDates.length > 0) input.value = futureDates[0];
+      else if (delta > 0 && pastDates.length > 0) input.value = pastDates[pastDates.length - 1];
+      else { showToast('これ以上データが存在しないぞ．', 'info'); return; }
+    } else {
+      // ログがある日からの通常のジャンプ
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < dates.length) input.value = dates[newIndex];
+      else { showToast('これ以上データが存在しないぞ．', 'info'); return; }
     }
     input.dispatchEvent(new Event('change'));
   }
@@ -957,7 +977,7 @@
 
 
   const CLIENT_ID = '119735837342-7jqp7nn2b34ro6r47s1ggsh3fckdfa36.apps.googleusercontent.com';
-  const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+  const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
   let tokenClient;
   let gAccessToken = null;
   let isGapiLoaded = false;
@@ -1313,11 +1333,11 @@
     document.getElementById('record-time').value = timePart;
 
     let defaultSingleDate = datePart;
-    if (logs.length > 0) {
-      let dates = [...new Set(logs.map(l => l.date.split('T')[0]))].sort();
-      const pastDates = dates.filter(d => d <= datePart);
-      if (pastDates.length > 0) defaultSingleDate = pastDates[pastDates.length - 1];
-      else defaultSingleDate = dates[dates.length - 1];
+    let dates = [...new Set(logs.map(l => l.date.split('T')[0]))].filter(isValidDate).sort();
+    if (dates.length > 0) {
+        const pastDates = dates.filter(d => d <= datePart);
+        if (pastDates.length > 0) defaultSingleDate = pastDates[pastDates.length - 1];
+        else defaultSingleDate = dates[dates.length - 1];
     }
     
     const els = ['review-target-date', 'log-single-date'];
@@ -1337,6 +1357,22 @@
     document.getElementById('review-end-date').value = datePart;
   }
 
+  // --- 【追加】ワンタッチの入力をクリアする機能 ---
+  function clearSetInput(index) {
+     document.getElementById(`weight-${index}`).value = '';
+     if(document.getElementById(`unit-${index}`).value !== '分') document.getElementById(`reps-${index}`).value = '';
+     if(document.getElementById(`set-comment-${index}`)) document.getElementById(`set-comment-${index}`).value = '';
+     setSetRating(index, 0);
+     saveDraft();
+  }
+
+  function clearAllInputs() {
+     if(!confirm('入力内容をすべてクリアするだろうか？')) return;
+     resetAfterSubmit();
+     saveDraft();
+     showToast('入力をクリアしたぞ．', 'info');
+  }
+
   function resetAfterSubmit() {
     localStorage.removeItem('workout_tracker_draft');
     document.getElementById('exercise').selectedIndex = 0;
@@ -1347,16 +1383,10 @@
     const setCount = parseInt(document.getElementById('set-count').value) || 1;
     
     if (isCommon) {
-      document.getElementById('weight-0').value = '';
-      if(document.getElementById('unit-0').value !== '分') document.getElementById('reps-0').value = '';
-      if (document.getElementById('set-comment-0')) document.getElementById('set-comment-0').value = '';
-      setSetRating(0, 0);
+      clearSetInput(0);
     } else {
       for (let i = 1; i <= setCount; i++) {
-        document.getElementById(`weight-${i}`).value = '';
-        if(document.getElementById(`unit-${i}`).value !== '分') document.getElementById(`reps-${i}`).value = '';
-        if (document.getElementById(`set-comment-${i}`)) document.getElementById(`set-comment-${i}`).value = '';
-        setSetRating(i, 0);
+        clearSetInput(i);
       }
     }
   }
@@ -1379,7 +1409,7 @@
     currentInputRating = 0; currentSetRatings = {}; initDates(); renderSetInputs();
   }
 
-  // --- 【完全修復】種目リストの自動選択ロジック ---
+  // --- 【完全修復】種目リストの自動選択と空白回避 ---
   function updateExerciseList() {
     const cat = document.getElementById('category').value; 
     const selectEl = document.getElementById('exercise');
@@ -1391,7 +1421,7 @@
       if (prev && customExerciseCategories[cat].includes(prev)) {
         selectEl.value = prev;
       } else {
-        selectEl.value = customExerciseCategories[cat][0]; // 確実に一番上を選ぶ
+        selectEl.value = customExerciseCategories[cat][0];
       }
     } else {
       selectEl.innerHTML = '<option value="" disabled selected style="display:none;">種目がありません</option>';
@@ -1506,7 +1536,7 @@
     else { for (let i = 1; i <= setCount; i++) { handleUnitChange(document.getElementById(`unit-${i}`), `reps-${i}`); } }
   }
 
-  // --- 【完全修復】上下分割（別行）フレキシブルレイアウト ---
+  // --- 【完全修復】上下分割（別行）フレキシブルレイアウトとリセットボタン ---
   function createSetRowHTML(label, index, showComments, initData = {}) {
     const wVal = initData.weight !== undefined ? initData.weight : '';
     const uVal = initData.unit || currentUnit;
@@ -1526,7 +1556,10 @@
     }
     
     return `<div class="set-row">
-      <div class="set-row-header">${label}</div>
+      <div class="set-row-header">
+        <span>${label}</span>
+        <button class="action-btn action-btn-danger" style="margin:0; padding:2px 8px; font-size:12px;" onclick="clearSetInput(${index})">リセット</button>
+      </div>
       <div class="set-row-inputs">
         <div class="set-row-item">
           <label>重量 / 時間</label>
@@ -1562,18 +1595,20 @@
       const el = document.getElementById(id);
       if (el) { 
         const prev = el.value; 
-        el.innerHTML = '<option value="ALL">すべての種目</option>'; 
-        if (exercises.length === 0) {
-           // データがない場合は「すべての種目」のみ残す
-        } else {
+        const isGraph = id === 'graph-exercise';
+        el.innerHTML = isGraph ? '' : '<option value="ALL">すべての種目</option>'; 
+        
+        if (exercises.length > 0) {
           exercises.forEach(ex => { el.innerHTML += `<option value="${ex}">${ex}</option>`; }); 
           if (prev && exercises.includes(prev)) {
             el.value = prev; 
-          } else if (prev === 'ALL') {
+          } else if (!isGraph && prev === 'ALL') {
             el.value = 'ALL';
           } else {
-            el.value = 'ALL';
+            el.value = isGraph ? exercises[0] : 'ALL';
           }
+        } else {
+          if (isGraph) el.innerHTML = '<option value="" disabled selected style="display:none;">データなし</option>';
         }
       }
     };
@@ -1632,7 +1667,7 @@
     const useDateFilter = document.getElementById('log-date-filter-check').checked;
     const currentViewMode = mode === 'date' ? logDateViewMode : logExerciseViewMode;
     
-    document.getElementById('log-exercise-select-row').style.display = 'flex';
+    document.getElementById('log-exercise-select-row').style.display = mode === 'exercise' ? 'flex' : 'none';
 
     if (currentViewMode === 'single') {
       document.getElementById('log-single-ui').style.display = 'flex';
@@ -1678,7 +1713,7 @@
     }
 
     const targetEx = document.getElementById('log-target-exercise').value;
-    if (targetEx && targetEx !== 'ALL') {
+    if (mode === 'exercise' && targetEx && targetEx !== 'ALL') {
       filteredLogs = filteredLogs.filter(log => log.exercise === targetEx);
     }
 
@@ -1776,6 +1811,15 @@
     renderReviewList();
   }
 
+  // --- 【追加】振り返りのクリア機能 ---
+  function resetReview(level, identifier) {
+     if(!confirm('評価とコメントをクリアするだろうか？')) return;
+     updateReviewRating(level, identifier, 0);
+     const ta = document.getElementById(`comment-${level}-${identifier}`);
+     if(ta) ta.value = '';
+     saveReviewComment(level, identifier);
+  }
+
   function renderReviewList() {
     const level = document.getElementById('review-level').value;
     const container = document.getElementById('review-container');
@@ -1824,7 +1868,10 @@
           let sortedLogs = [...dayLogs].sort((a, b) => a.date.localeCompare(b.date));
           sortedLogs.forEach(log => {
              detailsHtml += `<div style="margin-top:15px; padding:10px; background:rgba(128,128,128,0.05); border-radius:8px; border:1px solid var(--border-color);">`;
-             detailsHtml += `<div style="font-weight:bold; font-size:16px; margin-bottom:5px;">${log.exercise}</div>`;
+             detailsHtml += `<div style="font-weight:bold; font-size:16px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                <span>${log.exercise}</span>
+                <button class="action-btn" style="margin:0; padding:2px 8px; font-size:12px; background:transparent; color:var(--btn-bottom); border:1px solid var(--btn-bottom);" onclick="resetReview('exercise', '${log.id}')">リセット</button>
+             </div>`;
              detailsHtml += `<div style="margin-bottom:5px;">種目評価: ${getDynamicStarHtml('exercise', log.id, log.rating || 0)}</div>`;
              detailsHtml += `<textarea id="comment-exercise-${log.id}" placeholder="${log.exercise} の振り返り...">${log.comment || ''}</textarea>`;
              detailsHtml += `<button class="action-btn" style="margin-bottom:10px;" onclick="saveReviewComment('exercise', '${log.id}')">種目のコメントを保存</button>`;
@@ -1833,7 +1880,10 @@
                const identifier = `${log.id}_${set.setIndex}`;
                const repsText = set.unit === '分' ? `${set.weight}分` : `${set.weight}${set.unit} × ${set.reps}回`;
                detailsHtml += `<div style="margin-top:10px; padding-left:10px; border-left:3px solid var(--btn-top);">`;
-               detailsHtml += `<div style="font-size:13px; font-weight:bold;">第${set.setIndex}セット (${repsText})</div>`;
+               detailsHtml += `<div style="font-size:13px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+                  <span>第${set.setIndex}セット (${repsText})</span>
+                  <button class="action-btn action-btn-danger" style="margin:0; padding:2px 8px; font-size:12px;" onclick="resetReview('set', '${identifier}')">リセット</button>
+               </div>`;
                detailsHtml += `<div style="margin-bottom:5px;">セット評価: ${getDynamicStarHtml('set', identifier, set.rating || 0)}</div>`;
                detailsHtml += `<textarea id="comment-set-${identifier}" placeholder="セットの振り返り..." style="min-height:50px;">${set.comment || ''}</textarea>`;
                detailsHtml += `<button class="action-btn" onclick="saveReviewComment('set', '${identifier}')">セットのコメントを保存</button>`;
@@ -1843,7 +1893,18 @@
           });
         }
         
-        container.innerHTML += `<div class="review-card"><div class="review-card-header">${date} のトレーニング全体</div><div class="review-card-context">実行した種目: ${exNames}</div><label>1日の全体評価</label>${getDynamicStarHtml('day', date, evalData.rating)}<textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea><button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; margin-bottom:15px; padding:8px;" onclick="saveReviewComment('day', '${date}')">1日のコメントを保存</button>${detailsHtml}</div>`;
+        container.innerHTML += `<div class="review-card">
+          <div class="review-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>${date} の総括</span>
+            <button class="action-btn action-btn-danger" style="margin:0; padding:2px 8px; font-size:12px;" onclick="resetReview('day', '${date}')">リセット</button>
+          </div>
+          <div class="review-card-context">実行した種目: ${exNames}</div>
+          <label>1日の全体評価</label>
+          ${getDynamicStarHtml('day', date, evalData.rating)}
+          <textarea id="comment-day-${date}" placeholder="その日のコンディションや反省点を記録...">${evalData.comment}</textarea>
+          <button id="save-btn-day-${date}" class="glossy-btn" style="margin-top:10px; margin-bottom:15px; padding:8px;" onclick="saveReviewComment('day', '${date}')">1日のコメントを保存</button>
+          ${detailsHtml}
+        </div>`;
       });
     } else if (level === 'exercise') {
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
@@ -1859,14 +1920,32 @@
             return `第${s.setIndex}セット: ${repsStr}`;
           }).join('<br>');
         }
-        container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise}</div><div class="review-card-context">${setsSummary}</div><label>評価</label>${getDynamicStarHtml('exercise', log.id, log.rating || 0)}<textarea id="comment-exercise-${log.id}" placeholder="フォームの感覚などを記録...">${log.comment || ''}</textarea><button id="save-btn-exercise-${log.id}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('exercise', '${log.id}')">コメントを保存</button></div>`;
+        container.innerHTML += `<div class="review-card">
+          <div class="review-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>${log.date.replace('T', ' ')} - ${log.exercise}</span>
+            <button class="action-btn action-btn-danger" style="margin:0; padding:2px 8px; font-size:12px;" onclick="resetReview('exercise', '${log.id}')">リセット</button>
+          </div>
+          <div class="review-card-context">${setsSummary}</div>
+          <label>評価</label>${getDynamicStarHtml('exercise', log.id, log.rating || 0)}
+          <textarea id="comment-exercise-${log.id}" placeholder="フォームの感覚などを記録...">${log.comment || ''}</textarea>
+          <button id="save-btn-exercise-${log.id}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('exercise', '${log.id}')">コメントを保存</button>
+        </div>`;
       });
     } else if (level === 'set') {
       [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
         log.sets.forEach(set => {
           const identifier = `${log.id}_${set.setIndex}`;
           const repsText = set.unit === '分' ? `${set.weight}分` : `${set.weight}${set.unit} / 回数: ${set.reps}回`;
-          container.innerHTML += `<div class="review-card"><div class="review-card-header">${log.date.replace('T', ' ')} - ${log.exercise} (第${set.setIndex}セット)</div><div class="review-card-context">${repsText}</div><label>評価</label>${getDynamicStarHtml('set', identifier, set.rating || 0)}<textarea id="comment-set-${identifier}" placeholder="セットの限界度などを記録...">${set.comment || ''}</textarea><button id="save-btn-set-${identifier}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('set', '${identifier}')">コメントを保存</button></div>`;
+          container.innerHTML += `<div class="review-card">
+            <div class="review-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>${log.date.replace('T', ' ')} - ${log.exercise} (第${set.setIndex}セット)</span>
+              <button class="action-btn action-btn-danger" style="margin:0; padding:2px 8px; font-size:12px;" onclick="resetReview('set', '${identifier}')">リセット</button>
+            </div>
+            <div class="review-card-context">${repsText}</div>
+            <label>評価</label>${getDynamicStarHtml('set', identifier, set.rating || 0)}
+            <textarea id="comment-set-${identifier}" placeholder="セットの限界度などを記録...">${set.comment || ''}</textarea>
+            <button id="save-btn-set-${identifier}" class="glossy-btn" style="margin-top:10px; padding:8px;" onclick="saveReviewComment('set', '${identifier}')">コメントを保存</button>
+          </div>`;
         });
       });
     }
